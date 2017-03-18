@@ -1,0 +1,157 @@
+
+<style>
+		
+	* {
+	 	-webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+	}
+	
+	
+	.post
+	{
+		
+		border: solid #04abfb 2px;
+		max-width: 800px;
+		min-height: 200px;
+		margin: 20px auto;
+	}
+	
+	.postheader
+	{
+		max-width: 800px;
+		min-height: 20px;
+ 		padding: 0px;
+ 
+ 		background: deepskyblue;
+ 		border-bottom: solid #04abfb 2px;
+	}
+	
+	
+	.postbody
+	{
+		display: flex;
+		overflow: auto;
+		
+	
+ 		padding: 0px;
+
+ 		
+	}
+	
+	.postpost
+	{
+		width: 680px;
+		display: flex;
+		overflow: auto;
+ 		padding: 0px;
+ 		-webkit-flex-flow: column wrap;
+ 		position: relative;
+	}
+	
+	.postbuttons
+	{
+		width: 100%;
+		align:right;
+		border-top: solid #04abfb 2px;
+     	list-style: none;
+		display: -webkit-box;
+		display: -moz-box;
+	    display: -ms-flexbox;
+		display: -webkit-flex;
+		display: flex;
+		-webkit-flex-flow: row wrap;
+	  	justify-content: flex-end;
+		
+  		position: absolute;
+ 		bottom: 0;
+		right: 0;
+}
+	  	
+	  	
+	 	justify-content: flex-end;
+	}
+	
+	.postbuttons button:hover
+	{
+		 background: #00b7f5;
+	}
+	
+	.postbuttons button:active
+	{
+		 background: #00CCFF;
+	}
+	
+	.postbutton
+	{
+ 		border: none;
+	    color: black;
+	    padding: 5px 32px;
+	    text-align: center;
+	    text-decoration: none;
+	    font-size: 16px;
+	    margin: 10px;
+		border-top: #55555b 2px;
+    	border-top: #555555 2px;
+  
+	}
+	
+	@media all and (max-width: 600px)
+	{
+		.postbutton
+		{
+			padding: 0px 0px;
+			margin: 0;
+			width: 33.3%;
+		}
+		
+		.postbuttons
+		{
+			display: default;
+		}
+	}
+	
+	.postavatar
+	{
+
+		min-width: 100px;
+		min-height: 100px;
+
+		
+		position: relative;
+		
+ 		padding: 0px;
+ 		border: solid #04abfb 2px;
+	}
+	
+	.postuser
+	{
+		display: inline-block;
+ 		flex: 1;
+		border-right: solid #04abfb 2px;
+		max-width: 120px;
+		margin-bottom: 0px;
+		margin-left: 0px;
+		margin-top: 0px;
+		bottom: inherit;
+		position: relative;
+		background: #66d9ff ;
+ 		padding: 10px;
+	}
+	
+	
+	
+	.posttext
+	{
+		text-align: justify;
+		margin: 5 auto;
+		margin-bottom: 40px;
+		background: #FFFFFF;
+		
+		max-width: 680px;
+		right: 0;
+ 		padding: 10px;
+	}
+	
+	
+</style>

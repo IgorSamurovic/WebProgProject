@@ -1,0 +1,606 @@
+<style>
+@CHARSET "ISO-8859-1";
+
+.hidden {
+	display: none !important;
+}
+
+.left
+{
+	float:left;
+}
+
+.right
+{
+	float:right;
+}
+
+.flex1
+{
+	flex: 1 !important;
+}
+
+.flex2
+{
+	flex: 2 !important;
+}
+
+.flex3
+{
+	flex: 3 !important;
+}
+
+.center
+{
+	margin: 4px auto !important;
+	text-align: center;
+}
+
+.navigation {
+	width: 100%;
+	min-height: 5px;
+	list-style: none;
+	margin: 0 auto;
+	padding: 0;
+	display: flex;
+	flex-direction: row;
+}
+
+div.rowFlex {
+	width: 100%;
+	min-height: 0;
+	margin: 0 auto;
+	padding: 0;
+	display: flex;
+	flex-direction: row;
+}
+
+.navigation li {
+	font-size: x-large;
+	margin-top: 10px;
+	margin-bottom: 3px;
+	flex: 1;
+	float: right;
+}
+
+.navigation a {
+	margin-left: 8px;
+	margin-right: 8px;
+}
+
+div.useravatarsmall {
+	flex: 1;
+	background-color: var(--darker);
+	max-width: 40px;
+	max-height: 40px;
+	border: 2px solid var(--darker);
+	margin-top: -9px;
+	margin-bottom: -2px;
+}
+
+div.modal {
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; 
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+}
+
+div.modalWindow {
+    position: fixed;
+    margin: 100px auto; 
+    z-index: 1; 
+    
+    width: 100%;
+    height: 100%; 
+    overflow: auto;
+}
+
+.btn {
+	flex: 1;
+	text-decoration: none;
+	font-weight: bold;
+	background-color: var(--darker);
+	cursor: pointer;
+    color: var(--lighttext);
+    border: none;
+}
+
+.btn2 {
+	flex: 1;
+	text-decoration: none;
+	font-weight: bold;
+	background-color: var(--darker2);
+	cursor: pointer;
+    color: var(--lighttext2);
+    border: none;
+}
+
+.link {
+	text-decoration: none;
+	font-weight: bold;
+	color: var(--light);
+	cursor: pointer;
+}
+
+.link2 {
+	text-decoration: none;
+	font-weight: bold;
+	color: var(--darker2);
+	cursor: pointer;
+}
+
+.btn:hover {
+	outline: none !important;
+	outline-width: 0;
+    background: var(--dark);
+}
+
+.btn2:hover {
+	
+	outline-width: 0;
+    background: var(--dark2);
+}
+
+.link:hover {
+	color: var(--dark);
+}
+
+.link2:hover {
+	color: var(--dark2);
+}
+
+.btn:active {
+	background: var(--light);
+}
+
+.btn2:active {
+	background: var(--light2);
+}
+
+.link:active {
+	color: var(--darker);
+}
+
+.link2:active {
+	color: var(--light2);
+}
+
+.selected {
+	text-decoration: underline;
+	color: var(--light);
+}
+
+.selected2 {
+	text-decoration: underline;
+	color: var(--light2);
+}
+
+
+
+
+
+
+
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+* {
+	
+outline: none !important;
+outline-width: 0;	
+	
+}
+
+.adminStuff {
+	display: none;
+}
+
+
+
+html { 
+        background: url('images/background.jpg') no-repeat center center fixed;
+        -webkit-background-size: cover;
+        -moz-background-size: cover;
+        -o-background-size: cover;
+        background-size: cover;
+}
+
+
+footer
+{
+	font-style: italic;
+	color: gray;
+}
+
+footer:a
+{
+	font-weight: bold;
+	font-color: gray;
+}
+
+input[type=text], input[type=email], input[type=password], input[type=datetime-local], select
+{
+	padding: 8px 20px;
+    margin: 4px 0;
+    border: 2px solid var(--dark);
+    font-weight: bold;
+    font-size: medium;
+    box-sizing: border-box;
+    color: var(--lighttext);
+    background-color: var(--darkestest);
+}
+
+::-webkit-input-placeholder {
+   color: var(--neutraltext);
+}
+
+.wide {
+    width: 100%;
+}
+
+input.half, select.half {
+	flex: 1;
+    display: inline;
+}
+
+div, button, input, select, a, img, ul
+{
+	border-radius: 10px;
+}
+
+div.boldText, p.boldText, span.boldText
+{
+    width: 100%;
+    text-align: center;
+	color: white;
+    font-weight: bold;
+    font-size: large;
+    margin: 4px;
+}
+
+div.inputRow
+{
+	justify-content: space-around;
+	display: flex;
+	text-align: center;
+	margin: 0 auto;
+}
+
+
+
+input[type=datetime-local].half
+{
+	width: 100%;
+}
+
+div.wide, span.wide
+{
+	width: 100%;
+}
+
+div.half, span.half
+{
+	width: 50%;
+}
+
+input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, input[type=datetime-local]:focus, select:focus {
+    outline: none;
+    border: 2px solid var(--dark2);
+}
+
+@media all and (max-width: 600px)
+{
+  div.inputRow
+  {
+    flex-flow: column wrap;
+	padding: 0;
+  }
+  
+  div.userProfile
+  {
+  	flex-flow: column wrap;
+  }
+  
+  div.buttons
+  {
+	flex-direction: row !important;
+	flex-wrap: nowrap;
+	flex: 1;
+  }
+  
+  div.buttons button
+  {
+  	min-height: 40px;
+  }
+  
+  div.useravatar {
+	margin: 4px auto !important;
+}
+  
+}
+
+div.bad {
+	background: var(--cBad);
+}
+
+div.good {
+	background: var(--cGood);
+}
+
+div.msg
+{
+	border: 2px solid var(--stdborder);
+	color: white;
+	padding: 5px;
+	margin: 5px auto;
+	font-size: x-large;
+}
+
+
+:active
+{
+	border: none;
+}
+
+
+input[type=file]
+{
+	height:0px;
+	width:0px;
+	opacity:0;
+}
+
+input[type=submit].big, input[type=reset].big, button.big, a.big
+{
+	font-size: x-large;
+	text-align:center;
+    padding: 14px 20px;
+    margin: 4px;
+    
+}
+
+input[type=submit].small, input[type=reset].small, button.small, a.small
+{
+	font-size: large;
+	text-align:center;
+	min-width: 25px;
+	max-height: 25px;
+	margin: 4px;
+}
+
+div.stdSpacer
+{
+	min-width: 8px;
+}
+
+div.pages
+{ 
+	
+	width: 100%;
+	min-height:0px;
+	margin: 0 auto;
+	text-align: center;;
+}
+
+div.buttons
+{ 
+	display: flex;
+	flex-wrap: wrap;
+	flex-direction: column;
+}
+
+div.buttons button, input
+{
+	
+}
+
+button.page
+{ 
+	font-size: large;
+	min-width: 25px;
+	height: 25px; 
+	margin: 2px;
+}
+
+
+
+div.page {
+	text-align:center;
+	align: center;
+	margin: 0 auto;
+	max-width: 800px;
+    border-style: solid;
+    border-color: var(--stdborder);
+    background-color: var(--darkest);
+    padding: 0;
+}
+
+div.pagecontent {
+	text-align:center;
+	
+	margin: 10px auto;
+	max-width: 800px;
+    background-color: var(--darkest);
+    padding: 20px;
+  	
+}
+
+div.pagecontent:empty
+{
+	padding: 0;
+	margin: 0 auto;
+}
+
+div.pageheader {
+	font-size: x-large;
+	font-weight: bold;
+	text-align:left;
+	margin: 10 auto;
+	max-width: 800px;
+    background-color: var(--darkestest);
+    color: white;
+    padding: 10px;
+    margin-top: 0;
+}
+
+widthspanned
+{
+	width: 100%;
+}
+
+div.pageborder {
+	box-shadow: 0 10px 10px var(--darkestest);
+	max-width: 800px;
+	margin: 25px auto;
+	border: 2px solid var(--darker);
+	text-align: center;
+}
+
+div.large {
+	max-width: 1000px;
+}
+
+div.small {
+	max-width: 600px;
+}
+
+div.searchresults {
+	text-align: center;
+	margin: 0 auto;
+}
+
+div.searchresult {
+	text-align: center;
+	margin: 0 auto;
+}
+
+div.userProfile {
+	box-sizing:border-box;
+	display: flex;
+	border: 2px solid var(--darker);
+	text-align: left;
+	width: 100%;
+	min-height: 100px;
+	margin: 1em;
+	background-color: var(--darkestest);
+	background-color: var(--darkestestRGBA);
+	margin: 10px auto;
+	padding: 5px;
+	flex-wrap: row wrap;
+}
+
+div.useravatar {
+	flex: 1;
+	background-color: var(--darker);
+	width: 120px;
+	height: 120px;
+	border: 2px solid var(--darker);
+	margin: 4px;
+}
+
+
+
+div.useravatarsetup {
+	display: -webkit-flex;
+	display: flex;
+	-webkit-flex-direction: row;
+	flex-direction: row;
+	-webkit-align-items: center;
+	align-items: center;
+	-webkit-justify-content: center;
+	justify-content: center;
+	
+	width: 20%;
+	margin: 0 auto;
+}
+
+img.useravatar {
+	margin: 0 auto;
+	position: relative;
+	width: 120px;
+	height: 120px;
+	border: none;
+}
+
+img.useravatarsmall {
+	margin: 0 auto;
+	position: relative;
+	width: 40px;
+	height: 40px;
+	border: none;
+}
+
+div.useravatar:focus, div.useravatar:hover, div.useravatarsmall:focus, div.useravatarsmall:hover {
+	
+	border: 2px solid var(--dark);
+	
+}
+
+iframe
+{
+	margin: 0;
+	padding: 0;
+	border: none;
+	width: value;
+	height: value;
+}
+
+
+div.userinfo {
+	box-sizing:border-box;
+	overflow: hidden;
+	flex: 1;
+	width: 80px;
+	height: 100px;
+}
+
+
+
+dl.userinfo {
+	overflow: hidden;
+	width: 100%;
+	padding: 0;
+	margin: 4px;
+	margin-left: 8px !important;
+  
+}
+
+dl.userinfo dt {
+	overflow: hidden;
+	float:left;
+	color: var(--neutraltext);
+	width: 65px;
+	padding: 0;
+	margin: 0;
+}
+
+dl.userinfo dd
+{
+	float: left;
+	width: 80%;
+}
+
+dl.userinfo dd, a{
+  color: var(--lighttext);
+  font-weight: bold;
+  padding: 0;
+  margin: 0;
+}
+
+dd.spaced, dt.spaced
+{
+	margin-top: 1em !important;
+}
+
+</style>

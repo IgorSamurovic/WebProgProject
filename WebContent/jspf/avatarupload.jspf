@@ -1,0 +1,15 @@
+	<div id="inputAvatarDiv" class="center">
+		<form id="inputAvatarForm" class="center">
+			<div class="useravatarsetup">
+				<input type="file" id="inputAvatar" accept="image/*"/>
+				<div class="useravatar" id="avatarPreview"></div>
+				<div class="buttons">
+					<button type=button class="small btn" id="fileSelectBtn">Browse</button>
+					<button type=button class="small btn" id="removeAvatar">Remove</button>
+					<input 				class="small btn" type="reset" value="Reset" id="resetAvatar"/>
+					<input 				class="small btn2 hidden" type="submit" value="Upload" id="uploadAvatar"/>
+				</div>
+			</div>
+			<div class="hidden msg" id="avatarUploadMsg"></div>
+		</form>
+	</div>

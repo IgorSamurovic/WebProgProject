@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" id="WebApp_ID" version="2.5">
+  <display-name>site</display-name>
+  <welcome-file-list>
+    <welcome-file>forum.jsp</welcome-file>
+  </welcome-file-list>
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>securedapp</web-resource-name>
+      <url-pattern>/*</url-pattern>
+    </web-resource-collection>
+    <user-data-constraint>
+      <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+    </user-data-constraint>
+  </security-constraint>
+  
+  <!-- Filters START -->
+  
+  <filter>
+    <filter-name>AbsoluteFilter</filter-name>
+    <filter-class>
+      security.filter.AbsoluteFilter
+    </filter-class>
+  </filter>
+  
+  <filter>
+    <filter-name>GuestOnlyFilter</filter-name>
+    <filter-class>
+      security.filter.GuestOnlyFilter
+    </filter-class>
+  </filter>
+  
+  <filter>
+    <filter-name>UserFilter</filter-name>
+    <filter-class>
+      security.filter.UserFilter
+    </filter-class>
+  </filter>
+  
+  <filter>
+    <filter-name>ModFilter</filter-name>
+    <filter-class>
+      security.filter.ModFilter
+    </filter-class>
+  </filter>
+  
+  <filter>
+    <filter-name>AdminFilter</filter-name>
+    <filter-class>
+      security.filter.AdminFilter
+    </filter-class>
+  </filter>
+  
+  <!-- Filters END -->
+  
+  <!-- Filters Mapping START -->
+  
+    <filter-mapping>
+    <filter-name>AbsoluteFilter</filter-name>
+    <url-pattern>/jspf/*</url-pattern>
+  </filter-mapping>
+  
+  <filter-mapping>
+    <filter-name>UserFilter</filter-name>
+    <url-pattern>/users.jsp</url-pattern>
+  </filter-mapping>
+  
+  <filter-mapping>
+    <filter-name>UserFilter</filter-name>
+    <url-pattern>/profile.jsp</url-pattern>
+  </filter-mapping>
+  
+  <filter-mapping>
+    <filter-name>GuestOnlyFilter</filter-name>
+    <url-pattern>/login.jsp</url-pattern>
+  </filter-mapping>
+  
+  <filter-mapping>
+    <filter-name>GuestOnlyFilter</filter-name>
+    <url-pattern>/register.jsp</url-pattern>
+  </filter-mapping>
+  
+  <!-- Filters Mapping END -->
+  
+  <servlet>
+    <description></description>
+    <display-name>ForumController</display-name>
+    <servlet-name>ForumController</servlet-name>
+    <servlet-class>controller.ForumController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ForumController</servlet-name>
+    <url-pattern>/forum</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <description></description>
+    <display-name>UserController</display-name>
+    <servlet-name>UserController</servlet-name>
+    <servlet-class>controller.UserController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>UserController</servlet-name>
+    <url-pattern>/user</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <description></description>
+    <display-name>PostController</display-name>
+    <servlet-name>PostController</servlet-name>
+    <servlet-class>controller.PostController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>PostController</servlet-name>
+    <url-pattern>/post</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <description></description>
+    <display-name>SessionController</display-name>
+    <servlet-name>SessionController</servlet-name>
+    <servlet-class>controller.SessionController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>SessionController</servlet-name>
+    <url-pattern>/session</url-pattern>
+  </servlet-mapping>
+  <session-config/>
+  <servlet>
+    <description></description>
+    <display-name>AvatarController</display-name>
+    <servlet-name>AvatarController</servlet-name>
+    <servlet-class>controller.AvatarController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AvatarController</servlet-name>
+    <url-pattern>/avatar</url-pattern>
+  </servlet-mapping>
+</web-app>
+
