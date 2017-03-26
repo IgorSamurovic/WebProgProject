@@ -7,6 +7,14 @@
 
 var G = {
 
+	href : function(href) {
+		window.location.href(url);
+	},
+		
+	redirect : function(url) {
+		window.location.replace(url);
+	},
+		
 	// Creates an object with a specified prototype, and sets its data
 	create : function(protoObject, objData, doCopy) {
 		var obj = Object.create(protoObject);
@@ -17,6 +25,10 @@ var G = {
 				obj.data = {};
 				G.addToObject(objData, obj.data);
 			}
+		}
+		
+		if (obj._init) {
+			obj._init();
 		}
 		
 		return obj;
@@ -59,7 +71,9 @@ var G = {
 			url     :   url,
 			method  :   "get",
 			data    :   {id:id},
-			success :   callback
+			success : function(data) {
+				callback(JSON.parse(data));
+			}
 		});
 	},
 	
@@ -79,11 +93,11 @@ var G = {
 	},
 	
 	pushState : function() {
-		window.history.pushState("", document.title, window.location.href.split("?")[0] +"?" + this._params);
+		window.history.pushState("", document.title, window.location.href.split("?")[0] +"?" + $.param(this._params));
 	},
 	
 	replaceState : function() {
-		window.history.replaceState("", document.title, window.location.href.split("?")[0] +"?" + this._params);
+		window.history.replaceState("", document.title, window.location.href.split("?")[0] +"?" + $.param(this._params));
 	},
 	
 	// Posts a json object
@@ -122,7 +136,6 @@ var G = {
 
 			callback(data);
 		};
-		
 		$.ajax(args);
 	},
 	
@@ -155,8 +168,7 @@ var G = {
 	
 	// Shows a message in a msg field with a specific name
 	showMsgRegistered : false,
-	showMsg : function(id, msg, type)
-	{
+	showMsg : function(id, msg, type) {
 		if (!G.showMsgRegistered) {
 			$(document).on('click', '.msgCloseBtn', function(button) {
 				$(this).parent().addClass("hidden");
@@ -169,8 +181,7 @@ var G = {
 		if (!msg) {
 			$(query).html("");
 			$(query).addClass("hidden");
-		}
-		else {
+		} else {
 			var btn = ' <button type="button" class="msgCloseBtn small right btn">&times</button>';
 			msg = msg + btn;
 			$(query).html(msg);
@@ -178,12 +189,10 @@ var G = {
 			if (!type) {
 				$(query).removeClass("good");
 				$(query).removeClass("bad");
-			}
-			else if (type === "good" || type === "success") {
+			} else if (type === "good" || type === "success") {
 				$(query).addClass("good");
 				$(query).removeClass("bad");
-			}
-			else if (type === "bad" || type === "error") {
+			} else if (type === "bad" || type === "error") {
 				$(query).addClass("bad");
 				$(query).removeClass("good");
 			}
@@ -196,7 +205,7 @@ var G = {
 	
 	// Supplants an array of any depth, returning a string
 	supplantArray : function(ary, o) {
-		return G.flatten(ary).join().supplant(o);
+		return G.flatten(ary).join("").supplant(o);
 	},
 	
 	// Flattens the array of any depth, returning an array with a depth of 1
@@ -204,7 +213,7 @@ var G = {
 	    var ret = [];
 	    for(var i = 0; i < ary.length; i++) {
 	        if(Array.isArray(ary[i])) {
-	            ret = ret.concat(flatten(ary[i]));
+	            ret = ret.concat(this.flatten(ary[i]));
 	        } else {
 	            ret.push(ary[i]);
 	        }
@@ -217,17 +226,28 @@ var G = {
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	
 	// Sets a cookie to a specified value
-	setCookie : function(key, value) {
-        var expires = new Date();
-        expires.setTime(expires.getTime() + (1 * 24 * 60 * 60 * 1000));
-        document.cookie = key + '=' + value + ';expires=' + expires.toUTCString();
-    },
+	
+	cookie : {
+		
+		set : function(key, value) {
+	        var expires = new Date();
+	        expires.setTime(expires.getTime() + (1 * 24 * 60 * 60 * 1000));
+	        document.cookie = key + '=' + value + ';expires=' + expires.toUTCString();
+	    },
+	    
+		remove : function(key) {
+	        var expires = new Date();
+	        document.cookie = key + '=;expires=' + expires.toUTCString();
+	    },
 
-    // Gets a cookie with a specified key
-    getCookie : function(key) {
-        var keyValue = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)');
-        return keyValue ? keyValue[2] : null;
-    },
+	    // Gets a cookie with a specified key
+	    get : function(key) {
+	        var keyValue = document.cookie.match('(^|;) ?' + key + '=([^;]*)(;|$)');
+	        return keyValue ? keyValue[2] : null;
+	    },
+		
+	},
+
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	// Button binding
@@ -250,13 +270,11 @@ var G = {
 
 	// Shortens a string, adding "..." at the end if it needs to be shortened
 	if (!String.prototype.shorten) {
-		String.prototype.shorten = function (str, short)
-		{
-			if (!str) return "";
-			if (!short || str.length + 3 <= short)
-				return str;
+		String.prototype.shorten = function (maxLength) {
+			if (!maxLength || this.length + 3 <= maxLength)
+				return this.valueOf();
 			else
-				return str.substring(0, short) + "...";
+				return this.substring(0, maxLength) + "...";
 		};
 	}
 	
@@ -265,7 +283,12 @@ var G = {
 	        return this.replace(
 	            /\{([^{}]*)\}/g,
 	            function (a, b) {
-	                var r = o[b];
+	            	var r;
+	            	if (typeof o[b] === 'function') {
+	            		r = o[b]();
+	            	} else {
+	            		r =  o[b];
+	            	}
 	                return typeof r === 'string' || typeof r === 'number' ? r : a;
 	            }
 	        );

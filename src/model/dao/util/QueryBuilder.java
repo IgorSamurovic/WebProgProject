@@ -155,6 +155,18 @@ public class QueryBuilder
 	
 	public QueryBuilder limit(Integer page, Integer perPage)
 	{
+		if (page == null || page <= 0) {
+			page = 1;
+		}
+		
+		if (perPage == null) {
+			perPage = DEFAULT_PER_PAGE;
+		} else if (perPage <= 0) {
+			perPage = DEFAULT_PER_PAGE;
+		} else if (perPage > MAX_PER_PAGE) {
+			perPage = MAX_PER_PAGE;
+		}
+		
 		Integer startFrom = Math.max(0, page-1) * perPage;
 		
 		query += " LIMIT ?, ?";

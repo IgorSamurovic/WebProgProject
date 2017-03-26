@@ -12,8 +12,7 @@
 	$.ajax({
 	    url: "session",
 	    type: 'DELETE',
-	    success: function(data)
-	    {
+	    success: function(data) {
 	    	window.location.replace("/site/forum.jsp");
 	    }
 	});

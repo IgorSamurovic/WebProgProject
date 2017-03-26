@@ -1,14 +1,17 @@
 Profile = {
-		
+	
 	render : function(user) {
-		var isAdmin = Users.getCurrent().role >= Users.roles.admin; 
-		var isOwner = Users.getCurrent().data.id == user.data.id; 
+		
+		var currentUser = Users.getCurrent() 
+		var isAdmin = currentUser.data.role >= Users.roles.admin; 
+		
+		var isOwner = currentUser.data.id == user.data.id; 
 		
 		// Let's make buttons first!
 		var buttons = ['<div class="buttons">'];
 		
 		// Delete button
-		if (isAdmin) {
+		if (isAdmin && user.data.id != 1) {
 			if (!user.data.deleted) buttons.push(
 			    '<button name="userDeleteBtn" data-do="true" class="small btn flex1">Delete</button>');
 			else buttons.push(
@@ -64,20 +67,28 @@ Profile = {
 
 		s.push([
                  '</dl>',
+                 buttons,
              '</div>'
         ]);
 		
-		var complete = [buttons, s, buttons];
-		var renderString = G.supplantArray(complete, {
-			username   :  user.render.username(),
-			role       :  user.render.role(),
-			date       :  user.render.date(),
-			name       :  user.render.name()
+		s = G.supplantArray(s, {
+			avatar     :  user.renderAvatarLink(),
+			username   :  user.renderUsername(),
+			role       :  user.renderRole(),
+			date       :  user.renderDate(),
+			name       :  user.renderName(40),
+			email      :  user.renderEmail(40),
+			banned     :  user.renderBanned(),
+			deleted    :  user.renderDeleted()
 		});
 		
-		return renderString;
-	}
-		
+		return s;
+	},
+	
+	getProfileLink : function(id) {
+		return "profile.jsp?id=" + id;
+	},
+	
 };
 
 
@@ -90,8 +101,9 @@ $(document).ready(function()
 	});
 	
 	$(document).on('click', '[name="userBanBtn"]', function(button) {
-		Search.getObject(this).ban($(this).data("do"), function() {
-			Search.getSearch(this).loadResults();
+		var that = this;
+		Search.getObject(this).ban($(that).data("do"), function() {
+			Search.getSearch(that).loadResults();
 		});
 	});
 	

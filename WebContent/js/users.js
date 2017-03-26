@@ -1,23 +1,3 @@
-function populateUserList(data, params, settings)
-	{
-		var num = Math.min(params.perPage, data[1].length);
-		
-		$("#"+settings.prefix+"SearchResults").html("");
-
-		for (i = 0; i < num; i++)
-		{
-			var data2 = {
-				user    : data[1][i],
-				index   : i,
-				current : current
-			};
-			
-			processProfile(data2, params, settings);
-		}
-	}
-	
-
-
 Users = {
 		
 	_guestRawData : {
@@ -27,16 +7,26 @@ Users = {
 		role: 0
 	},
 	
+	// Sets a value for every role
+	roles : {
+		guest: 0,
+		user : 1,
+		mod  : 2,
+		admin: 3
+	},
+	
 	getCurrent : function()  {
 		if (!Users._currentUser) {
 			// First get raw user data
-			var userRawData = JSON.parse(JSON.parse(G.getCookie("user")));
-			
+			var userRawData = JSON.parse(JSON.parse(G.cookie.get("user")));
+			if (userRawData.deleted) {
+				G.setCookie("user", null);
+			}
 	    	if (userRawData === null) {
-	    		Users._currentUser = G.create("User", _guestRawData, true);
+	    		Users._currentUser = G.create(User, _guestRawData, true);
 	    	}
 	    	else {
-	    		Users._currentUser = G.create("User", userRawData, true);
+	    		Users._currentUser = G.create(User, userRawData, true);
 	    	}
 		}
 		return Users._currentUser;

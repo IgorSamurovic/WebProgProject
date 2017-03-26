@@ -96,11 +96,11 @@ Search = {
 	},
 	
 	getObject : function(sel) {
-		$(sel).closest('[name="result"]').data('obj');
+		return $(sel).closest('div[name="result"]').data('obj');
 	},
 	
 	getSearch : function(sel) {
-		$(sel).closest('[name="container"]').data('searchObject');
+		return $(sel).closest('div[name="container"]').data('searchObject');
 	},
 	
 	DEFAULT_PERPAGE : 10,
@@ -120,27 +120,29 @@ Search = {
 				
 				var needPush = false;
 				
-				// Fix perPage property if needed
-				if (!$.isNumeric(params.perPage)) {
-					params.perPage = this.DEFAULT_PERPAGE;
-					needPush = true;
-				}
-				
-				// Fix page number if needed
-				var numPages = this.getNumPages();
-				
-				if (!$.isNumeric(params.page)) {
-					if (params.page > numPages) {
-						params.page = numPages;
+				if (data.totalRecords > 1) {
+					// Fix perPage property if needed
+					if (!$.isNumeric(params.perPage)) {
+						params.perPage = this.DEFAULT_PERPAGE;
 						needPush = true;
 					}
-				} else {
-					params.page = 1;
-					needPush = true;
-				}
-				
-				if (needPush) {
-					G.replaceState();
+					
+					// Fix page number if needed
+					var numPages = this.getNumPages();
+					
+					if (!$.isNumeric(params.page)) {
+						if (params.page > numPages) {
+							params.page = numPages;
+							needPush = true;
+						}
+					} else {
+						params.page = 1;
+						needPush = true;
+					}
+					
+					if (needPush) {
+						G.replaceState();
+					}
 				}
 				
 				// Create an outline for search results
@@ -151,34 +153,32 @@ Search = {
 			    	pageBtns,
 				];
 				
-				
 				result = G.supplantArray(result, {
-					prefix: settings.prefix
+					prefix: this.settings.prefix
 				});
 				
 				$(this.selContainer()).html(result);
 				
 				// Create actual results to fill out the list
-				result = [
-				    '<div class="searchresult" id="{prefix}SearchResult{i}" name="result">'.supplant({prefix: settings.prefix, i:i}),
-				    null,
-				    '</div>'
-				];
+
 				
 				// Now process all objects and render all elements 
-				for (i=0; i<data.length; i++) {
+				for (var i=0; i<data.length; i++) {
 					
 					// Convert every raw JSON object to a proper G object with methods
 					data[i] = G.create(this.settings.objType, data[i]);
 					
-					// Process the object to generate HTML and put it in a proper result housing
-					result[1] = this.settings.renderFunc(data[i]);
+					result = [
+					    '<div class="searchresult" id="{prefix}SearchResult{i}" name="result">'.supplant({prefix: this.settings.prefix, i:i}),
+					    this.settings.renderFunc(data[i]),
+					    '</div>'
+					];
 
 					// Add the generated HTML to the results
 					$(this.selResults()).append(result.join());
 					
 					// Attach the last processed object to the last added HTML element
-					$(this.selResults()).last().data("obj", data[i]);
+					$(this.selResults()).children().last().data("obj", data[i]);
 				}
 			}
 		}
@@ -186,7 +186,12 @@ Search = {
 	
 	loadResults : function() {
 		// Executes a dataFunc function with dataArgs, calling renderResults once the data is collected
-		this.settings.dataFunc(settings.dataArgs, this.renderResults);
+		if (this.settings.dataArg) {
+			this.renderResults(this.settings.dataArg);
+			this.settings.dataArg = null;
+		} else {
+			this.settings.dataFunc(this.settings.dataArgs, this.renderResults.bind(this));
+		}
 	},
 	
 	// Creates a search result environment
@@ -197,7 +202,7 @@ Search = {
 		var html = '<div id="{prefix}SearchResultsContainer" name="container" class="hidden searchresults"></div>'.supplant({prefix:settings.prefix});
 		
 		$(obj.selParent()).append(html);
-		$(obj.selContainer()).data('searchObject', this);
+		$(obj.selContainer()).data('searchObject', obj);
 		
 		return obj;
 	},
