@@ -25,6 +25,7 @@
 	$(document).ready(function()
 	{
 		username = window.location.href.split("?username=")[1];
+		
 		if (username != null)
 		{
 			$("#inputEntry").val(username);
@@ -83,7 +84,7 @@
 	<div class="page">
 		<div class="pageheader">Login</div>
 		<div class="pagecontent">
-			<form id="inputForm" method="POST" action="/site/session">
+			<form id="inputForm" method="POST" action="session">
 				<input class="wide" name="entry" id="inputEntry" type='text' placeholder="Username or Email" maxlength=60 required/>
 				<input class="wide" name="password" type='password' id = "inputPassword" placeholder="Password" pattern=".{6,20}" maxlength=20 required oninvalid="setCustomValidity('Password must be between 6 and 20 characters long.')" oninput="setCustomValidity('')"/>
 				<div class="hidden msg" id="loginMsg"></div>

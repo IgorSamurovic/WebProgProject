@@ -1,2 +1,3 @@
 eclipse.preferences.version=1
+excluded=//cookies.js\://jquery.js\://skinny.js
 included=//*.js

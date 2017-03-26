@@ -393,6 +393,31 @@ div.pages
 	text-align: center;;
 }
 
+button.page
+{ 
+	font-size: large;
+	min-width: 25px;
+	height: 25px; 
+	margin: 2px;
+}
+
+div.tabs
+{ 
+	
+	width: 100%;
+	min-height:0px;
+	margin: 0 auto;
+	text-align: center;;
+}
+
+button.tab
+{ 
+	font-size: large;
+	min-width: 25px;
+	height: 25px; 
+	margin: 2px;
+}
+
 div.buttons
 { 
 	display: flex;
@@ -405,30 +430,24 @@ div.buttons button, input
 	
 }
 
-button.page
-{ 
-	font-size: large;
-	min-width: 25px;
-	height: 25px; 
-	margin: 2px;
-}
+
 
 
 
 div.page {
+	box-shadow: 0 10px 10px var(--darkestest);
 	text-align:center;
 	align: center;
-	margin: 0 auto;
+	margin: 25px auto;
 	max-width: 800px;
-    border-style: solid;
-    border-color: var(--stdborder);
+	border: 2px solid var(--darker);
     background-color: var(--darkest);
     padding: 0;
 }
 
 div.pagecontent {
 	text-align:center;
-	
+	min-height: 0;
 	margin: 10px auto;
 	max-width: 800px;
     background-color: var(--darkest);
@@ -459,13 +478,7 @@ widthspanned
 	width: 100%;
 }
 
-div.pageborder {
-	box-shadow: 0 10px 10px var(--darkestest);
-	max-width: 800px;
-	margin: 25px auto;
-	border: 2px solid var(--darker);
-	text-align: center;
-}
+
 
 div.large {
 	max-width: 1000px;

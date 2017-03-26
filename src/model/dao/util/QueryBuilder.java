@@ -153,8 +153,10 @@ public class QueryBuilder
 	static final int MAX_PER_PAGE = 50;
 	static final int DEFAULT_PER_PAGE = 10;
 	
-	public QueryBuilder limit(Integer startFrom, Integer perPage)
+	public QueryBuilder limit(Integer page, Integer perPage)
 	{
+		Integer startFrom = Math.max(0, page-1) * perPage;
+		
 		query += " LIMIT ?, ?";
 	
 		if (startFrom != null && startFrom >= 0)

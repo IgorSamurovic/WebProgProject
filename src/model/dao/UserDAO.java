@@ -196,7 +196,7 @@ public class UserDAO
 		list.add(getNumRecords(qb));
 
 		qb.setStart("SELECT * FROM USER");
-		qb.limit(pp.integer("startFrom"), pp.integer("perPage"));
+		qb.limit(pp.integer("page"), pp.integer("perPage"));
 		list.add(processMany(qb));
 		
 		return list;

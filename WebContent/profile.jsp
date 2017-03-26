@@ -4,21 +4,19 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-
-<script src="/site/js/users.js"></script>
-<script src="/site/js/cookies.js"></script>
-<script src="/site/js/jquery.js"></script>
-<script src="/site/js/skinny.js"></script>
-<script src="/site/js/general.js"></script>
-<script src="/site/js/edituser.js"></script>
-<script src="/site/js/avatarupload.js"></script>
-<script src="/site/js/profile.js"></script>
-<script src="/site/js/forum.js"></script>
-<script src="/site/js/search.js"></script>
+<script src="js/jquery.js"></script>
+<script src="js/skinny.js"></script>
+<script src="js/g.js"></script>
+<script src="js/h.js"></script>
+<script src="js/user.js"></script>
+<script src="js/users.js"></script>
+<script src="js/edituser.js"></script>
+<script src="js/avatarupload.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/search.js"></script>
 
 <jsp:include page="css/colors.css"/>
 <jsp:include page="css/general.css"/>
-
 
 <title>Profile</title>
 </head>
@@ -27,105 +25,104 @@
 	<%@include file="jspf/header.jspf" %>
 	<script>
 	
-	var owner = null;
-	var current = null;
-
-	function redirectToOwnProfile()
-	{
-		window.location.href = "profile.jsp?id=" + current.id;
-	}
-	
-	function redrawProfile()
-	{
-		getUser(owner.id, function(data)
-		{
-			owner = data;
-			renderPage();
-		});
-	}
-	
-	function renderProfile(data, params, settings)
-	{
-
-		var data2 = {
-				user    : data,
-				index   : -1,
-				current : current
-				}
-		
-		processProfile(data2, params, settings);
-	}
-	
-	function renderPage()
-	{
-		$("#profileHeader").html(formatUsername(owner));
-		
-		var settings = {
-			prefix     : "profile",
-			detail     : 2,
-			title      : "Profile",
-			dataFunc   : fetchUsers,
-			dataArgs   : {},
-			callback   : renderProfile
-			}
-		settings.dataArgs.params = {id:owner.id};
-		settings.dataArgs.settings = settings;
-
-		loadResults(settings.dataArgs.params, settings);
-	}
-
-	function loadPage()
-	{
-		var params = window.location.href.split("?")[1];
-		params = $.deparam(params);
-		
-		if (params && params.id && parseInt(params.id))
-		{
-			getUser(params.id, function(data)
-			{
-				if (data)
-				{
-					owner = data;
-					if (data)
-						renderPage();
-					else
-						redirectToOwnProfile();	
-				}
-				else
-				{
-					redirectToOwnProfile();	
-				}
-			});
-		}
-		else
-		{
-			redirectToOwnProfile();
-		}
-
-	}
-	
 	$(document).ready(function()
 	{	
-		current = getUserData();
-		loadPage();
+		var owner;
+		var tabStrings = ["profile", "forums", "threads", "posts"];
 		
-		$(window).bind('popstate', function()
-		{
+		function loadPage() {
+			params = G.getParams();
+			
+			if (params && params.id && parseInt(params.id)) {
+				// Determine owner first
+				G.dbGetById("user", params.id, function(data) {
+					if (data) {
+						owner = G.create("User", data);
+						$("#profileHeader").html(owner.data.username);
+						selectTab(tabStrings.indexOf(params.tab));
+					} else {
+						redirectToOwnProfile();	
+					}
+				});
+			} else {
+				redirectToOwnProfile();
+			}
+		};
+		
+		var searchObjects = [];
+		
+		// Create Search objects
+		(function() {
+			var settings
+			
+			// Profile
+			settings = {
+				prefix     : "profile",
+				parent     : "pageContent",
+				objType    : User,
+				dataFunc   : G.dbGet,
+				dataArgs   : {
+					url    : "user",
+					data   : {id:owner.data.id},
+				},
+				renderFunc : Profile.render 
+			}
+			
+			searchObjects.push(Search.create(settings));
+			
+		}) ();
+		
+		var currentTab = -1;
+		
+		function selectTab(tab) {
+			
+			// Fix tab to default in case something random was entered
+			var params = G.getParams();
+			if (tab < 0) {
+				tab = 0;
+				params.tab = tabString[0];
+				G.replaceState();
+			}
+			if (tab != currentTab) {
+				if (currentTab >= 0) {
+					searchObjects[currentTab].show(false);
+				}
+				currentTab = tab;
+				searchObjects[currentTab].show(true);
+				params.tab = tabStrings[currentTab];
+				G.pushState();
+			}
+		}
+		
+		function redirectToOwnProfile() {
+			window.location.href = "profile.jsp?id=" + Users.getCurrent().data.id;
+		}
+		
+		
+		$(window).bind('popstate', function() {
 			loadPage();	
 		});
 		
+		G.tabHandler("#profileTabs", selectTab);
+		
+		loadPage();
 	});
 	
 	</script>
-	  
-	<div class="pageborder">
-		<div class="page">
-			<div id="profileHeader" class="pageheader"></div>
-			<div id="profileSearchResults" class="pagecontent"> 
-			</div>
+	 
+	<div class="page">
+		<div class="pageheader" id="profileHeader" ></div>
+		
+		<div class="tabs" id="profileTabs">
+			<button class="tab small btn">Profile</button>
+			<button class="tab small btn">Forums</button>
+			<button class="tab small btn">Threads</button>
+			<button class="tab small btn">Posts</button>
 		</div>
+		
+		<div class="pagecontent" id="pageContent"></div>
+		
 	</div>
-	
 	
 	<%@include file="jspf/edituser.jspf" %>
 	

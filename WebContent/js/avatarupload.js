@@ -103,7 +103,7 @@ function avataruploadReady()
          	avatarFile = null;
         	$("#uploadAvatar").addClass("hidden");	
         	$("#resetAvatar").addClass("hidden");
-        	("Must be a valid image file.");
+        	showMsg("avatarUploadMsg", "Must be a valid image file.", "error");
         	$('#avatarPreview').html(showUserAvatar(avatarUser.id));
         	return;
         }
