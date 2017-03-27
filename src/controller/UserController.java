@@ -88,6 +88,7 @@ public class UserController extends HttpServlet {
 		String password = pp.string("password");
 		Integer role = pp.integer("role");
 		Boolean banned = pp.bool("banned");
+		Boolean deleted = pp.bool("deleted");
 		String reqType = pp.string("reqType");
 		
 		User current = Cookies.getUser(request);
@@ -204,7 +205,7 @@ public class UserController extends HttpServlet {
 		
 		else if (reqType.equals("ban"))
 		{
-			if (id != null && current.getId() != null && current.getRole() >= User.Role.ADMIN)
+			if (id != null && current.getId() != null && current.getRole() >= User.Role.ADMIN && banned != null)
 			{
 				User entry = new UserDAO().findById(id, current.getRole());
 				entry.setBanned(banned);
@@ -224,28 +225,25 @@ public class UserController extends HttpServlet {
 			{
 				response.sendError(401);
 				return;
-			}
-
-			Boolean softDelete = pp.bool("softDelete");
-			Boolean doDelete = pp.bool("doDelete");
+			};
 			
 			User toDelete = null;
 			
 			if (id != null)
 				toDelete = new UserDAO().findById(id, current.getRole());
 			
-			if (toDelete != null && softDelete != null && doDelete != null)
-				if (softDelete)
+			if (id != null && current.getId() != null && current.getRole() >= User.Role.ADMIN && deleted != null && toDelete != null)
+				if (current.getRole() >= User.Role.ADMIN)
 				{
-					new UserDAO().softDelete(toDelete, doDelete);
+					//new UserDAO().hardDelete(toDelete);
+					new UserDAO().softDelete(toDelete, deleted);
 				}
 				else
 				{
-					new UserDAO().hardDelete(toDelete);
+					new UserDAO().softDelete(toDelete, deleted);
 				}
 			else
 			{
-				
 				response.sendError(400);
 				return;
 			}

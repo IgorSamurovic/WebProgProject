@@ -46,7 +46,7 @@ Search = {
 	getButton : function(pageId, btnType) {
 		return G.supplantArray([
 		    '<button name="changePageBtn" data-page="{pageId}" class="page btn{btnType} ',
-		    (1==G.getParams().page ? 'selected{btnType}' : ''), '">{pageId}</button>'],
+		    (pageId==G.getParams().page ? 'selected{btnType}' : ''), '">{pageId}</button>'],
 		    {pageId:pageId, btnType:btnType}
 		);
 	},
@@ -70,14 +70,14 @@ Search = {
 			s.push('<div class="pages">');
 			s.push(this.getButton(1, 2));
 			
-			for (i=params.startPage; i < endPage; i++) {
-				s.push(this.getButton(i, 1));
+			for (var i = startPage; i < endPage; i++) {
+				s.push(this.getButton(i, ""));
 			}
 			
 			s.push(this.getButton(numPages, 2));
 			s.push('</div>');
 			
-			s = s.join();
+			s = s.join("");
 		}
 
 		return s;
@@ -104,17 +104,25 @@ Search = {
 	},
 	
 	DEFAULT_PERPAGE : 10,
+	MAX_PERPAGE : 50,
 	
 	renderResults : function(data) {
 		
 		var params = G.getParams();
+		var html;
 		
 		// Set the raw data here
 		this.data = data;
 		
 		// Render fitting HTML
 		if (data !== null && data !== undefined) {
+			
+			html = '<div id="{prefix}SearchResultsContainer" name="container" class="searchresults"></div>'.supplant({prefix:this.settings.prefix});
+			$(this.selParent()).html(html);
+			$(this.selContainer()).data('searchObject', this);
+			
 			if (data.totalRecords === 0) {
+
 				$(this.selContainer()).html('<div class="boldText">The search has returned no results.</div>');
 			} else if (data.totalRecords) {
 				
@@ -125,20 +133,28 @@ Search = {
 					if (!$.isNumeric(params.perPage)) {
 						params.perPage = this.DEFAULT_PERPAGE;
 						needPush = true;
+					} else if (params.perPage <= 0) {
+						params.perPage = this.DEFAULT_PERPAGE;
+						needPush = true;
+					} else if (params.perPage > this.MAX_PERPAGE) {
+						params.perPage = this.MAX_PERPAGE;
+						needPush = true;
 					}
 					
 					// Fix page number if needed
 					var numPages = this.getNumPages();
-					
-					if (!$.isNumeric(params.page)) {
+					if ($.isNumeric(params.page)) {
 						if (params.page > numPages) {
 							params.page = numPages;
+							needPush = true;
+						} else if (params.page <= 0) {
+							params.page = 1;
 							needPush = true;
 						}
 					} else {
 						params.page = 1;
 						needPush = true;
-					}
+					};
 					
 					if (needPush) {
 						G.replaceState();
@@ -175,7 +191,7 @@ Search = {
 					];
 
 					// Add the generated HTML to the results
-					$(this.selResults()).append(result.join());
+					$(this.selResults()).append(result.join(""));
 					
 					// Attach the last processed object to the last added HTML element
 					$(this.selResults()).children().last().data("obj", data[i]);
@@ -186,24 +202,15 @@ Search = {
 	
 	loadResults : function() {
 		// Executes a dataFunc function with dataArgs, calling renderResults once the data is collected
-		if (this.settings.dataArg) {
-			this.renderResults(this.settings.dataArg);
-			this.settings.dataArg = null;
-		} else {
-			this.settings.dataFunc(this.settings.dataArgs, this.renderResults.bind(this));
-		}
+
+		this.settings.dataFunc(this.settings.dataArgs, this.renderResults.bind(this));
+
 	},
 	
 	// Creates a search result environment
 	create : function(settings) {
 		var obj = Object.create(this);
 		obj.settings = settings;
-		
-		var html = '<div id="{prefix}SearchResultsContainer" name="container" class="hidden searchresults"></div>'.supplant({prefix:settings.prefix});
-		
-		$(obj.selParent()).append(html);
-		$(obj.selContainer()).data('searchObject', obj);
-		
 		return obj;
 	},
 	
@@ -215,6 +222,10 @@ Search = {
 			$(this.selContainer()).html("");
 			$(this.selContainer()).addClass("hidden");
 		}
+	},
+	
+	display : function() {
+		this.loadResults();
 	}
 	
 };
@@ -225,11 +236,13 @@ $(document).ready(function() {
 		var searchObject = $(this).closest('[name="container"]').data('searchObject'),
 			params = G.getParams();
 		
-		params.page = $(this).data('page');
-		G.pushState();
-		
-		window.history.pushState("", settings.title, window.location.href.split("?")[0] +"?" + $.param(params));
-		searchObject.loadResults();
+		if (params.page != $(this).data('page')) {
+			params.page = $(this).data('page');
+			G.pushState();
+
+			searchObject.loadResults();
+		}
+
 	});
 });
 

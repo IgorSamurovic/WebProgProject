@@ -4,6 +4,9 @@ import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import model.dao.ForumDAO;
+import model.dao.UserDAO;
+
 public class Forum
 {
 	private Integer id;
@@ -71,6 +74,16 @@ public class Forum
 		return parent;
 	}
 
+	@JsonProperty("_parentTitle")
+	public String getParentTitle()
+	{
+		if (this.parent == null || this.parent == 0) {
+			return "Site";
+		} else {
+			return new ForumDAO().findById(this.parent).getTitle();
+		}
+	}
+	
 	public void setParent(Integer parent)
 	{
 		this.parent = parent;
@@ -80,12 +93,18 @@ public class Forum
 	{
 		return owner;
 	}
+	
+	@JsonProperty("_ownerUsername")
+	public String getOwnerName()
+	{
+		return new UserDAO().findById(this.owner, User.Role.ADMIN).getUsername();
+	}
 
 	public void setOwner(Integer owner)
 	{
 		this.owner = owner;
 	}
-
+	
 	public Integer getVistype()
 	{
 		return vistype;
@@ -101,7 +120,7 @@ public class Forum
 		return date;
 	}
 
-	@JsonProperty
+	@JsonProperty("date")
 	public String getDateString()
 	{
 		return String.valueOf(date);

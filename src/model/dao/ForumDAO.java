@@ -132,7 +132,7 @@ public class ForumDAO
 		list.add(getNumRecords(qb));
 
 		qb.setStart("SELECT * FROM FORUM");
-		qb.limit(pp.integer("startFrom"), pp.integer("perPage"));
+		qb.limit(pp.integer("page"), pp.integer("perPage"));
 		list.add(processMany(qb));
 		
 		return list;

@@ -16,14 +16,16 @@ var G = {
 	},
 		
 	// Creates an object with a specified prototype, and sets its data
-	create : function(protoObject, objData, doCopy) {
+	create : function(protoObject, objData) {
 		var obj = Object.create(protoObject);
+		obj.xtra = {};
 		if (objData) {
-			if (!doCopy) {
-				obj.data = objData;
-			} else {
-				obj.data = {};
-				G.addToObject(objData, obj.data);
+			obj.data = objData;
+			for (var prop in obj.data) {
+				if (prop.startsWith("_")) {
+					obj.xtra[prop.substring(1, prop.length)] = obj.data[prop];
+					delete obj.data[prop];
+				}
 			}
 		}
 		
@@ -77,11 +79,23 @@ var G = {
 		});
 	},
 	
-	
-	getParams : function() {
-		if (this._params === undefined) {
-			this._params = $.deparam(window.location.href.split("?")[1]); 
+	resetParams : function() {
+		for (prop in this._params) {
+			delete this._params[prop];
 		}
+	},
+	
+	getParams : function(reset = false) {
+		var paramString = window.location.href.split("?")[1];
+		
+		if (!this._params) {
+			if (paramString !== null && paramString !== undefined) {
+				this._params = $.deparam(paramString); 
+			} else {
+				this._params = {};
+			}
+		} 
+
 		return this._params;
 	},
 	
@@ -89,11 +103,10 @@ var G = {
 		if (params) {
 			this._params = params;
 		} 
-		
 	},
 	
 	pushState : function() {
-		window.history.pushState("", document.title, window.location.href.split("?")[0] +"?" + $.param(this._params));
+		window.history.pushState(this.getParams(), document.title, window.location.href.split("?")[0] +"?" + $.param(this._params));
 	},
 	
 	replaceState : function() {
@@ -109,12 +122,30 @@ var G = {
 	
 	// Gets raw JSON objects from a table in the database
 	dbGet : function(args, callback) {
-		args.method = "get";
-		args.success = function(data) {
+		var params = {};
+		
+
+		
+		if (typeof args.data === 'function') {
+			params.data = args.data();
+		} else {
+			params.data = args.data;
+		}
+		
+		if (args.url === "forum")
+		{
+			console.log(params.data);
+		}
+		
+		params.error = args.error;
+		params.url = args.url;
+		params.method = "get";
+		params.success = function(data) {
 			data = JSON.parse(data);
 			
 			if (!data) {
 				data = null;
+				
 			} else {
 				
 				if (Array.isArray(data)) {
@@ -124,7 +155,7 @@ var G = {
 						data.totalRecords = totalRecords;
 						data.type = "multi";
 					} else {
-						data = null;
+						data.totalRecords = 0;
 					}
 				} else {
 					data = [data];
@@ -136,7 +167,7 @@ var G = {
 
 			callback(data);
 		};
-		$.ajax(args);
+		$.ajax(params);
 	},
 	
 	// Forces a refresh of all images that contain a specified string in their URL
@@ -253,9 +284,15 @@ var G = {
 	// Button binding
 	//////////////////////////////////////////////////////////////////////////////////////////////
     
+	_selectTab : function(selector, index) {
+		$(selector).children().removeClass("selected");
+		$(selector).children().eq(index).addClass("selected");
+	},
+	
     // Connects a tab button container to pages
     tabHandler : function(selector, func) {	
 		$(selector).on('click', '.tab', function(button) {
+			G._selectTab(selector, $(this).index());
 			func($(this).index());
 		});
 	}

@@ -1,9 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
 <%@include file="jspf/headbasic.jspf"%>
+<script src="js/forum.js"></script>
 <script src="js/edituser.js"></script>
 <script src="js/avatarupload.js"></script>
-<script src="js/profile.js"></script>
 <script src="js/search.js"></script>
 
 <title>Profile</title>
@@ -22,21 +22,29 @@
 			
 			var params = G.getParams();
 			
+			if (!$.isNumeric(params.id) || params.id < 0) {
+				redirectToOwnProfile();
+			}
+			
 			if (params && params.id && parseInt(params.id)) {
 				// Determine owner first
-				G.dbGet({url: "user", data: {id:params.id}}, function(data) {
+				G.dbGet({
+					url: "user",
+					data: {id:params.id},
+					error: redirectToOwnProfile,
+					}, function(data) {
 					
-					if (data) {
-						ownerData = data;
-						owner = G.create(User, data[0]);
-						
-						$("#profileLabel").html(owner.data.username);
-						createSearchObjects();
-						selectTab(tabStrings.indexOf(params.tab));
-					} else {
-						redirectToOwnProfile();	
-					}
-				});
+						if (data.totalRecords === 1) {
+							ownerData = data;
+							owner = G.create(User, data[0]);
+							
+							$("#profileLabel").html(owner.data.username);
+							createSearchObjects();
+							render();
+						} else {
+							redirectToOwnProfile();	
+						}
+					});
 			} else {
 				redirectToOwnProfile();
 			}
@@ -49,56 +57,84 @@
 			searchObjects = [];
 			var search;
 			var settings;
-			
+			var params = G.getParams();
 			
 			// Profile
 			settings = {
 				prefix     : "profile",
 				parent     : "pageContent",
 				objType    : User,
-				dataArg    : ownerData,
 				dataFunc   : G.dbGet,
 				dataArgs   : {
 					url    : "user",
-					data   : {id:owner.data.id},
+					data   : function() {
+						return {
+							id : params.id
+						};
+					},
 				},
-				renderFunc : Profile.render 
+				renderFunc : Users.render 
 			}
 			
 			search = Search.create(settings);
+			searchObjects.push(search);
 			
+			// Forums
+			settings = {
+				prefix     : "forums",
+				parent     : "pageContent",
+				objType    : Forum,
+				dataFunc   : G.dbGet,
+				dataArgs   : {
+					url    : "forum",
+					data   : function() {
+						return {
+							owner   : params.id,
+							page    : params.page,
+							perPage : params.perPage
+						};
+					},
+				},
+				renderFunc : Forums.render 
+			}
+			
+			search = Search.create(settings);
 			searchObjects.push(search);
 		};
 		
 		var currentTab = -1;
 		
-		function selectTab(tab) {
+		function render() {
 			
 			// Fix tab to default in case something random was entered
 			var params = G.getParams();
-			if (tab < 0) {
-				tab = 0;
+			if (!params.tab || tabStrings.indexOf(params.tab) < 0) {
 				params.tab = tabStrings[0];
 				G.replaceState();
 			}
+			
+			searchObjects[tabStrings.indexOf(params.tab)].display();
+		}
+		
+		function selectTab(tab) {
 			if (tab != currentTab) {
-				if (currentTab >= 0) {
-					searchObjects[currentTab].show(false);
-				}
 				currentTab = tab;
-				searchObjects[currentTab].show(true);
-				params.tab = tabStrings[currentTab];
+				var params = G.getParams();
+				params.tab = tabStrings[tab];
 				G.pushState();
+				render();
 			}
 		}
 		
 		function redirectToOwnProfile() {
-			//window.location.href = "profile.jsp?id=" + Users.getCurrent().data.id;
+			window.location.href = "profile.jsp?id=" + Users.getCurrent().data.id;
+			console.log("htmm");
 		}
 		
 		
 		$(window).bind('popstate', function() {
-			loadPage();	
+			var params = G.getParams(true);
+			render();
 		});
 		
 		G.tabHandler("#profileTabs", selectTab);
@@ -111,13 +147,15 @@
 	<div class="page">
 		<div class="pageheader" id="profileHeader" >Profile</div>
 		
+		<div class="tabs" id="profileTabs">
+			<button class="tab small btn">Profile</button>
+			<button class="tab small btn">Forums</button>
+			<button class="tab small btn">Threads</button>
+			<button class="tab small btn">Posts</button>
+		</div>
+		
 		<div class="pagecontent" id="pageContent">
-			<div class="tabs" id="profileTabs">
-				<button class="tab small btn">Profile</button>
-				<button class="tab small btn">Forums</button>
-				<button class="tab small btn">Threads</button>
-				<button class="tab small btn">Posts</button>
-			</div>
+			
 		</div>
 		
 	</div>

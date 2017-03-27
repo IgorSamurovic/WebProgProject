@@ -33,7 +33,8 @@ User = {
 	renderAvatar : function(height, width) {
 		if (!height) height = 120;
 		if (!width) width = 120;
-		return '<img src="avatar?id=' + this.data.id + '&time=' + new Date().getTime() + '" class="useravatar" height="' +height+  '" width="' +width+ '"/>';
+		//return '<img src="avatar?id=' + this.data.id + '&time=' + new Date().getTime() + '" class="useravatar" height="' +height+  '" width="' +width+ '"/>';
+		return '<img src="avatar?id=' + this.data.id + '" class="useravatar" height="' +height+  '" width="' +width+ '"/>';
 	},
 	
 	renderAvatarLink: function (height, width) {
@@ -45,7 +46,7 @@ User = {
 	},
 	
 	renderEmail: function(maxLength = 60) {
-		return '<a href="mailto:' + this.data.email + '">' + this.data.email.shorten(maxLength) + '</a>';
+		return this.data.email ? '<a href="mailto:' + this.data.email + '">' + this.data.email.shorten(maxLength) + '</a>' : "Not available";
 	},
 	
 	renderName: function(maxLength = 60) {
@@ -75,6 +76,128 @@ User = {
 	renderDeleted: function() {
 		return (this.data.deleted === true || this.data.deleted === 1) ? "Yes" : "No";
 	}
-		
-		
+	
 };
+
+Users = {
+		
+	_guestRawData : {
+		username: "Guest",
+		banned: false,
+		deleted: false,
+		role: 0
+	},
+	
+	// Sets a value for every role
+	roles : {
+		guest: 0,
+		user : 1,
+		mod  : 2,
+		admin: 3
+	},
+	
+	getCurrent : function()  {
+		if (!Users._currentUser) {
+			// First get raw user data
+			var userRawData = JSON.parse(JSON.parse(G.cookie.get("user")));
+			if (userRawData.deleted) {
+				G.setCookie("user", null);
+			}
+	    	if (userRawData === null) {
+	    		Users._currentUser = G.create(User, _guestRawData, true);
+	    	}
+	    	else {
+	    		Users._currentUser = G.create(User, userRawData, true);
+	    	}
+		}
+		return Users._currentUser;
+	},
+	
+	render : function(user) {
+		
+		var currentUser = Users.getCurrent();
+		var isAdmin = currentUser.data.role >= Users.roles.admin; 
+		
+		var isOwner = currentUser.data.id == user.data.id; 
+		
+		// Let's make buttons first!
+		var buttons = ['<div class="buttons">'];
+		
+		// Delete button
+		if (isAdmin && user.data.id != 1) {
+			if (!user.data.deleted) buttons.push(
+				H.smallBtnDo('Delete', 'userDeleteBtn', 'true'));
+			//			'<button name="userDeleteBtn" data-do="true" class="small btn flex1">Delete</button>');
+
+			else buttons.push(
+				'<button name="userDeleteBtn" data-do="false" class="small btn flex1">Undelete</button>');
+		}
+		
+		// Edit button
+		if (isAdmin || isOwner) {
+			buttons.push('<button name="userEditBtn" class="small btn2 flex3">Edit</button>');
+		}
+		
+		// Ban button
+		if (isAdmin && user.data.id != 1 && !isOwner)
+		{
+			if (!user.data.banned) buttons.push(
+				'<button name="userBanBtn" data-do="true" class="small btn flex1">Ban</button>');
+			else buttons.push(
+				'<button name="userBanBtn" data-do="false" class="small btn flex1">Unban</button>');
+		}
+		
+		// Close buttons!
+		buttons.push('</div>');
+		
+		// Now render the rest of it!
+		var s = [];
+		
+		var dlFields = ['Username', 'Role', 'Date', 'Name'];
+		if (isAdmin || (user.data.email && isOwner)) dlFields.push('Email');
+		if (isAdmin) dlFields.push('Banned', 'Deleted');
+		
+
+		s.push([
+			'<div class="userProfile">',
+				'<div class="useravatar">{avatar}</div>',
+				H.dl(dlFields),
+	            buttons,
+	         '</div>'
+        ]);
+		
+		s = G.supplantArray(s, {
+			avatar     :  user.renderAvatarLink(),
+			Username   :  user.renderUsername(),
+			Role       :  user.renderRole(),
+			Date       :  user.renderDate(),
+			Name       :  user.renderName(40),
+			Email      :  user.renderEmail(40),
+			Banned     :  user.renderBanned(),
+			Deleted    :  user.renderDeleted()
+		});
+		
+		return s;
+	},
+};
+
+$(document).ready(function() {
+	
+	$(document).on('click', '[name="userDeleteBtn"]', function(button) {
+		var that = this;
+		Search.getObject(this).del($(that).data("do"), function() {
+			Search.getSearch(that).loadResults();
+		});
+	});
+	
+	$(document).on('click', '[name="userBanBtn"]', function(button) {
+		var that = this;
+		Search.getObject(this).ban($(that).data("do"), function() {
+			Search.getSearch(that).loadResults();
+		});
+	});
+	
+	$(document).on('click', '[name="userEditBtn"]', function(button) {
+		Users.loadEditWindow(Search.getObject(this));
+	});
+});

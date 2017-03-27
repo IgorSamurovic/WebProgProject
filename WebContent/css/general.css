@@ -623,7 +623,7 @@ dl.userinfo dt {
 	overflow: hidden;
 	float:left;
 	color: var(--neutraltext);
-	width: 65px;
+	width: 100px;
 	padding: 0;
 	margin: 0;
 }
@@ -631,7 +631,7 @@ dl.userinfo dt {
 dl.userinfo dd
 {
 	float: left;
-	width: 80%;
+	width-min: 200px;
 }
 
 dl.userinfo dd, a{
