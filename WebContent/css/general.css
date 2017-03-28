@@ -201,13 +201,13 @@ div.modalWindow {
 }
 
 .selected {
-	text-decoration: underline;
-	color: var(--light);
+	
+	border: 2px solid var(--dark2) !important;
 }
 
 .selected2 {
-	text-decoration: underline;
-	color: var(--light2);
+
+	border: 2px solid var(--dark2) !important;
 }
 
 
@@ -263,7 +263,7 @@ input[type=text], input[type=email], input[type=password], input[type=datetime-l
 {
 	padding: 8px 20px;
     margin: 4px 0;
-    border: 2px solid var(--dark);
+    border: 2px solid var(--darker);
     font-weight: bold;
     font-size: medium;
     box-sizing: border-box;
@@ -411,7 +411,8 @@ input[type=submit].small, input[type=reset].small, button.small, a.small
 
 div.stdSpacer
 {
-	min-width: 8px;
+	min-width: 1332px;
+	display: inline;
 }
 
 div.pages
@@ -420,7 +421,7 @@ div.pages
 	width: 100%;
 	min-height:0px;
 	margin: 0 auto;
-	text-align: center;;
+	text-align: left;
 }
 
 button.page
@@ -433,17 +434,27 @@ button.page
 
 div.tabs
 { 
-	
 	width: 100%;
 	min-height:0px;
 	margin: 0 auto;
-	text-align: center;;
+	text-align: left;
+}
+
+div.tabcontent
+{ 
+	border-radius: 0 0 10px 10px !important;
+	width: 100%;
+	min-height:0px;
+	margin: 0 auto;
+	text-align: center;
 }
 
 button.tab
 { 
+	border-radius: 10px 10px 0 0 !important;
+	
 	font-size: large;
-	min-width: 25px;
+	width: 100px;
 	height: 25px; 
 	margin: 2px;
 }
@@ -469,20 +480,19 @@ div.page {
 	text-align:center;
 	align: center;
 	margin: 25px auto;
-	max-width: 800px;
+	max-width: 1024px;
 	border: 2px solid var(--darker);
     background-color: var(--darkest);
-    padding: 0;
+    padding: 5px;
 }
 
 div.pagecontent {
 	text-align:center;
 	min-height: 0;
-	margin: 10px auto;
-	max-width: 800px;
+	margin: 0 auto;
+	max-width: 1024px;
     background-color: var(--darkest);
-    padding: 20px;
-  	
+    padding: 0;
 }
 
 div.pagecontent:empty
@@ -496,7 +506,7 @@ div.pageheader {
 	font-weight: bold;
 	text-align:left;
 	margin: 10 auto;
-	max-width: 800px;
+	max-width: 1024px;
     background-color: var(--darkestest);
     color: white;
     padding: 10px;
@@ -525,7 +535,7 @@ div.searchresults {
 
 div.searchresult {
 	text-align: center;
-	margin: 0 auto;
+	margin: 5px auto;
 }
 
 div.userProfile {
@@ -535,10 +545,9 @@ div.userProfile {
 	text-align: left;
 	width: 100%;
 	min-height: 100px;
-	margin: 1em;
 	background-color: var(--darkestest);
 	background-color: var(--darkestestRGBA);
-	margin: 10px auto;
+	
 	padding: 5px;
 	flex-wrap: row wrap;
 }
@@ -571,8 +580,6 @@ div.useravatarsetup {
 img.useravatar {
 	margin: 0 auto;
 	position: relative;
-	width: 120px;
-	height: 120px;
 	border: none;
 }
 
@@ -611,7 +618,7 @@ div.userinfo {
 
 
 dl.userinfo {
-	overflow: hidden;
+	overflow: visible;
 	width: 100%;
 	padding: 0;
 	margin: 4px;
@@ -620,8 +627,9 @@ dl.userinfo {
 }
 
 dl.userinfo dt {
-	overflow: hidden;
+	
 	float:left;
+	clear:left;
 	color: var(--neutraltext);
 	width: 100px;
 	padding: 0;
@@ -630,7 +638,7 @@ dl.userinfo dt {
 
 dl.userinfo dd
 {
-	float: left;
+	overflow: hidden;
 	width-min: 200px;
 }
 
@@ -639,6 +647,7 @@ dl.userinfo dd, a{
   font-weight: bold;
   padding: 0;
   margin: 0;
+  
 }
 
 dd.spaced, dt.spaced

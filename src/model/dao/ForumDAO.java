@@ -17,7 +17,7 @@ public class ForumDAO
 {
 	private Forum process(ResultSet rs) throws Exception
 	{
-		return new Forum
+		Forum f =  new Forum
 		(
 			rs.getInt("id"),
 			rs.getString("title"),
@@ -29,6 +29,8 @@ public class ForumDAO
 			rs.getBoolean("locked"),
 			rs.getBoolean("deleted")
 		);
+		
+		return f;
 	}
 	
 	private Forum processOne(PreparedStatement stmt)
@@ -129,7 +131,7 @@ public class ForumDAO
 		
 		qb.setStart("SELECT COUNT(ID) FROM FORUM");
 		
-		list.add(getNumRecords(qb));
+		list.add(qb.getNumRecords());
 
 		qb.setStart("SELECT * FROM FORUM");
 		qb.limit(pp.integer("page"), pp.integer("perPage"));
@@ -138,52 +140,12 @@ public class ForumDAO
 		return list;
 	}
 	
-	public Integer getNumRecords(QueryBuilder qb)
-	{
-		try
-		{
-			ResultSet rs = qb.getResultSet();
-			if(rs.next())
-				return (rs.getInt("COUNT(id)"));
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		finally
-		{
-			qb.close();
-		}
-		return null;
-	}
-	
 	public Forum findById(int id)
 	{
+	
 		try (Connection conn = Connector.get(); PreparedStatement stmt = conn.prepareStatement("SELECT * FROM FORUM WHERE id=?;");)
 		{
 			stmt.setObject(1, id);
-			return processOne(stmt);
-		}
-		catch (Exception e) {e.printStackTrace();}
-		return null;
-	}
-	
-	public Forum findByForumname(String username)
-	{
-		try (Connection conn = Connector.get(); PreparedStatement stmt = conn.prepareStatement("SELECT * FROM FORUM WHERE username=?;");)
-		{
-			stmt.setObject(1, username);
-			return processOne(stmt);
-		}
-		catch (Exception e) {e.printStackTrace();}
-		return null;
-	}
-	
-	public Forum findByEmail(String email)
-	{
-		try (Connection conn = Connector.get(); PreparedStatement stmt = conn.prepareStatement("SELECT * FROM FORUM WHERE email=?;");)
-		{
-			stmt.setObject(1, email);
 			return processOne(stmt);
 		}
 		catch (Exception e) {e.printStackTrace();}

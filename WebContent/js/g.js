@@ -7,14 +7,33 @@
 
 var G = {
 
+	// Goes to the location
 	href : function(href) {
 		window.location.href(url);
 	},
-		
+	
+	// Redirects to the location
 	redirect : function(url) {
 		window.location.replace(url);
 	},
-		
+	
+	
+	_loadedScripts : {},
+	
+	loadScript : function (url, callback) {
+		if (this._loadedScripts[url]) {
+			callback();
+		} else {
+			this._loadedScripts[url] = true;
+		    $.ajax({
+		        url: 'js/'+url+'.js',
+		        dataType: 'script',
+		        success: callback,
+		        async: true
+		    });
+		}
+	},
+	
 	// Creates an object with a specified prototype, and sets its data
 	create : function(protoObject, objData) {
 		var obj = Object.create(protoObject);
@@ -79,12 +98,53 @@ var G = {
 		});
 	},
 	
-	resetParams : function() {
+	_paramProtected : {},
+	
+	// Makes it so that the parameter can only be directly changed, not through deletion
+	protectParam : function(prop) {
+		this._paramProtected[prop] = true;
+	},
+	
+	restrictParams : function(allowed) {
+		var prop;
+		if (allowed === undefined || allowed === null) {
+			allowed = [];
+		}
 		for (prop in this._params) {
-			delete this._params[prop];
+			if (!this._paramProtected[prop] && $.inArray(prop, allowed) <= -1) {
+				delete this._params[prop];
+			}
+		}
+		this.replaceState();
+	},
+	
+	// Deletes all unprotected parameters
+	deleteParams : function() {
+		if (_params) {
+			var prop;
+			for (prop in _params) {
+				if (!_paramProtected[prop]) {
+					delete _params[prop];
+				}
+			}
 		}
 	},
 	
+	// Reloads parameters from the URL, into the _params object
+	reloadParams : function() {
+		var newParams = $.deparam(window.location.href.split("?")[1]);
+		var prop;
+		
+		for (prop in this._params) {
+			delete this._params[prop];
+		}
+		
+		for (prop in newParams) {
+			this._params[prop] = newParams[prop];
+		}
+	},
+	
+	// Gets the _params object, if it is not created yet, creates it by loading data from the URL
 	getParams : function(reset = false) {
 		var paramString = window.location.href.split("?")[1];
 		
@@ -99,9 +159,14 @@ var G = {
 		return this._params;
 	},
 	
+	// Deletes all parameters except the protected ones, then sets new values from the given object
 	setParams : function(params) {
+		this.deleteParams();
 		if (params) {
-			this._params = params;
+			var prop;
+			for (prop in params) {
+				this._params[prop] = params[prop];
+			}
 		} 
 	},
 	
@@ -124,17 +189,10 @@ var G = {
 	dbGet : function(args, callback) {
 		var params = {};
 		
-
-		
 		if (typeof args.data === 'function') {
 			params.data = args.data();
 		} else {
 			params.data = args.data;
-		}
-		
-		if (args.url === "forum")
-		{
-			console.log(params.data);
 		}
 		
 		params.error = args.error;
@@ -198,13 +256,14 @@ var G = {
 	},
 	
 	// Shows a message in a msg field with a specific name
-	showMsgRegistered : false,
-	showMsg : function(id, msg, type) {
-		if (!G.showMsgRegistered) {
+	_msgRegistered : false,
+	
+	msg : function(id, msg, type) {
+		if (!G._msgRegistered) {
 			$(document).on('click', '.msgCloseBtn', function(button) {
 				$(this).parent().addClass("hidden");
 			});
-			G.showMsgRegistered = true;
+			G._msgRegistered = true;
 		}
 		
 		var query = "[name=" + id + "].msg";
@@ -284,17 +343,42 @@ var G = {
 	// Button binding
 	//////////////////////////////////////////////////////////////////////////////////////////////
     
-	_selectTab : function(selector, index) {
-		$(selector).children().removeClass("selected");
-		$(selector).children().eq(index).addClass("selected");
+	_tabs : null,
+	
+	selectTab : function(index, pushState=true) {
+		if (this._tabs && $(this._tabs).data('currentTab') !== index) {
+			var params = G.getParams();
+			$(this._tabs).children().removeClass("selected");
+			$(this._tabs).children().eq(index).addClass("selected");
+			
+			params.tab = Page.getTabString(index);
+			if (pushState)
+				G.pushState();
+			else
+				G.replaceState();
+			Page.render();
+		}
 	},
 	
     // Connects a tab button container to pages
-    tabHandler : function(selector, func) {	
-		$(selector).on('click', '.tab', function(button) {
-			G._selectTab(selector, $(this).index());
-			func($(this).index());
+    tabHandler : function(initial=0) {
+    	var that = this;
+    	this._tabs = $(".tabs");
+		$(this._tabs).on('click', '.tab', function(button) {
+			that.selectTab($(this).index());
 		});
+
+		this.selectTab(initial, false);
+	},
+	
+	popStateHandler : function() {
+		var that = this;
+		$(window).bind('popstate', function() {
+			var params = that.getParams();
+			that.reloadParams();
+			that.selectTab(Page.getTabId(params.tab), false);
+			Page.render();
+		});	
 	}
     
 };
@@ -305,6 +389,10 @@ var G = {
 
 (function() {
 
+	Array.prototype.supplant = function(o) {
+		return this.flatten().join("").supplant(o);
+	};
+	
 	// Shortens a string, adding "..." at the end if it needs to be shortened
 	if (!String.prototype.shorten) {
 		String.prototype.shorten = function (maxLength) {
@@ -314,6 +402,18 @@ var G = {
 				return this.substring(0, maxLength) + "...";
 		};
 	}
+	
+	Array.prototype.flatten = function () {
+	    var ret = [];
+	    for(var i = 0; i < this.length; i++) {
+	        if(Array.isArray(this[i])) {
+	            ret = ret.concat(this[i].flatten());
+	        } else {
+	            ret.push(this[i]);
+	        }
+	    }
+	    return ret;
+	};
 	
 	if (!String.prototype.supplant) {
 	    String.prototype.supplant = function (o) {

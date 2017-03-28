@@ -25,6 +25,13 @@ public class Forum
 		this.deleted = false;
 	}
 	
+	@Override
+	public String toString() {
+		return "Forum [id=" + id + ", title=" + title + ", descript=" + descript + ", parent=" + parent + ", owner="
+				+ owner + ", vistype=" + vistype + ", date=" + date + ", locked=" + locked + ", deleted=" + deleted
+				+ "]";
+	}
+
 	public Forum(Integer id, String title, String descript, Integer parent, Integer owner, Integer vistype, Timestamp date, Boolean locked, Boolean deleted)
 	{
 		super();

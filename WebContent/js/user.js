@@ -28,17 +28,21 @@ User = {
 		});
 	},
 	
-	// Renders the specified field into HTML
-
-	renderAvatar : function(height, width) {
-		if (!height) height = 120;
-		if (!width) width = 120;
-		//return '<img src="avatar?id=' + this.data.id + '&time=' + new Date().getTime() + '" class="useravatar" height="' +height+  '" width="' +width+ '"/>';
-		return '<img src="avatar?id=' + this.data.id + '" class="useravatar" height="' +height+  '" width="' +width+ '"/>';
+	// Getters
+	
+	getProfileLink : function(id=this.data.id) {
+		 return "profile.jsp?id={id}&tab=profile".supplant({id:id});
 	},
 	
-	renderAvatarLink: function (height, width) {
-		return '<a href="profile.jsp?id=' + this.data.id + '">' + this.renderAvatar(height, width) + '</a>';
+	// Renders the specified field into HTML
+	
+	renderAvatar : function(id=this.data.id, height=120, width=120) {
+		//return '<img src="avatar?id=' + this.data.id + '&time=' + new Date().getTime() + '" class="useravatar" height="' +height+  '" width="' +width+ '"/>';
+		return '<img src="avatar?id=' +id+ '" class="useravatar" height="' +height+ '" width="' +width+ '"/>';
+	},
+	
+	renderAvatarLink: function (id=this.data.id, height=120, width=120) {
+		return '<a href="profile.jsp?id=' + id + '">' + this.renderAvatar(id, height, width) + '</a>';
 	},
 	
 	renderUsername : function() {
@@ -127,24 +131,21 @@ Users = {
 		if (isAdmin && user.data.id != 1) {
 			if (!user.data.deleted) buttons.push(
 				H.smallBtnDo('Delete', 'userDeleteBtn', 'true'));
-			//			'<button name="userDeleteBtn" data-do="true" class="small btn flex1">Delete</button>');
-
 			else buttons.push(
-				'<button name="userDeleteBtn" data-do="false" class="small btn flex1">Undelete</button>');
+				H.smallBtnDo('Undelete', 'userDeleteBtn', 'false'));
 		}
 		
 		// Edit button
 		if (isAdmin || isOwner) {
-			buttons.push('<button name="userEditBtn" class="small btn2 flex3">Edit</button>');
+			buttons.push(H.smallBtn('Edit', 'userEditBtn'));
 		}
 		
 		// Ban button
-		if (isAdmin && user.data.id != 1 && !isOwner)
-		{
+		if (isAdmin && user.data.id != 1 && !isOwner) {
 			if (!user.data.banned) buttons.push(
-				'<button name="userBanBtn" data-do="true" class="small btn flex1">Ban</button>');
+				H.smallBtnDo('Ban', 'userBanBtn', 'true'));
 			else buttons.push(
-				'<button name="userBanBtn" data-do="false" class="small btn flex1">Unban</button>');
+				H.smallBtnDo('Unban', 'userBanBtn', 'false'));
 		}
 		
 		// Close buttons!
@@ -166,7 +167,7 @@ Users = {
 	         '</div>'
         ]);
 		
-		s = G.supplantArray(s, {
+		s = s.supplant({
 			avatar     :  user.renderAvatarLink(),
 			Username   :  user.renderUsername(),
 			Role       :  user.renderRole(),

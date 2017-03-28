@@ -84,9 +84,10 @@ public class UserDAO
 		return list;
 	}
 	
+	// Used for validating logins
 	public User validate(String entry, String pass)
 	{
-		try (Connection conn = Connector.get(); PreparedStatement stmt = conn.prepareStatement("SELECT * FROM USER WHERE (username=? OR email=?) AND password=?;");)
+		try (Connection conn = Connector.get(); PreparedStatement stmt = conn.prepareStatement("SELECT * FROM USER WHERE (username=? OR email=?) AND password=? AND deleted=FALSE;");)
 		{
 			stmt.setObject(1, entry);
 			stmt.setObject(2, entry);
@@ -193,32 +194,13 @@ public class UserDAO
 		
 		qb.setStart("SELECT COUNT(ID) FROM USER");
 		
-		list.add(getNumRecords(qb));
+		list.add(qb.getNumRecords());
 
 		qb.setStart("SELECT * FROM USER");
 		qb.limit(pp.integer("page"), pp.integer("perPage"));
 		list.add(processMany(qb));
 		
 		return list;
-	}
-	
-	public Integer getNumRecords(QueryBuilder qb)
-	{
-		try
-		{
-			ResultSet rs = qb.getResultSet();
-			if(rs.next())
-				return (rs.getInt("COUNT(id)"));
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		finally
-		{
-			qb.close();
-		}
-		return null;
 	}
 	
 	public User findById(int id, int role)

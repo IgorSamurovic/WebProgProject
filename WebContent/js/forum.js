@@ -56,15 +56,17 @@ Forums = {
 		
 		// Now render the rest of it!
 		var s = ['<div class="userProfile">'];
+		s.push("{Avatar}");
+		var dlFields = ['Title', 'Descript', 'Parent', 'Owner'];
+		var dlFields2 = ['Visibility', 'Date', 'Locked']
+		if (isAdmin) dlFields2.push('Deleted');
 		
-		var dlFields = ['Title', 'Descript', 'Parent', 'Owner', 'Visibility', 'Date', 'Locked']
-		if (isAdmin) dlFields.push('Deleted');
-		
-		s.push(H.dl(dlFields));
+		s.push(H.dl(dlFields), H.dl(dlFields2));
 
 		s.push(['</div>']);
 		
-		s = G.supplantArray(s, {
+		s = s.supplant({
+			Avatar     : User.renderAvatarLink(forum.data.owner, 80, 80),
 			Title      : forum.renderTitle(),
 			Descript   : forum.renderDescript(),
 			Parent     : forum.renderParent(),

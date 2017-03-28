@@ -17,6 +17,8 @@ public class QueryBuilder
 	private Connection conn;
 	private boolean hasArgs;
 	
+	private Integer numRecords;
+	
 	private String andString()
 	{
 		return hasArgs ? " AND " : " WHERE ";
@@ -35,6 +37,7 @@ public class QueryBuilder
 		this.start = "";
 		this.hasArgs = false;
 		this.alreadySorting = false;
+		this.numRecords = 0;
 	}
 	
 	public QueryBuilder setStart(String start)
@@ -138,23 +141,59 @@ public class QueryBuilder
 		} catch (Exception e) {e.printStackTrace();}
 	}
 	
-	public QueryBuilder orderBy(String orderBy, String asc)
-	{
-		if (orderBy != null && orderBy.matches("[A-Za-z]{1,20}"))
-		{
+	public QueryBuilder orderBy(String orderBy, String asc) {
+
+		if (orderBy != null && orderBy.matches("[A-Za-z]{1,20}")) {
 			query += orderByString() + orderBy;
-			if (asc != null && (asc.toUpperCase().equals("ASC") || asc.toUpperCase().equals("DESC")))
-				query += " " + asc;
-			return this;	
+			if (asc != null && !asc.equals("")) {
+				asc = asc.toUpperCase();
+				if (asc.equals("TRUE") || asc.equals("ASC")) {
+					asc = "ASC";
+					query += " " + asc;
+				} else if (asc.equals("FALSE") || asc.equals("DESC")) {
+					asc = "DESC";
+					query += " " + asc;
+				}
+			}	
 		}
-		return this;
+		this.alreadySorting = true;
+		return orderBy.toUpperCase().equals("ID") ? this : this.orderBy("ID", "TRUE");
 	}
 	
 	static final int MAX_PER_PAGE = 50;
 	static final int DEFAULT_PER_PAGE = 10;
 	
+	public Integer getNumRecords()
+	{
+		try
+		{
+			ResultSet rs = this.getResultSet();
+			if(rs.next()) {
+				this.numRecords = rs.getInt("COUNT(id)");
+				return numRecords;
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			this.close();
+		}
+		return null;
+	}
+	
+	private Integer getNumPages(Integer perPage) {
+		return this.numRecords / perPage + ((this.numRecords % perPage > 0) ? 1 : 0);
+	}
+	
+	private static int[] perPageValues = {1, 5, 10, 20, 50};
+	
 	public QueryBuilder limit(Integer page, Integer perPage)
 	{
+
+		
 		if (page == null || page <= 0) {
 			page = 1;
 		}
@@ -165,9 +204,21 @@ public class QueryBuilder
 			perPage = DEFAULT_PER_PAGE;
 		} else if (perPage > MAX_PER_PAGE) {
 			perPage = MAX_PER_PAGE;
+		} else {
+			boolean found = false;
+			for (int i=0; i<perPageValues.length; i++) {
+				if (perPage == perPageValues[i]) found = true;
+			}
+			if (!found) perPage = DEFAULT_PER_PAGE;
+		}
+
+		Integer numPages = this.getNumPages(perPage);
+		
+		if (page > numPages) {
+			page = numPages;
 		}
 		
-		Integer startFrom = Math.max(0, page-1) * perPage;
+		Integer startFrom = (page-1) * perPage;
 		
 		query += " LIMIT ?, ?";
 	

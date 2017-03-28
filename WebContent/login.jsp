@@ -40,7 +40,7 @@
 					G.showMsg("loginMsg", "");
 				},
 				error: function(data) {
-					G.showMsg("loginMsg", "Wrong username or password!", "error");
+					G.msg("loginMsg", "Wrong username or password!", "error");
 				}
 			});
 		});
@@ -55,7 +55,7 @@
 			<form id="inputForm">
 				<input class="wide" name="entry" id="inputEntry" type='text' placeholder="Username or Email" maxlength=60 required/>
 				<input class="wide" name="password" type='password' id = "inputPassword" placeholder="Password" pattern=".{6,20}" maxlength=20 required oninvalid="setCustomValidity('Password must be between 6 and 20 characters long.')" oninput="setCustomValidity('')"/>
-				<div class="hidden msg" id="loginMsg"></div>
+				<div class="hidden msg" name="loginMsg"></div>
 				<input class="big wide btn2 center" type="submit" value="Login"/>
 			</form>
 		</div>

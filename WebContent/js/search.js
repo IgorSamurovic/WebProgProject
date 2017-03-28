@@ -44,11 +44,10 @@ Search = {
 	},
 
 	getButton : function(pageId, btnType) {
-		return G.supplantArray([
+		return [
 		    '<button name="changePageBtn" data-page="{pageId}" class="page btn{btnType} ',
-		    (pageId==G.getParams().page ? 'selected{btnType}' : ''), '">{pageId}</button>'],
-		    {pageId:pageId, btnType:btnType}
-		);
+		    (pageId==G.getParams().page ? 'selected{btnType}' : ''),
+		    '">{pageId}</button>'].supplant({pageId:pageId, btnType:btnType});
 	},
 	
 	getButtons : function(totalRecords) {
@@ -59,28 +58,39 @@ Search = {
 		
 		if (params.page !== null)
 		{
-			startPage = Math.max(2, params.page-10);
+			startPage = Math.max(1, params.page-10);
 			endPage = Math.min(params.page+10, numPages);
 		}
 		
 		var s = "";
-		if (numPages > 1) {
+		if (true) {//numPages > 1) {
 			
 			s = [];
-			s.push('<div class="pages">');
-			s.push(this.getButton(1, 2));
 			
-			for (var i = startPage; i < endPage; i++) {
+			s.push('<div class="pages">');
+			s.push(this.getPerPageSelector());
+			//s.push(H.stdSpacer());
+			
+			for (var i = startPage; i <= endPage; i++) {
 				s.push(this.getButton(i, ""));
 			}
-			
-			s.push(this.getButton(numPages, 2));
+
 			s.push('</div>');
 			
 			s = s.join("");
 		}
 
 		return s;
+	},
+	
+	getPerPageSelector : function() {
+		var perPage = G.getParams().perPage;
+		
+		if (this.data.totalRecords <= 1) {
+			return "";
+		} else {
+			return H.input.perPage('half', "resultPerPage");
+		}
 	},
 	
 	selParent : function() {
@@ -139,6 +149,9 @@ Search = {
 					} else if (params.perPage > this.MAX_PERPAGE) {
 						params.perPage = this.MAX_PERPAGE;
 						needPush = true;
+					} else if ($.inArray(params.perPage, H.input._perPageValues) <= -1) {
+						params.perPage = this.DEFAULT_PERPAGE;
+						needPush = true;
 					}
 					
 					// Fix page number if needed
@@ -154,7 +167,7 @@ Search = {
 					} else {
 						params.page = 1;
 						needPush = true;
-					};
+					}
 					
 					if (needPush) {
 						G.replaceState();
@@ -163,13 +176,13 @@ Search = {
 				
 				// Create an outline for search results
 				var pageBtns = this.getButtons();
+				
 				var result = [
-			    	pageBtns,
 			    	'<div class="searchresults" id="{prefix}SearchResults" name="results"></div>',
 			    	pageBtns,
 				];
 				
-				result = G.supplantArray(result, {
+				result = result.supplant({
 					prefix: this.settings.prefix
 				});
 				
@@ -202,7 +215,8 @@ Search = {
 	
 	loadResults : function() {
 		// Executes a dataFunc function with dataArgs, calling renderResults once the data is collected
-
+		// Remove needless parameters
+		G.restrictParams(this.settings.allowed);
 		this.settings.dataFunc(this.settings.dataArgs, this.renderResults.bind(this));
 
 	},
@@ -238,6 +252,19 @@ $(document).ready(function() {
 		
 		if (params.page != $(this).data('page')) {
 			params.page = $(this).data('page');
+			G.pushState();
+
+			searchObject.loadResults();
+		}
+		
+	});
+	
+	$(document).on('change', '[name=resultPerPage]', function(button) {
+		var searchObject = $(this).closest('[name="container"]').data('searchObject'),
+			params = G.getParams();
+		
+		if (params.perPage != $(this).val()) {
+			params.perPage = $(this).val();
 			G.pushState();
 
 			searchObject.loadResults();
