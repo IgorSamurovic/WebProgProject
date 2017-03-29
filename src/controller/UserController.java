@@ -181,18 +181,14 @@ public class UserController extends HttpServlet {
 				{
 					if (role != null) entry.setRole(role);
 				}
-		
-				response.getWriter().print("email");
 				
 				if (emailCheck == null || emailCheck.getId().equals(entry.getId()))
 				{
 					new UserDAO().update(entry);
-					response.getWriter().print("ok");
 				}
 				else
 				{
-					
-					
+					response.getWriter().print("email");
 				}
 					
 

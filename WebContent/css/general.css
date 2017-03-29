@@ -31,34 +31,14 @@
 
 }
 
-.hidden {
-	display: none !important;
-}
+.hidden {display: none !important;}
 
-.left
-{
-	float:left;
-}
+.left {float:left;}
+.right{float:right;}
 
-.right
-{
-	float:right;
-}
-
-.flex1
-{
-	flex: 1 !important;
-}
-
-.flex2
-{
-	flex: 2 !important;
-}
-
-.flex3
-{
-	flex: 3 !important;
-}
+.flex1{flex: 1 !important;}
+.flex2{flex: 2 !important;}
+.flex3{flex: 3 !important;}
 
 .center
 {
@@ -98,15 +78,7 @@ div.rowFlex {
 	margin-right: 8px;
 }
 
-div.useravatarsmall {
-	flex: 1;
-	background-color: var(--darker);
-	max-width: 40px;
-	max-height: 40px;
-	border: 2px solid var(--darker);
-	margin-top: -9px;
-	margin-bottom: -2px;
-}
+/* !MODAL -------------------------------------------------- */
 
 div.modal {
     position: fixed;
@@ -129,6 +101,8 @@ div.modalWindow {
     height: 100%; 
     overflow: auto;
 }
+
+/* !BTNS and !LINKS -------------------------------------------------- */
 
 .btn {
 	flex: 1;
@@ -164,103 +138,47 @@ div.modalWindow {
 	cursor: pointer;
 }
 
-.btn:hover {
-	outline: none !important;
-	outline-width: 0;
-    background: var(--dark);
-}
+.btn:hover  {background: var(--dark);}
+.btn2:hover {background: var(--dark2);}
 
-.btn2:hover {
-	
-	outline-width: 0;
-    background: var(--dark2);
-}
+.link:hover  {color: var(--dark);}
+.link2:hover {color: var(--dark2);}
 
-.link:hover {
-	color: var(--dark);
-}
+.btn:active {background: var(--light);}
+.btn2:active {background: var(--light2);}
 
-.link2:hover {
-	color: var(--dark2);
-}
+.link:active {color: var(--darker);}
+.link2:active {color: var(--light2);}
 
-.btn:active {
-	background: var(--light);
-}
+.selected {border: 2px solid var(--dark) !important;}
+.selected2 {border: 2px solid var(--dark2) !important;}
 
-.btn2:active {
-	background: var(--light2);
-}
-
-.link:active {
-	color: var(--darker);
-}
-
-.link2:active {
-	color: var(--light2);
-}
-
-.selected {
-	
-	border: 2px solid var(--dark2) !important;
-}
-
-.selected2 {
-
-	border: 2px solid var(--dark2) !important;
-}
-
-
-
-
-
-
-
-.unselectable {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
+.unselectable {user-select: none;}
 
 * {
-	
-outline: none !important;
-outline-width: 0;	
-	
+  outline: none !important;
+  outline-width: 0 !important;	
 }
-
-.adminStuff {
-	display: none;
-}
-
-
 
 html { 
 	background: url('images/background.jpg') no-repeat center center fixed;
-	-webkit-background-size: cover;
-	-moz-background-size: cover;
-	-o-background-size: cover;
 	background-size: cover;
 }
 
 
-footer
-{
+footer {
 	font-style: italic;
 	color: gray;
 }
 
-footer:a
-{
+footer:a {
 	font-weight: bold;
 	font-color: gray;
 }
 
-input[type=text], input[type=email], input[type=password], input[type=datetime-local], select
-{
+/* !INPUTs and !SELECTs -------------------------------------------------- */
+
+input[type=text], input[type=email], input[type=password], input[type=datetime-local], select {
 	padding: 8px 20px;
     margin: 4px 0;
     border: 2px solid var(--darker);
@@ -269,6 +187,8 @@ input[type=text], input[type=email], input[type=password], input[type=datetime-l
     box-sizing: border-box;
     color: var(--lighttext);
     background-color: var(--darkestest);
+    flex: 1;
+    display: inline;
 }
 
 ::-webkit-input-placeholder {
@@ -277,11 +197,6 @@ input[type=text], input[type=email], input[type=password], input[type=datetime-l
 
 .wide {
     width: 100%;
-}
-
-input.half, select.half {
-	flex: 1;
-    display: inline;
 }
 
 div, button, input, select, a, img, ul

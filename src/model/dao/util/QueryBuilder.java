@@ -142,7 +142,9 @@ public class QueryBuilder
 	}
 	
 	public QueryBuilder orderBy(String orderBy, String asc) {
-
+		if (orderBy == null) orderBy = "ID";
+		if (asc == null) asc = "TRUE";
+		
 		if (orderBy != null && orderBy.matches("[A-Za-z]{1,20}")) {
 			query += orderByString() + orderBy;
 			if (asc != null && !asc.equals("")) {

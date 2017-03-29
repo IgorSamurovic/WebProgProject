@@ -69,24 +69,20 @@ public class User
 	@JsonView(Views.Admin.class)
 	private Boolean deleted;
 
-	@JsonIgnore public boolean isGuest()
-	{
+	@JsonIgnore public boolean isGuest() {
 		return role == Role.GUEST;
 	}
 	
-	@JsonIgnore public boolean isUser()
-	{
-		return role == Role.USER;
+	@JsonIgnore public boolean isUser() {
+		return role >= Role.USER;
 	}
 	
-	@JsonIgnore public boolean isModerator()
-	{
-		return role == Role.MOD;
+	@JsonIgnore public boolean isMod() {
+		return role >= Role.MOD;
 	}
 	
-	@JsonIgnore public boolean isAdmin()
-	{
-		return role == Role.ADMIN;
+	@JsonIgnore public boolean isAdmin() {
+		return role >= Role.ADMIN;
 	}
 
 	public User(Integer id, String username, String password, String name, String surname, String email, Timestamp date, Integer role, Boolean banned, Boolean deleted)

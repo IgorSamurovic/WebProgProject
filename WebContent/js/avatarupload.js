@@ -117,37 +117,14 @@ function avataruploadReady()
 		resetAvatarInput();
 	});
 	
-	$("#fileSelectBtn").click(function(event)
-	{
-	    event.stopPropagation();
-	    event.preventDefault();
-	    
-		$("#inputAvatar").trigger('click');
-	});
+
 	
 	$("#inputAvatar").click(function(event)
 	{
 		event.stopPropagation();
 	});
 	
-	$("#removeAvatar").click(function(event)
-	{
-	    event.stopPropagation();
-	    event.preventDefault();
-		$.ajax({
-		    url: "avatar?id=" + avatarUser.id,
-		    type: 'DELETE',
-		    success: function(data)
-		    {
-		    	if (avatarFile === null)
-		    		resetAvatarInput();
-		    	refreshImage(avatarUser.id);
-		    	showMsg("avatarUploadMsg", "Avatar has been removed.", "success");
-		    	avatarUpdateRemoveVis();
-		    }
-		});
-		
-	});
+
 
 	
 	$("#inputAvatarForm").submit(function(event)

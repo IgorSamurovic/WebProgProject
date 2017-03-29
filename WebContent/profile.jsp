@@ -1,10 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
 <%@include file="jspf/headbasic.jspf"%>
-<script src="js/forum.js"></script>
-<script src="js/edituser.js"></script>
-<script src="js/avatarupload.js"></script>
-<script src="js/search.js"></script>
 
 <title>Profile</title>
 </head>
@@ -59,6 +55,7 @@
 			// Profile
 			settings = {
 				allowed    : [],
+				useParams  : false,
 				prefix     : "profile",
 				parent     : "pageContent",
 				objType    : User,
@@ -71,8 +68,8 @@
 						};
 					},
 				},
-				renderFunc : Users.render 
-			}
+				renderFunc : User.render 
+			};
 			
 			search = Search.create(settings);
 			Page.searchObjects.push(search);
@@ -96,8 +93,8 @@
 						};
 					},
 				},
-				renderFunc : Forums.render 
-			}
+				renderFunc : Forum.render 
+			};
 			
 			search = Search.create(settings);
 			Page.searchObjects.push(search);

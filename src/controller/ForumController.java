@@ -1,6 +1,7 @@
 package controller;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 
 import javax.servlet.ServletException;
@@ -13,6 +14,7 @@ import controller.util.Responder;
 import model.Forum;
 import model.User;
 import model.dao.ForumDAO;
+import model.dao.UserDAO;
 import util.Cookies;
 import views.Views;
 
@@ -52,8 +54,31 @@ public class ForumController extends HttpServlet {
 
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		doGet(request, response);
+		
+		// First initialize variables
+		ParamProcessor pp = new ParamProcessor(request);
+		
+		Integer id = pp.integer("id");
+		String title = pp.string("title");
+		String descript = pp.string("descript");
+		Integer parent = pp.integer("parent");
+		Integer owner = pp.integer("owner");
+		Integer vistype = pp.integer("vistype");
+		Boolean locked = pp.bool("locked");
+		Boolean deleted = pp.bool("deleted");
+		String reqType = pp.string("reqType");
+		
+		User current = Cookies.getUser(request);
+		
+		// Done
+		
+		if (reqType.equals("update")) {
+			
+			if (id != null && current.isAdmin()) {
+				Forum entry = new ForumDAO().findById(id);
+				
+					new ForumDAO().update(entry);
+			}
+		}
 	}
-
 }

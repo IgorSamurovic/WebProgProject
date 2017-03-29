@@ -89,7 +89,7 @@ Search = {
 		if (this.data.totalRecords <= 1) {
 			return "";
 		} else {
-			return H.input.perPage('half', "resultPerPage");
+			return H.input.perPage('', "resultPerPage");
 		}
 	},
 	

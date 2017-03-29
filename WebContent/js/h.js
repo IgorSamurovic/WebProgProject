@@ -6,70 +6,64 @@
 
 H = {
 		
-	smallBtnDo : function(label, name, doVal, style="") {
-	    return '<button name="{name}" data-do="{doVal}" class="small btn{style} flex1">{label}</button>'.supplant(
-	    	{name:name, doVal:doVal, label:label, style:style});
+	btn : function(label, name, cls="small btn", val=null, type='button') {
+	    return `<button
+	    			name="${name}"
+	    			type="${type}"
+	    			${val!==null ? 'data-val="'+val+'"' : ''}
+	    			class="${cls}">
+	    			${label}
+	    		</button>`;
 	},
 	
-	smallBtn : function(label, name, style="") {
-	    return '<button name="{name}" class="small btn{style} flex1">{label}</button>'.supplant(
-	    	{name:name, label:label, style:style});
+	toggleBtn : function(labels, name, cls='small btn', val=null) {
+		const label = val ? labels[0] : labels[1];
+		return this.btn(label, name, cls, val);
 	},
 	
 	stdSpacer : function() {
 		return '<div class="stdSpacer"></div>';
 	},
 	
-	modal : function(cls="small") {
-		return [
-		    '<div class="modal">',
-		    	'<div class="modalWindow">',
-					'<div class="page {cls}">',
-					    '<div class="pageheader" name="modalHeader"></div>',
-						'<div class="pagecontent"></div>',
-						'</div>',
-					'</div>',
-				'</div>',
-			'</div>'
-		].supplant({cls:cls});
+	msg : function(name) {
+		return `<div class="hidden msg" name="${name}Msg"></div>`;
 	},
 	
 	input : {
 		
 		defaultClass : 'wide',
 		
-		username : function(cls=defaultClass, name="username") {
+		username : function(cls=this.defaultClass, name="username") {
 			return '<input class="{cls}" name="{name}" type="text" placeholder="Username" pattern = "[a-zA-Z0-9_]{3,20}" maxlength=20/>'.supplant({cls:cls, name:name});
 		},
 		
-		role : function(cls=defaultClass, name="role") {
-			return [
-			    '<select class="{cls}" name="{name}">',
-			    '<option value="null">Any role</option>',
-			    '<option value="1">User</option>',
-			    '<option value="2">Moderator</option>',
-			    '<option value="3">Administrator</option>',
-			    '</select>'
-			].supplant({cls:cls, name:name});
+		role : function(cls=this.defaultClass, name="role", strict=true) {
+			return `
+			    <select class="${cls}" name="${name}">
+	   ${!strict ? '<option value="null">Any role</option>' : ''}
+			    	<option value="1">User</option>
+			    	<option value="2">Moderator</option>
+			    	<option value="3">Administrator</option>
+			    </select>`;
 		},
 		
-		email : function(cls=defaultClass, name="email") {
-			return '<input class="{cls}" name="{name}" type="text" placeholder="Email" maxlength=60/>'.supplant({cls:cls, name:name});
+		email : function(cls=this.defaultClass, name="email") {
+			return '<input class="{cls}" name="{name}" type="email" placeholder="Email" maxlength=60/>'.supplant({cls:cls, name:name});
 		},
 		
-		name : function(cls=defaultClass, name="name") {
+		name : function(cls=this.defaultClass, name="name") {
 			return '<input class="{cls}" name="{name}" type="text" placeholder="Name" maxlength=40/>'.supplant({cls:cls, name:name});
 		},
 		
-		surname : function(cls=defaultClass, name="surname") {
+		surname : function(cls=this.defaultClass, name="surname") {
 			return '<input class="{cls}" name="{name}" type="text" placeholder="Surname" maxlength=40/>'.supplant({cls:cls, name:name});
 		},
 		
-		date : function(cls=defaultClass, name="date") {
+		date : function(cls=this.defaultClass, name="date") {
 			return '<input class="{cls}" name="{name}" type="datetime-local">'.supplant({cls:cls, name:name});
 		},
 		
-		exclusionSelect : function(cls=defaultClass, name="change", what=change, selected=true) {
+		exclusionSelect : function(cls=this.defaultClass, name="change", what='change', selected=true) {
 			return [
 				'<select class="{cls}" name="{name}"',
 				'<option {s1} value="true">Include {what}</option>',
@@ -90,7 +84,7 @@ H = {
 			return exclusionSelect(cls, name, "locked", selected);
 		}, 
 		
-		orderBy : function(cls=defaultClass, name="orderBy", options=[]) {
+		orderBy : function(cls=this.defaultClass, name="orderBy", options=[]) {
 			var currentUser = Users.getCurrentUser();
 			for (var i=0; i<options.length; i++) {
 				if (!options[i].startsWith('!') || currentUser.data.role >= Users.roles.admin) {
@@ -105,7 +99,7 @@ H = {
 			 ].supplant({cls:cls, name:name});
 		},
 		
-		asc : function(cls=defaultClass, name="asc") {
+		asc : function(cls=this.defaultClass, name="asc") {
 			return [
 			    '<select class="{cls}" name="{name}">',
 			    '<option value="true">Ascending</option>',
@@ -117,7 +111,7 @@ H = {
 		
 		_perPageValues : ['1', '5', '10', '20', '50'],
 		
-		perPage : function(cls=defaultClass, name="perPage", vals=this._perPageValues) {
+		perPage : function(cls=this.defaultClass, name="perPage", vals=this._perPageValues) {
 			var options = [];
 			var perPage = G.getParams().perPage;
 			
@@ -141,8 +135,8 @@ H = {
 		return ['<dt>', str, '</dt><dd>{', str, '}</dd>'].join("");
 	},
 	
-	dl : function(fields) {
-		var s = ['<dl class="userinfo">'];
+	dl : function(fields, cls="") {
+		var s = [`<dl class="userinfo ${cls}">`];
 		
 		for (var i=0; i < fields.length; i++) {
 			s.push(this.dle(fields[i]));

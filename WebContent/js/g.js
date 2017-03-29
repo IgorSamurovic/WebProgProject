@@ -6,7 +6,33 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 var G = {
+	
+	isProperId : function(val) {
+		val = parseInt(val, 10);
+		return (val !== undefined && val !== null && typeof val === 'number' && val > 0);
+	},
+		
+	input : {
+			
+		loadFields : function(selector) {
+			const data = {};
+			$(selector).children('input, select').each(function () {
+				data[$(this).attr(`name`)] = $(this).val();
+			});
+			return data;
+		},
+		
+		setFields : function(selector, data) {
+			$(selector).children('input, select').each(function () {
+				$(this).val(data[$(this).attr(`name`)]);
+			});
+			return data;
+		},
+			
+	},
+	
 
+		
 	// Goes to the location
 	href : function(href) {
 		window.location.href(url);
@@ -246,7 +272,7 @@ var G = {
 	},
 	
 	goHome : function() {
-		window.location.href="forum.jsp";
+		window.location.href="forum.jsp?id=1";
 	},
 	
 	// Hides objects identified by the obj string in JQuery
@@ -258,7 +284,7 @@ var G = {
 	// Shows a message in a msg field with a specific name
 	_msgRegistered : false,
 	
-	msg : function(id, msg, type) {
+	msg : function(name, msg, type) {
 		if (!G._msgRegistered) {
 			$(document).on('click', '.msgCloseBtn', function(button) {
 				$(this).parent().addClass("hidden");
@@ -266,7 +292,7 @@ var G = {
 			G._msgRegistered = true;
 		}
 		
-		var query = "[name=" + id + "].msg";
+		var query = `[name="${name}Msg"].msg`;
 		
 		if (!msg) {
 			$(query).html("");
@@ -276,13 +302,13 @@ var G = {
 			msg = msg + btn;
 			$(query).html(msg);
 			$(query).removeClass("hidden");
-			if (!type) {
+			if (type === null || type === undefined) {
 				$(query).removeClass("good");
 				$(query).removeClass("bad");
-			} else if (type === "good" || type === "success") {
+			} else if (type === true || type === "good" || type === "success") {
 				$(query).addClass("good");
 				$(query).removeClass("bad");
-			} else if (type === "bad" || type === "error") {
+			} else if (type === false || type === "bad" || type === "error") {
 				$(query).addClass("bad");
 				$(query).removeClass("good");
 			}
