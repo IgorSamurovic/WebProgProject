@@ -9,6 +9,27 @@
 	<%@include file="jspf/header.jspf" %>
 	<script>
 	
+	$('body').append(H.page({
+		name: 'forum',
+		title: 'Forum',
+		canHide: true,
+		canExit: true,
+	}));
+	
+	$('body').append(H.page({
+		name: 'subforums',
+		title: 'Subforums',
+		canHide: true,
+		canExit: true,
+	}));
+	
+	$('body').append(H.page({
+		name: 'threads',
+		title: 'Threads',
+		canHide: true,
+		canExit: true,
+	}));
+	
 	// This global variable should only be defined in .jsp files!
 	Page = {
 		
@@ -79,10 +100,12 @@
 
 		(function () {
 			const params = G.getParams();
-			console.log(params);
 			
 			if (G.isProperId(params.id)) {
 				// Determine owner first
+				G.protectParam('id');
+				G.restrictParams();
+				
 				G.dbGet({
 					url: "forum",
 					data: {id:params.id},
@@ -90,34 +113,52 @@
 					}, function(data) {
 					
 						if (data.totalRecords === 1) {
+							Search.create({
+								prefix     : "forum",
+								parent     : "forumPageContent",
+								objType    : Forum,
+								data       : data,
+								dataFunc   : G.dbGet,
+								dataArgs   : {
+									url    : "forum",
+									data   : function() {
+										return {
+											id   : params.id,
+										};
+									},
+								},
+								renderFunc : Forum.render 
+							}).loadResults();
+							
 							var forumData = data;
 							var forum = G.create(Forum, data[0]);
 							
-							// Init successful
+			
 							
+							// Init successful							
 							// Render forum page
-							$("#forumInfoHeader").html(forum.data.title);
-							$("#forumInfoContent").html(forum.render());
+							$("#forumPageTitle").html(forum.data.title);
 							
-							// Render subforums
-							G.dbGet({
-								url: 'forum',
-								data: {parent:params.id, perPage:50},
-							}, function(data) {
-								console.log(data);
-								if (data.totalRecords > 0) {
-									for (var i=0; i<data.totalRecords; i++) {
-										data[i] = G.create(Forum, data[i]);
-										$("#subforumsContent").append(data[i].render());
-									}
-									
-									$("#subforumsHeader").html('Subforums ('+data.totalRecords+')');	
-								} else {
-									$("#subforumsPage").remove();
-									console.log(data.totalRecords);
-								}
-								
-							});
+							Search.create({
+								allowed    : ['page', 'perPage'],
+								useParams  : false,
+								prefix     : "subforums",
+								parent     : "subforumsPageContent",
+								objType    : Forum,
+								dataFunc   : G.dbGet,
+								dataArgs   : {
+									url    : "forum",
+									data   : function() {
+										return {
+											orderBy : "DATE",
+											asc     : "FALSE",
+											parent  : params.id,
+										};
+									},
+								},
+								renderFunc : Forum.render 
+							}).loadResults();
+							
 							
 							//Page.createSearchObjects();
 							G.protectParam('id');
@@ -136,24 +177,31 @@
 		
 	});
 	
+
+	
 	</script>
-	 
+	<!--  
 	<div class="page" id="forumPage">
-		<div class="pageheader" id="forumInfoHeader">Forum</div>
+		<div class="pageheader" id="forumInfoHeader">
+			<div class="pagetitle" id="forumInfoTitle">Forum</div>
+		</div>
 		<div class="pagecontent" id="forumInfoContent"></div>
 	</div>
 	
 	<div class="page" id="subforumsPage">
-		<div class="pageheader" id="subforumsHeader">Subforums</div>
+		<div class="pageheader" id="subforumsHeader">
+			<div class="pagetitle" id="subforumsTitle">Subforums</div>
+		</div>
 		<div class="pagecontent" id="subforumsContent"></div>
 	</div>
 	
 	<div class="page" id="threadsPage">
-		<div class="pageheader" id="threadsHeader">Threads</div>
+		<div class="pageheader" id="threadsHeader">
+			<div class="pagetitle" id="threadsTitle">Threads</div>
+		</div>
 		<div class="pagecontent" id="threadsContent"></div>
 	</div>
-	
-	<%@include file="jspf/edituser.jspf" %>
+	-->
 	
 <%@include file="jspf/footer.jspf" %>
 </body>

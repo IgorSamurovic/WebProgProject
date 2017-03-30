@@ -4,6 +4,7 @@
 :root {
 
 --stdborder2    : white;
+--darkestest2   : #260e00;
 --darkest2  	: #4f2600;
 --darker2       : #ff8b00;
 --dark2         : #ffa83f;
@@ -312,7 +313,6 @@ input[type=submit].big, input[type=reset].big, button.big, a.big
 	text-align:center;
     padding: 14px 20px;
     margin: 4px;
-    
 }
 
 input[type=submit].small, input[type=reset].small, button.small, a.small
@@ -417,15 +417,21 @@ div.pagecontent:empty
 }
 
 div.pageheader {
-	font-size: x-large;
-	font-weight: bold;
-	text-align:left;
+	height: 30px;
 	margin: 10 auto;
 	max-width: 1024px;
     background-color: var(--darkestest);
-    color: white;
     padding: 10px;
-    margin-top: 0;
+}
+
+div.pagetitle {
+	float:left;
+	max-width: 500px;
+	font-size: x-large;
+	font-weight: bold;
+	text-align:left;
+	margin: 0 auto;
+    color: white;
 }
 
 widthspanned
@@ -441,6 +447,10 @@ div.large {
 
 div.small {
 	max-width: 600px;
+}
+
+div.tiny {
+	max-width: 300px;
 }
 
 div.searchresults {

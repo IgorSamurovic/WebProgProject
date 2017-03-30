@@ -80,5 +80,24 @@ public class ForumController extends HttpServlet {
 					new ForumDAO().update(entry);
 			}
 		}
+		
+		if (reqType.equals("lock")) {
+			if (id != null && current.isAdmin()) {
+				Forum entry = new ForumDAO().findById(id);
+				if (locked != null) {
+					entry.setLocked(locked);
+					new ForumDAO().lock(entry, locked);
+				}
+			}
+		}
+		
+		if (reqType.equals("delete")) {
+			if (id != null && current.isAdmin()) {
+				Forum entry = new ForumDAO().findById(id);
+				if (deleted != null) {
+					new ForumDAO().softDelete(entry, (boolean) deleted);
+				}
+			}
+		}
 	}
 }

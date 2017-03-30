@@ -122,7 +122,7 @@ User = {
 	},
 	
 	generateEdit : function(target, user=this) {
-		const modal = $(target).data('modal');
+		const modal = $(target).closest('.modal').data('modal');
 		const name = `editUser`;
 		const form = `#${name}Form`;
 		
@@ -188,7 +188,7 @@ User = {
 		this.generateAvatarUpload(modal.content, user);
 		this.generateEdit(modal.content, user);
 		
-		$(modal.header).html(`Editing user ${user.data.username}`);
+		$(modal.title).html(`Editing user ${user.data.username}`);
 		modal.display();
 	},
 		
@@ -278,6 +278,7 @@ User = {
 Users = {
 		
 	_guestRawData : {
+		id: -1, 
 		username: "Guest",
 		banned: false,
 		deleted: false,

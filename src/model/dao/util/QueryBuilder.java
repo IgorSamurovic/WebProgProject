@@ -5,8 +5,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
+import controller.util.ParamProcessor;
+
 public class QueryBuilder
 {
+	//  /\$[^\s]+/g
 	private String query;
 	private String start;
 	
@@ -16,6 +19,7 @@ public class QueryBuilder
 	private boolean alreadySorting;
 	private Connection conn;
 	private boolean hasArgs;
+	ParamProcessor pp;
 	
 	private Integer numRecords;
 	
@@ -38,6 +42,12 @@ public class QueryBuilder
 		this.hasArgs = false;
 		this.alreadySorting = false;
 		this.numRecords = 0;
+		this.pp = null;
+	}
+	
+	public QueryBuilder(ParamProcessor pp) {
+		this();
+		this.pp = pp;
 	}
 	
 	public QueryBuilder setStart(String start)
@@ -63,8 +73,16 @@ public class QueryBuilder
 		return this.start + " " + this.query;
 	}
 	
+	private String prep(String part) {
+		if (part != null && part.charAt(0) == '$' && this.pp != null) {
+			return this.pp.string(part.substring(1, part.length()));
+		}
+		return part;
+	}
+	
 	public QueryBuilder and(Object o, String part)
 	{
+		part = prep(part);
 		if (o != null)
 		{
 			query += andString();
@@ -78,6 +96,8 @@ public class QueryBuilder
 	
 	public QueryBuilder and(Object o, String part, String alternative)
 	{
+		part = prep(part);
+		alternative = prep(alternative);
 		if (o != null)
 		{
 			query += andString();
@@ -97,6 +117,7 @@ public class QueryBuilder
 	
 	public QueryBuilder and(String part)
 	{
+		part = prep(part);
 		query += andString();
 		query += part;
 		hasArgs = true;
@@ -142,8 +163,13 @@ public class QueryBuilder
 	}
 	
 	public QueryBuilder orderBy(String orderBy, String asc) {
+		orderBy = prep(orderBy);
+		asc = prep(asc);
+		
 		if (orderBy == null) orderBy = "ID";
 		if (asc == null) asc = "TRUE";
+		
+		
 		
 		if (orderBy != null && orderBy.matches("[A-Za-z]{1,20}")) {
 			query += orderByString() + orderBy;

@@ -34,9 +34,17 @@
  */ 
 
 Search = {
+	
+	getParams() {
+		if (this.settings.useParams) {
+			return G.getParams();
+		} else {
+			return this.settings._params;
+		}
+	},
 		
 	getNumPages : function() {
-		var params = G.getParams(),
+		var params = this.getParams(),
 			numPages = Math.floor(this.data.totalRecords/params.perPage);
 		if (this.data.totalRecords % params.perPage > 0)
 			numPages += 1;
@@ -46,12 +54,12 @@ Search = {
 	getButton : function(pageId, btnType) {
 		return [
 		    '<button name="changePageBtn" data-page="{pageId}" class="page btn{btnType} ',
-		    (pageId==G.getParams().page ? 'selected{btnType}' : ''),
+		    (pageId==this.getParams().page ? 'selected{btnType}' : ''),
 		    '">{pageId}</button>'].supplant({pageId:pageId, btnType:btnType});
 	},
 	
 	getButtons : function(totalRecords) {
-		var params = G.getParams(),
+		var params = this.getParams(),
 			numPages = this.getNumPages(),
 			startPage = 1,
 			endPage = numPages;
@@ -69,7 +77,6 @@ Search = {
 			
 			s.push('<div class="pages">');
 			s.push(this.getPerPageSelector());
-			//s.push(H.stdSpacer());
 			
 			for (var i = startPage; i <= endPage; i++) {
 				s.push(this.getButton(i, ""));
@@ -84,12 +91,12 @@ Search = {
 	},
 	
 	getPerPageSelector : function() {
-		var perPage = G.getParams().perPage;
+		var perPage = this.getParams().perPage;
 		
 		if (this.data.totalRecords <= 1) {
 			return "";
 		} else {
-			return H.input.perPage('', "resultPerPage");
+			return H.input.perPage('', "resultPerPage", perPage);
 		}
 	},
 	
@@ -118,7 +125,9 @@ Search = {
 	
 	renderResults : function(data) {
 		
-		var params = G.getParams();
+		var params = this.getParams();
+		var useParams = this.settings.useParams;
+		
 		var html;
 		
 		// Set the raw data here
@@ -170,7 +179,7 @@ Search = {
 					}
 					
 					if (needPush) {
-						G.replaceState();
+						G.replaceState(useParams);
 					}
 				}
 				
@@ -189,7 +198,6 @@ Search = {
 				$(this.selContainer()).html(result);
 				
 				// Create actual results to fill out the list
-
 				
 				// Now process all objects and render all elements 
 				for (var i=0; i<data.length; i++) {
@@ -209,6 +217,9 @@ Search = {
 					// Attach the last processed object to the last added HTML element
 					$(this.selResults()).children().last().data("obj", data[i]);
 				}
+				
+				// In case this initialized with an object, lets destroy it
+				this.settings.data = null;
 			}
 		}
 	},
@@ -216,7 +227,16 @@ Search = {
 	loadResults : function() {
 		// Executes a dataFunc function with dataArgs, calling renderResults once the data is collected
 		// Remove needless parameters
-		G.restrictParams(this.settings.allowed);
+		if (this.settings.data) {
+			this.renderResults(this.settings.data);
+			return;
+		}
+		
+		if (this.settings.useParams) {
+			G.restrictParams(this.settings.allowed);
+		} else {
+			this.settings.dataArgs.xData = this.getParams();
+		}
 		this.settings.dataFunc(this.settings.dataArgs, this.renderResults.bind(this));
 
 	},
@@ -225,6 +245,12 @@ Search = {
 	create : function(settings) {
 		var obj = Object.create(this);
 		obj.settings = settings;
+		if (!obj.settings.useParams) {
+			obj.settings._params = {};
+			obj.settings.useParams = false;
+		} else {
+			obj.settings.useParams = true;
+		}
 		return obj;
 	},
 	
@@ -247,25 +273,24 @@ Search = {
 $(document).ready(function() {
 	
 	$(document).on('click', '[name=changePageBtn]', function(button) {
-		var searchObject = $(this).closest('[name="container"]').data('searchObject'),
-			params = G.getParams();
+		var searchObject = $(this).closest('[name="container"]').data('searchObject');
+		var params = searchObject.getParams();
 		
 		if (params.page != $(this).data('page')) {
 			params.page = $(this).data('page');
-			G.pushState();
+			G.pushState(searchObject.settings.useParams);
 
 			searchObject.loadResults();
-		}
-		
+		}		
 	});
 	
 	$(document).on('change', '[name=resultPerPage]', function(button) {
-		var searchObject = $(this).closest('[name="container"]').data('searchObject'),
-			params = G.getParams();
+		var searchObject = $(this).closest('[name="container"]').data('searchObject');
+		var params = searchObject.getParams();
 		
 		if (params.perPage != $(this).val()) {
 			params.perPage = $(this).val();
-			G.pushState();
+			G.pushState(searchObject.settings.useParams);
 
 			searchObject.loadResults();
 		}

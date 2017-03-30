@@ -55,7 +55,7 @@
 			// Profile
 			settings = {
 				allowed    : [],
-				useParams  : false,
+				useParams  : true,
 				prefix     : "profile",
 				parent     : "pageContent",
 				objType    : User,
@@ -77,6 +77,7 @@
 			// Forums
 			settings = {
 				allowed    : ['page', 'perPage'],
+				useParams  : true,
 				prefix     : "forums",
 				parent     : "pageContent",
 				objType    : Forum,

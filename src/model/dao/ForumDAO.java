@@ -96,16 +96,15 @@ public class ForumDAO
 		if (role < User.Role.ADMIN)
 		{
 			qb
-			.and(pp.string("title"), "title LIKE ?")
-			.and(pp.string("parent"), "parent = ?")
-			.and(pp.string("owner"), "owner = ?")
-			.and(pp.string("vistype"), "vistype <= ?")
-			.and("vistype <= " + role)
-			.and(pp.string("dataA"), "dateA <= ?")
-			.and(pp.string("dataB"), "dateB >= ?")
-			.and(pp.string("includeLocked"), "locked <= ?")
+			.and("$title", "title LIKE ?")
+			.and("$parent", "parent = ?")
+			.and("$owner", "owner = ?")
+			.and("$vistype", "vistype <= ?").and("vistype <= " + role)
+			.and("$dataA", "dateA <= ?")
+			.and("$dataB", "dateB >= ?")
+			.and("$includeLocked", "locked <= ?")
 			.and("deleted = FALSE")
-			.orderBy(pp.string("orderBy"), pp.string("asc"));
+			.orderBy("$orderBy", "$asc");
 		}
 		else
 		{
@@ -114,11 +113,10 @@ public class ForumDAO
 			.and(pp.string("parent"), "parent = ?")
 			.and(pp.string("owner"), "owner = ?")
 			.and(pp.string("vistype"), "vistype <= ?")
-			
 			.and(pp.string("dataA"), "dateA <= ?")
 			.and(pp.string("dataB"), "dateB >= ?")
 			.and(pp.string("includeLocked"), "locked <= ?")
-			.and(pp.string("includeDeleted"), "deleted <= ?", "deleted = FALSE")
+			.and(pp.string("includeDeleted"), "deleted <= ?")
 			.orderBy(pp.string("orderBy"), pp.string("asc"));
 		}
 	}
@@ -126,7 +124,7 @@ public class ForumDAO
 	public ArrayList<Object> filter(ParamProcessor pp, int role)
 	{
 		ArrayList<Object> list = new ArrayList<Object>();
-		QueryBuilder qb = new QueryBuilder();
+		QueryBuilder qb = new QueryBuilder(pp);
 		processFilter(qb, pp, role);
 		
 		qb.setStart("SELECT COUNT(ID) FROM FORUM");
@@ -171,6 +169,20 @@ public class ForumDAO
 			e.printStackTrace();
 		}
 		return false;
+	}
+	
+	public int lock(Forum o, Boolean doLock) {
+		try (Connection conn = Connector.get();) {
+			PreparedStatement stmt = conn.prepareStatement("UPDATE FORUM SET locked=? WHERE id=?;");
+			stmt.setObject(1, doLock);
+			stmt.setObject(2, o.getId());
+			return stmt.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		return 0;
 	}
 	
 	public int update(Forum o)

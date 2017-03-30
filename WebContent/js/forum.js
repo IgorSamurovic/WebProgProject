@@ -52,7 +52,7 @@ Forum = {
 			data   : {
 				reqType : "lock",
 				id      :  this.data.id,
-				lock    :  doLock
+				locked  :  doLock
 			},
 			success: callback
 		});
@@ -120,15 +120,24 @@ $(document).ready(function() {
 	
 	$(document).on('click', '[name="forumDeleteBtn"]', function(button) {
 		var that = this;
-		Search.getObject(this).del($(that).data("val"), function() {
-			Search.getSearch(that).loadResults();
+		Modals.confirmation({
+			yesFunc : function() {
+				Search.getObject(that).del($(that).data("val"), function() {
+					Search.getSearch(that).loadResults();
+				});
+			}
 		});
 	});
 	
 	$(document).on('click', '[name="forumLockBtn"]', function(button) {
 		var that = this;
-		Search.getObject(this).lock($(that).data("val"), function() {
-			Search.getSearch(that).loadResults();
+		Modals.confirmation({
+			yesFunc : function() {  
+				console.log('yes runs');
+				Search.getObject(that).lock($(that).data("val"), function() {
+					Search.getSearch(that).loadResults();
+				});
+			}
 		});
 	});
 	

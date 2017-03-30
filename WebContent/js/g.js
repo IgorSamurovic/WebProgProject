@@ -131,11 +131,9 @@ var G = {
 		this._paramProtected[prop] = true;
 	},
 	
-	restrictParams : function(allowed) {
+	restrictParams : function(allowed=[]) {
 		var prop;
-		if (allowed === undefined || allowed === null) {
-			allowed = [];
-		}
+		
 		for (prop in this._params) {
 			if (!this._paramProtected[prop] && $.inArray(prop, allowed) <= -1) {
 				delete this._params[prop];
@@ -196,12 +194,12 @@ var G = {
 		} 
 	},
 	
-	pushState : function() {
-		window.history.pushState(this.getParams(), document.title, window.location.href.split("?")[0] +"?" + $.param(this._params));
+	pushState : function(really=true) {
+		if (really) window.history.pushState(this.getParams(), document.title, window.location.href.split("?")[0] +"?" + $.param(this._params));
 	},
 	
-	replaceState : function() {
-		window.history.replaceState("", document.title, window.location.href.split("?")[0] +"?" + $.param(this._params));
+	replaceState : function(really=true) {
+		if (really) window.history.replaceState("", document.title, window.location.href.split("?")[0] +"?" + $.param(this._params));
 	},
 	
 	// Posts a json object
@@ -214,12 +212,15 @@ var G = {
 	// Gets raw JSON objects from a table in the database
 	dbGet : function(args, callback) {
 		var params = {};
+
 		
 		if (typeof args.data === 'function') {
 			params.data = args.data();
 		} else {
 			params.data = args.data;
 		}
+		
+		$.extend(params.data, args.xData);
 		
 		params.error = args.error;
 		params.url = args.url;
@@ -245,12 +246,14 @@ var G = {
 					data = [data];
 					data.totalRecords = 1;
 					data.type = "single";
+					data.length = 1;
 				}
 				
 			}
 
 			callback(data);
 		};
+		
 		$.ajax(params);
 	},
 	

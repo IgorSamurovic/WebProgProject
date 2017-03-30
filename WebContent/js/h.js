@@ -5,6 +5,35 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 H = {
+	
+	page : function(args) {
+		const name = args.name;
+		const title = "" || args.title;
+		const hidden = args.hidden;
+		const cls = args.cls;
+		const hiddenHeader = args.hiddenHeader;
+		const hiddenContent = args.hiddenContent;
+		const headerButtons = [];
+		if (args.canExit) headerButtons.push(H.pageExitBtn());
+		if (args.canHide) headerButtons.push(H.pageHideBtn());
+		
+		return `
+			<div class="${hidden ? "hidden" : ""} ${cls} page" id="${name}Page">
+				<div class="${hiddenHeader ? "hidden" : ""} pageheader" id="${name}PageHeader">
+					<div class="pagetitle" id="${name}PageTitle">${title}</div>
+					${headerButtons.join("")}
+				</div>
+				<div class="${hiddenContent ? "hidden" : ""} pagecontent" id="${name}PageContent"></div>
+			</div>`;
+	},
+		
+	pageHideBtn : function() {
+		return `<button name="pageHideBtn" class="small btn right">_</button>`;
+	},
+	
+	pageExitBtn : function() {
+		return `<button name="pageExitBtn" class="small btn right">&times</button>`;
+	},
 		
 	btn : function(label, name, cls="small btn", val=null, type='button') {
 	    return `<button
@@ -111,9 +140,8 @@ H = {
 		
 		_perPageValues : ['1', '5', '10', '20', '50'],
 		
-		perPage : function(cls=this.defaultClass, name="perPage", vals=this._perPageValues) {
+		perPage : function(cls=this.defaultClass, name="perPage", perPage=10, vals=this._perPageValues) {
 			var options = [];
-			var perPage = G.getParams().perPage;
 			
 			for (var i=0; i < vals.length; i++) {
 				options.push('<option ' , vals[i] == perPage ? 'selected' : '', ' value=',vals[i], '>',vals[i],' per page</option>');
@@ -154,19 +182,22 @@ H = {
 
 	$(document).ready(function()
 	{
-		$(document).on('click', "[name=toggleBtn]", function(event)
-		{
+		$(document).on('click', "[name=pageHideBtn]", function(event) {
 			event.preventDefault();
 			var container = $(this).closest(".pageheader").siblings(".pagecontent");
-			console.log($(this));
-			if ($(container).hasClass("hidden"))
-			{
+			
+			if ($(container).hasClass("hidden")) {
 				$(container).removeClass("hidden");
-			}
-			else
-			{
+			} else {
 				$(container).addClass("hidden");
 			}
+		});	
+		
+		$(document).on('click', "[name=pageExitBtn]", function(event) {
+			event.preventDefault();
+			const modal = $(this).closest(".modal").data('modal');
+			if (modal) modal.destroy();
+			$(this).closest(".page").remove();
 		});	
 	});
 
