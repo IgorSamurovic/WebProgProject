@@ -1,31 +1,29 @@
 <nav class="widthspanned">
-<div class="pageborder">
-<div class="page">
-	<ul class="navigation">
-		<!--  Admin stuff -->
-		<%@ page import="model.User" %>
-		<% User current = util.Cookies.getUser(request); %>
-		                                                <li><a class="left link" id="linkForums" href="/site/forum.jsp?id=0">Forums</a>
-		<% if (current.getRole() <= User.Role.GUEST) %> <a class="left link" id="linkLogin" href="/site/login.jsp">Login</a>
-		<% if (current.getRole() <= User.Role.GUEST) %> <a class="left link" id="linkRegister" href="/site/register.jsp">Register</a>
+	<div class="pageborder">
+		<div class="page">
+			<ul class="navigation">
+				<!--  Admin stuff -->
+				<%@ page import="model.User" %>
+				<% User current = util.Cookies.getUser(request); %>
+				                                                <li><a class="left link" id="linkForums" href="/site/forum.jsp?id=0">Forums</a>
+				<% if (current.getRole() <= User.Role.GUEST) %> <a class="left link" id="linkLogin" href="/site/login.jsp">Login</a>
+				<% if (current.getRole() <= User.Role.GUEST) %> <a class="left link" id="linkRegister" href="/site/register.jsp">Register</a>
+				
+				<!-- Registered user stuff -->
+				<% if (current.getRole() >= User.Role.USER) %> <a class="left link" id="linkUsers" href="/site/users.jsp">Users</a>
+				</li>
+				
+				<% if (current.getRole() >= User.Role.USER) {%>
+				<li>
+					
+					<a class ="right" href='<%= "profile.jsp?id=" + current.getId() %> '>  
+						<img width="40" height="40" src='<%= "avatar?id=" + current.getId() %> ' class="useravatar"/>
+					</a>
+					<a class="right link2" id="linkLogout" href="logout.jsp">&timesLogout</a>
+				</li>
+				<% } %>
 		
-		<!-- Registered user stuff -->
-		<% if (current.getRole() >= User.Role.USER) %> <a class="left link" id="linkUsers" href="/site/users.jsp">Users</a>
-		</li>
-		
-		<% if (current.getRole() >= User.Role.USER) {%>
-		<li>
-			
-			<a class ="right" href='<%= "profile.jsp?id=" + current.getId() %> '>  
-				<div class="useravatarsmall">
-					<img src='<%= "avatar?id=" + current.getId() %> ' class="useravatarsmall"/>
-				</div>
-			</a>
-			<a class="right link2" id="linkLogout" href="logout.jsp">&timesLogout</a>
-		</li>
-		<% } %>
-
-	</ul>
-</div>
-</div>
+			</ul>
+		</div>
+	</div>
 </nav>

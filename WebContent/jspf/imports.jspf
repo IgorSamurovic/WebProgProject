@@ -1,0 +1,21 @@
+<link rel="stylesheet" type="text/css" href="css/general.css">
+
+<!-- jQuery and plugins -->
+<script src="js/jquery/jquery.js"></script>
+<script src="js/jquery/skinny.js"></script>
+<script src="js/jquery/myjqueryaddons.js"></script>
+
+<!-- General purpose functions and HTML string generation -->
+<script src="js/g.js"></script>
+<script src="js/h.js"></script>
+<script src="js/myjsaddons.js"></script>
+
+<!-- Objects -->
+<script src="js/objects/dataobj.js"></script>
+<script src="js/objects/user.js"></script>
+<script src="js/objects/forum.js"></script>
+<!--<script src="js/objects/thread.js"></script> TODO-->
+<!--<script src="js/objects/post.js"></script> TODO-->
+
+<script src="js/modal.js"></script>
+<script src="js/search.js"></script>

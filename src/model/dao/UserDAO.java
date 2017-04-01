@@ -13,7 +13,7 @@ import model.User;
 import model.dao.util.Connector;
 import model.dao.util.QueryBuilder;
 
-public class UserDAO
+public class UserDAO 
 {
 	private String fixOrderBy(String orderBy, int role)
 	{
@@ -203,15 +203,15 @@ public class UserDAO
 		return list;
 	}
 	
-	public User findById(int id, int role)
-	{
-		try (Connection conn = Connector.get(); PreparedStatement stmt = conn.prepareStatement("SELECT * FROM USER WHERE id=? AND deleted <= ?;");)
-		{
+	public User findById(int id, int role) {
+		try (Connection conn = Connector.get(); PreparedStatement stmt = conn.prepareStatement(
+				"SELECT * FROM USER WHERE id=? AND deleted <= ?;");) {
 			stmt.setObject(1, id);
 			stmt.setObject(2, role == User.Role.ADMIN);
 			return processOne(stmt);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		catch (Exception e) {e.printStackTrace();}
 		return null;
 	}
 	

@@ -6,14 +6,45 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 var G = {
+
+	clone : function(obj) {
+		return $.extend(true, {}, obj);
+	}, 
+		
+	addPage : function(page) {
+		$('#pages').append(page);
+	},
 	
+	removePage : function(pageName) {
+		$('#pages').children(`#${page}Page`).remove();
+	},
+		
+	// Shows a 'loading' gif in the middle of the screen
+	loading : function(isLoading) {
+		if (this._loading === undefined) this._loading = 0;
+		if (isLoading)
+			this._loading += 1;
+		else
+			this._loading -= 1;
+		
+		var modal = Modal.byName('loading');
+		if (!modal && this._loading > 0) {
+			modal = Modal.create('loading', 'small');
+			$(modal.title).html('Loading...');
+			modal.display();
+		} else if (modal && this._loading <= 0) {
+			modal.destroy();
+		}
+	},
+	
+	// Checks an id value against null, undefined and greater than 0
 	isProperId : function(val) {
 		val = parseInt(val, 10);
 		return (val !== undefined && val !== null && typeof val === 'number' && val > 0);
 	},
-		
+	
 	input : {
-			
+		// Maps all form fields into properties of their name
 		loadFields : function(selector) {
 			const data = {};
 			$(selector).children('input, select').each(function () {
@@ -22,20 +53,19 @@ var G = {
 			return data;
 		},
 		
+		// Sets all form fields by passing an object that contains
+		// values mapped by their name
 		setFields : function(selector, data) {
 			$(selector).children('input, select').each(function () {
 				$(this).val(data[$(this).attr(`name`)]);
 			});
 			return data;
-		},
-			
+		},	
 	},
 	
-
-		
 	// Goes to the location
-	href : function(href) {
-		window.location.href(url);
+	href : function(url) {
+		window.location.href = url;
 	},
 	
 	// Redirects to the location
@@ -43,10 +73,9 @@ var G = {
 		window.location.replace(url);
 	},
 	
-	
-	_loadedScripts : {},
-	
+	// Dynamically loads a javascript file, then calls a callback function
 	loadScript : function (url, callback) {
+		if (!this._loadedScripts) this._loadedScripts = {};
 		if (this._loadedScripts[url]) {
 			callback();
 		} else {
@@ -60,7 +89,8 @@ var G = {
 		}
 	},
 	
-	// Creates an object with a specified prototype, and sets its data
+	// Creates an object with a specified prototype, and sets its data property
+	// to the passed object (objData)
 	create : function(protoObject, objData) {
 		var obj = Object.create(protoObject);
 		obj.xtra = {};
@@ -81,7 +111,8 @@ var G = {
 		return obj;
 	},
 	
-	createMany : function(protoObject, aryData, doCopy) {
+	// Same as above, just works with an array as well as with a single object
+	createMany : function(protoObject, aryData) {
 		var retVal;
 		if (Array.isArray(aryData)) {
 			retVal = [];
@@ -102,33 +133,13 @@ var G = {
 				object[prop] = data[prop];
 			}
 		}
+		return object;
 	},
-	
-	// Converts a collection of raw data objects to a proper JSON object with methods and other functionalities
-	// Mutates an array, does not return a new one!
-	convertRawObjects : function (ary, protoObject) {
-		for (i=0; i<ary.length; i++) {
-			ary[i] = G.create(protoObject, ary[i]);
-		}
-	},
-	
-	// Gets a specified object by id
-	dbGetById : function(url, id, callback) {
-		$.ajax ({
-			url     :   url,
-			method  :   "get",
-			data    :   {id:id},
-			success : function(data) {
-				callback(JSON.parse(data));
-			}
-		});
-	},
-	
-	_paramProtected : {},
 	
 	// Makes it so that the parameter can only be directly changed, not through deletion
-	protectParam : function(prop) {
-		this._paramProtected[prop] = true;
+	protectParam : function(prop, doProtect=true) {
+		if (this._paramProtected === undefined) this._paramProtected = {};
+		this._paramProtected[prop] = doProtect;
 	},
 	
 	restrictParams : function(allowed=[]) {
@@ -213,6 +224,7 @@ var G = {
 	dbGet : function(args, callback) {
 		var params = {};
 
+		G.loading(true);
 		
 		if (typeof args.data === 'function') {
 			params.data = args.data();
@@ -226,6 +238,7 @@ var G = {
 		params.url = args.url;
 		params.method = "get";
 		params.success = function(data) {
+			
 			data = JSON.parse(data);
 			
 			if (!data) {
@@ -250,7 +263,8 @@ var G = {
 				}
 				
 			}
-
+			
+			G.loading(false);
 			callback(data);
 		};
 		
@@ -275,15 +289,9 @@ var G = {
 	},
 	
 	goHome : function() {
-		window.location.href="forum.jsp?id=1";
+		this.href("forum.jsp?id=1");
 	},
-	
-	// Hides objects identified by the obj string in JQuery
-	hide :function(obj, doHide) {
-		if (doHide) $(obj).addClass("hidden");
-		else $(obj).removeClass("hidden");
-	},
-	
+
 	// Shows a message in a msg field with a specific name
 	_msgRegistered : false,
 	
@@ -367,7 +375,6 @@ var G = {
 		
 	},
 
-	
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	// Button binding
 	//////////////////////////////////////////////////////////////////////////////////////////////
@@ -416,49 +423,3 @@ var G = {
 // Additional functionalities for base object types in Javascript
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-(function() {
-
-	Array.prototype.supplant = function(o) {
-		return this.flatten().join("").supplant(o);
-	};
-	
-	// Shortens a string, adding "..." at the end if it needs to be shortened
-	if (!String.prototype.shorten) {
-		String.prototype.shorten = function (maxLength) {
-			if (!maxLength || this.length + 3 <= maxLength)
-				return this.valueOf();
-			else
-				return this.substring(0, maxLength) + "...";
-		};
-	}
-	
-	Array.prototype.flatten = function () {
-	    var ret = [];
-	    for(var i = 0; i < this.length; i++) {
-	        if(Array.isArray(this[i])) {
-	            ret = ret.concat(this[i].flatten());
-	        } else {
-	            ret.push(this[i]);
-	        }
-	    }
-	    return ret;
-	};
-	
-	if (!String.prototype.supplant) {
-	    String.prototype.supplant = function (o) {
-	        return this.replace(
-	            /\{([^{}]*)\}/g,
-	            function (a, b) {
-	            	var r;
-	            	if (typeof o[b] === 'function') {
-	            		r = o[b]();
-	            	} else {
-	            		r =  o[b];
-	            	}
-	                return typeof r === 'string' || typeof r === 'number' ? r : a;
-	            }
-	        );
-	    };
-	}
-
-}) ();

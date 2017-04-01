@@ -12,7 +12,7 @@ import model.User;
 import model.dao.util.Connector;
 import model.dao.util.QueryBuilder;
 
-public class PostDAO
+public class PostDAO 
 {
 	private String fixOrderBy(String orderBy, int role)
 	{
@@ -232,4 +232,5 @@ public class PostDAO
 		}
 		return true;
 	}
+
 }

@@ -1,1 +1,4 @@
-<footer style="color:white;" align="center">Forum system powered by <a style="color:white;" href="http://tomcat.apache.org/">Apache Tomcat® v6.0</a></footer>
+<footer
+	style="color:white;" align="center">Forum system powered by <a style="color:white;"
+	href="http://tomcat.apache.org/">Apache Tomcat® v6.0</a>
+</footer>

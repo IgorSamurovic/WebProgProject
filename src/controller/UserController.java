@@ -18,30 +18,22 @@ import views.Views;
 public class UserController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
-	{
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     	User current = Cookies.getUser(request);
-    	ParamProcessor pp = new ParamProcessor(request);
+		ParamProcessor pp = new ParamProcessor(request);
 		
-    	// Let's check for singular search
-    	Integer id = pp.integer("id");
-		if (id != null)
-		{
+		Integer id = pp.integer("id");
+		if (id != null) {
 			User result = new UserDAO().findById(id, current.getRole());
 			if (result != null)
-				if (current.getId().equals(id))
-				{
+				if (current.getId() == id) {
 					Responder.out(response, result, Views.getPersonal(current));
-				}
-				else
-				{
+				} else {
 					Responder.out(response, result, Views.forUser(current));
+				} else {
+					Responder.out(response, "notFound");
 				}
-				
-			else response.sendError(404, "User not found.");
-		}
-		else
-		{
+		} else {
 			ArrayList<Object> results = new UserDAO().filter(pp, current.getRole());
 			Responder.out(response, results, Views.forUser(current));
 		}
@@ -76,9 +68,9 @@ public class UserController extends HttpServlet {
     	return null;
     }
     
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
-	{
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		ParamProcessor pp = new ParamProcessor(request);
+		User current = Cookies.getUser(request);
 		
 		Integer id = pp.integer("id");
 		String username = pp.string("username");
@@ -89,14 +81,11 @@ public class UserController extends HttpServlet {
 		Integer role = pp.integer("role");
 		Boolean banned = pp.bool("banned");
 		Boolean deleted = pp.bool("deleted");
+		
 		String reqType = pp.string("reqType");
 		
-		User current = Cookies.getUser(request);
-		
-		if (reqType.equals("register"))
-		{
-			if (current.isGuest())
-			{
+		if (reqType.equals("register")) {
+			if (current.isGuest()) {
 				User entry = new User();
 				entry.setUsername(username);
 				entry.setEmail(email);
@@ -107,30 +96,22 @@ public class UserController extends HttpServlet {
 				
 				String unique = new UserDAO().checkUnique(entry);
 				
-				if (unique == null)
-				{
+				if (unique == null) {
 					String problems = getProblems(entry);
-					if (problems == null)
-					{
+					if (problems == null) {
 						new UserDAO().insert(entry);
 						response.getWriter().print(new UserDAO().findByUsername(username).getId());
-					}
-					else
-					{
+					} else {
 						response.getWriter().print("error");
 					}
-				}
-				else
-				{
+				} else {
 					response.getWriter().print("error");
 				}
 			}
 		}
 		
-		else if (reqType.equals("insert"))
-		{
-			if (current.getRole() >= 2)
-			{
+		else if (reqType.equals("insert")) {
+			if (current.getRole() >= 2) {
 				User entry = new User();
 				entry.setUsername(username);
 				entry.setEmail(email);
@@ -139,32 +120,23 @@ public class UserController extends HttpServlet {
 				entry.setPassword("password");
 				String problems = getProblems(entry);
 				
-				if (problems == null)
-				{
+				if (problems == null) {
 					new UserDAO().insert(entry);
 					response.getWriter().print("User " + username + "successfully created!");
-				}
-				else
-				{
+				} else {
 					response.getWriter().print(problems);
 				}
-			}
-			else
-			{
+			} else {
 				response.sendError(401);
 			}
-			
 		}
 		
-		else if (reqType.equals("update"))
-		{
-			if (id != null && current.getId() != null && (id.equals(current.getId()) || current.getRole() >= User.Role.ADMIN))
-			{
+		else if (reqType.equals("update")) {
+			if (id != null && current.getId() != null && (id.equals(current.getId()) || current.getRole() >= User.Role.ADMIN)) {
 				User entry = new UserDAO().findById(id, current.getRole());
 				User emailCheck = null;
 				
-				if (email != null)
-				{
+				if (email != null) {
 					entry.setEmail(email);
 					emailCheck = new UserDAO().findByEmail(email);
 				}
@@ -172,29 +144,20 @@ public class UserController extends HttpServlet {
 				entry.setName(name);	
 				entry.setSurname(surname);
 				
-				if (id == current.getId())
-				{
+				if (id == current.getId()) {
 					if (password != null) entry.setPassword(password);
 				}
 				
-				if (current.getRole() >= User.Role.ADMIN)
-				{
+				if (current.getRole() >= User.Role.ADMIN) {
 					if (role != null) entry.setRole(role);
 				}
 				
-				if (emailCheck == null || emailCheck.getId().equals(entry.getId()))
-				{
+				if (emailCheck == null || emailCheck.getId().equals(entry.getId())) {
 					new UserDAO().update(entry);
-				}
-				else
-				{
+				} else {
 					response.getWriter().print("email");
 				}
-					
-
-			}
-			else
-			{
+			} else {
 				response.sendError(401);
 			}
 		} 

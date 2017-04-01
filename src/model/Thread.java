@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Thread
+public class Thread implements DataObject
 {
 	private Integer id;
 	private String title;

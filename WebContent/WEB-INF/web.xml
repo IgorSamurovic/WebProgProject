@@ -4,15 +4,6 @@
   <welcome-file-list>
     <welcome-file>forum.jsp</welcome-file>
   </welcome-file-list>
-  <security-constraint>
-    <web-resource-collection>
-      <web-resource-name>securedapp</web-resource-name>
-      <url-pattern>/*</url-pattern>
-    </web-resource-collection>
-    <user-data-constraint>
-      <transport-guarantee>CONFIDENTIAL</transport-guarantee>
-    </user-data-constraint>
-  </security-constraint>
   
   <!-- Filters START -->
   
@@ -120,11 +111,13 @@
     <servlet-name>SessionController</servlet-name>
     <servlet-class>controller.SessionController</servlet-class>
   </servlet>
+  
   <servlet-mapping>
     <servlet-name>SessionController</servlet-name>
     <url-pattern>/session</url-pattern>
   </servlet-mapping>
   <session-config/>
+  
   <servlet>
     <description></description>
     <display-name>AvatarController</display-name>
@@ -136,4 +129,3 @@
     <url-pattern>/avatar</url-pattern>
   </servlet-mapping>
 </web-app>
-

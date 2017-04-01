@@ -1,0 +1,88 @@
+
+<div class="page">
+	<div class="pageheader">Search
+		<button id="toggleSearchHidden" name="toggleBtn" class="small btn right">_</button>
+	</div>
+	<%  String loadSearch  = (request.getQueryString() != null) ? "hidden" : ""; %>
+	<div id="searchPage" class="pagecontent <%=loadSearch%>"> 
+		<form id="inputForm">
+			<div class="inputRow">
+			<input class="half" name="username" type='text' id = "inputUsername" placeholder="Username" pattern = "[a-zA-Z0-9_]{3,20}" maxlength=20/>
+			<div class="stdSpacer"></div>
+			<select class="half" name="role" id="inputRole">
+				<option value="null">Any role</option>
+				<option value="1">User</option>
+				<option value="2">Moderator</option>
+				<option value="3">Administrator</option>
+			</select>
+			</div>
+			<%@ page import="model.User" %>
+			<% if (util.Cookies.getUser(request).getRole() >= User.Role.ADMIN) {%>
+			<input class="wide" name="text" type='text' id = "inputEmail" placeholder="Email" maxlength=60/><% } %>
+			<input class="wide" name="name" type='text' id = "inputName" placeholder="Name" maxlength=40/>
+			<input class="wide" name="surname" type='text' id = "inputSurname" placeholder="Surname" maxlength=40/> 
+
+			<div class="inputRow">
+				<div class="wide">
+					<div class="boldText wide">Registered after:</div>
+					<input class="wide" type="datetime-local" name="dateA" id="inputDateA">
+				</div>
+				<div class="stdSpacer"></div>
+				<div class="wide">
+					<div class="boldText wide">Registered before:</div>
+					<input class="wide" type="datetime-local" name="dateB" id="inputDateB">
+				</div>
+			</div>
+
+			
+			<%  User currentUser = util.Cookies.getUser(request); %>
+
+			<% if (currentUser.getRole() >= User.Role.ADMIN) {%>
+			<div class="inputRow">
+				<select class="wide" id="inputIncludeBanned">
+					<option value="true">Include banned</option>
+					<option value="false">Exclude banned</option>
+				</select>
+				<div class="stdSpacer"></div>
+				<select class="wide" id="inputIncludeDeleted">
+					<option value="true">Include deleted</option>
+					<option selected value="false">Exclude deleted</option>
+				</select>
+			</div>
+			<% } %>
+			
+			<div class="boldText">Order by:</div>
+			<div class="inputRow">
+				<select class="half" id="inputOrderBy">
+					<option value="username">Username</option>
+					<option value="email">Email</option>
+					<option value="date">Date</option>
+					<option value="name">Name</option>
+					<option value="surname">Surname</option>
+					<option value="role">Role</option>
+					<% if (currentUser.getRole() >= User.Role.ADMIN) {%>
+					<option value="banned">Banned status</option>
+					<option value="deleted">Deleted status</option><% } %>
+				</select>
+				<div class="stdSpacer"></div>
+				<select class="half" id="inputAsc">
+					<option value="ASC">Ascending</option>
+					<option value="DESC">Descending</option>
+				</select>
+				<div class="stdSpacer"></div>
+				<select class="half" id="inputPerPage">
+					<option value=1>1 per page</option>
+					<option value=5>5 per page</option>
+					<option selected value=10>10 per page</option>
+					<option value=20>20 per page</option>
+					<option value=50>50 per page</option>
+				</select>
+				
+			</div>
+		
+			<div class="hidden msg" id="msg"></div>
+			
+			<input class="big wide btn2 center" type="submit" value="Search"/>
+		</form>
+	</div>
+</div>

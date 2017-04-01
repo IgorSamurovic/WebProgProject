@@ -23,8 +23,21 @@ H = {
 					<div class="pagetitle" id="${name}PageTitle">${title}</div>
 					${headerButtons.join("")}
 				</div>
+				${args.tabs ? H.tabs(args.tabs) : ""}
 				<div class="${hiddenContent ? "hidden" : ""} pagecontent" id="${name}PageContent"></div>
 			</div>`;
+	},
+	
+	tabs : function(ary) {
+		var allTabs = [];
+		for (var i = 0; i < ary.length; i++) {
+			allTabs.push(`<button class="tab small btn">${ary[i]}</button>`);
+		}
+		allTabs = allTabs.join("");
+		
+		return `<div class="tabs">
+					${allTabs}
+				</div>`;
 	},
 		
 	pageHideBtn : function() {
@@ -51,7 +64,7 @@ H = {
 	},
 	
 	stdSpacer : function() {
-		return '<div class="stdSpacer"></div>';
+		return `<div class="stdSpacer"></div>`;
 	},
 	
 	msg : function(name) {
@@ -114,9 +127,9 @@ H = {
 		}, 
 		
 		orderBy : function(cls=this.defaultClass, name="orderBy", options=[]) {
-			var currentUser = Users.getCurrentUser();
+			var currentUser = User.getCurrentUser();
 			for (var i=0; i<options.length; i++) {
-				if (!options[i].startsWith('!') || currentUser.data.role >= Users.roles.admin) {
+				if (!options[i].startsWith('!') || currentUser.data.role >= User.roles.admin) {
 					options[i] = '<option value="{val}">{val}</option>'.supplant({val:options[i].replace('!', '')});
 				}
 			}
@@ -171,7 +184,7 @@ H = {
 		}
 		
 		s.push('</dl>');
-		return s;
+		return s.join("");
 	},
 		
 		
@@ -195,7 +208,7 @@ H = {
 		
 		$(document).on('click', "[name=pageExitBtn]", function(event) {
 			event.preventDefault();
-			const modal = $(this).closest(".modal").data('modal');
+			const modal = $(this).closest(".modal").data('modalObject');
 			if (modal) modal.destroy();
 			$(this).closest(".page").remove();
 		});	

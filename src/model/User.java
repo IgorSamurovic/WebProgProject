@@ -9,15 +9,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 import views.Views;
 
 
-public class User
+public class User implements DataObject
 {
-	
-	@Override
-	public String toString() {
-		return "User [id=" + id + ", username=" + username + ", password=" + password + ", name=" + name + ", surname="
-				+ surname + ", email=" + email + ", date=" + date + ", role=" + role + ", banned=" + banned
-				+ ", deleted=" + deleted + "]";
-	}
 
 	public static class Role
 	{

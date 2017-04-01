@@ -7,13 +7,13 @@
 <title>Logout</title>
 </head>
 <body>
-<script src="/site/js/jquery.js"></script>
+<script src="js/jquery/jquery.js"></script>
 <script>
 	$.ajax({
 	    url: "session",
 	    type: 'DELETE',
 	    success: function(data) {
-	    	window.location.replace("/site/forum.jsp");
+	    	window.location.replace("forum.jsp");
 	    }
 	});
 </script>

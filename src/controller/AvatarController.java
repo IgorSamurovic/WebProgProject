@@ -30,7 +30,7 @@ public class AvatarController extends HttpServlet {
 
 	private String getAvatarPath(String id)
 	{
-		return "F:\\avatars\\" + id + ".jpg";
+		return "X:\\dev\\web\\avatars\\" + id + ".jpg";
 	}
 	
 	private static final int MAX_WIDTH = 120;

@@ -1,50 +1,29 @@
-User = {
+User = Object.assign(Object.create(DataObj), {
 
 	render : function(user) {
-		
-		var currentUser = Users.getCurrent();
-		var isAdmin = currentUser.data.role >= Users.roles.admin; 
+		var currentUser = User.getCurrent();
+		var isAdmin = currentUser.isAdmin();
 		var isGod = user.isGod();
 		var isOwner = currentUser.data.id == user.data.id; 
-		
-		// Let's make buttons first!
-		var buttons = ['<div class="buttons">'];
-		
-		// Delete button
-		if (isAdmin && user.data.id != 1) {
-			buttons.push(H.toggleBtn(['Delete', 'Undelete'], 'userDeleteBtn', 'small btn', !user.data.deleted));
-		}
-		
-		// Edit button
-		if (isAdmin || isOwner) {
-			buttons.push(H.btn('Edit', 'userEditBtn', "small btn2"));
-		}
-		
-		// Ban button
-		if (isAdmin && user.data.id != 1 && !isOwner) {
-			buttons.push(H.toggleBtn(['Ban', 'Unban'], 'userBanBtn', 'small btn', !user.data.banned));
-		}
-		
-		// Close buttons!
-		buttons.push('</div>');
-		
-		// Now render the rest of it!
-		var s = [];
 		
 		var dlFields = ['Username', 'Role', 'Date', 'Name'];
 		if (isAdmin || (user.data.email && isOwner)) dlFields.push('Email');
 		if (isAdmin) dlFields.push('Banned', 'Deleted');
 		
+		var s = `<div class="userProfile">
+				<div class="useravatar">{avatar}</div>
+				${H.dl(dlFields)}
+	           
+				<div class="buttons">
+					${(isAdmin && !isGod && !isOwner) ?
+						H.toggleBtn(['Delete', 'Undelete'], 'userDeleteBtn', 'small btn', !user.data.deleted) : ""}
+					${(isAdmin || isOwner) ?
+						H.btn('Edit', 'userEditBtn', "small btn2") : ""}
+					${(isAdmin && !isGod && !isOwner) ?
+						H.toggleBtn(['Ban', 'Unban'], 'userBanBtn', 'small btn', !user.data.banned) : ""}
+			 	</div>;
 
-		s.push([
-			'<div class="userProfile">',
-				'<div class="useravatar">{avatar}</div>',
-				H.dl(dlFields),
-	            buttons,
-	         '</div>'
-        ]);
-		
-		s = s.supplant({
+	         </div>`.supplant({
 			avatar     :  user.renderAvatarLink(),
 			Username   :  user.renderUsername(),
 			Role       :  user.renderRole(),
@@ -55,6 +34,30 @@ User = {
 			Deleted    :  user.renderDeleted()
 		});
 		
+		// Add button events
+		
+		if (this._renderInit === undefined) {
+			$(document).on('click', '[name="userDeleteBtn"]', function(button) {
+				var that = this;
+				Search.getObject(this).del($(that).data("val"), function() {
+					Search.getSearch(that).loadResults();
+				});
+			});
+			
+			$(document).on('click', '[name="userBanBtn"]', function(button) {
+				var that = this;
+				Search.getObject(this).ban($(that).data("val"), function() {
+					Search.getSearch(that).loadResults();
+				});
+			});
+			
+			$(document).on('click', '[name="userEditBtn"]', function(button) {
+				Search.getObject(this).openEditWindow();
+			});
+			
+			this._renderInit = true;
+		}
+
 		return s;
 	},
 		
@@ -122,7 +125,7 @@ User = {
 	},
 	
 	generateEdit : function(target, user=this) {
-		const modal = $(target).closest('.modal').data('modal');
+		const modal = $(target).closest('.modal').data('modalObject');
 		const name = `editUser`;
 		const form = `#${name}Form`;
 		
@@ -158,7 +161,9 @@ User = {
 				data    : data,
 				success : function(error) {
 					if (!error) {
-						modal.destroy();
+						if (modal) {
+							modal.destroy();
+						}
 						Page.render();
 					} else {
 						G.msg('editUser', error, false);
@@ -266,26 +271,9 @@ User = {
 	},
 
 	renderBanned: function() {
-		return (this.data.banned === true || this.data.banned === 1) ? "Yes" : "No";
-	},
-
-	renderDeleted: function() {
-		return (this.data.deleted === true || this.data.deleted === 1) ? "Yes" : "No";
-	}
-	
-};
-
-Users = {
-		
-	_guestRawData : {
-		id: -1, 
-		username: "Guest",
-		banned: false,
-		deleted: false,
-		role: 0
+		return this.renderYesNo('banned');
 	},
 	
-	// Sets a value for every role
 	roles : {
 		guest: 0,
 		user : 1,
@@ -293,42 +281,41 @@ Users = {
 		admin: 3
 	},
 	
+	isAdmin : function() {return this.data.role === this.roles.admin},
+	isMod   : function() {return this.data.role === this.roles.mod},
+	isUser  : function() {return this.data.role === this.roles.user},
+	isGuest : function() {return this.data.role === this.roles.guest},
+	
 	getCurrent : function()  {
-		if (!Users._currentUser) {
+		// Create guest data if not available
+		if (this._guestRawData === undefined) {
+			this._guestRawData = {
+				id: -1, 
+				username: "Guest",
+				banned: false,
+				deleted: false,
+				role: 0
+			}
+		}
+		
+		if (this._currentUser === undefined) {
 			// First get raw user data
 			var userRawData = JSON.parse(JSON.parse(G.cookie.get("user")));
-			if (userRawData.deleted) {
-				G.setCookie("user", null);
-			}
-	    	if (userRawData === null) {
-	    		Users._currentUser = G.create(User, _guestRawData, true);
+
+	    	if (!userRawData) {
+	    		this._currentUser = G.create(this, this._guestRawData, true);
 	    	}
 	    	else {
-	    		Users._currentUser = G.create(User, userRawData, true);
+				if (!userRawData && userRawData.deleted) {
+					G.setCookie("user", null);
+					this._currentUser = G.create(this, this._guestRawData, true);
+				} else {
+					this._currentUser = G.create(this, userRawData, true);
+				}
 	    	}
 		}
-		return Users._currentUser;
+		return this._currentUser;
 	},
-	
-};
 
-$(document).ready(function() {
 	
-	$(document).on('click', '[name="userDeleteBtn"]', function(button) {
-		var that = this;
-		Search.getObject(this).del($(that).data("val"), function() {
-			Search.getSearch(that).loadResults();
-		});
-	});
-	
-	$(document).on('click', '[name="userBanBtn"]', function(button) {
-		var that = this;
-		Search.getObject(this).ban($(that).data("val"), function() {
-			Search.getSearch(that).loadResults();
-		});
-	});
-	
-	$(document).on('click', '[name="userEditBtn"]', function(button) {
-		Search.getObject(this).openEditWindow();
-	});
 });

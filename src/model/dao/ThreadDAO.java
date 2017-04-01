@@ -7,6 +7,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 
 import model.Thread;
+import model.User;
 import model.dao.util.Connector;
 import model.dao.util.QueryBuilder;
 
@@ -58,29 +59,30 @@ public class ThreadDAO
 	
 	public ArrayList<Thread> filter(String title, Integer forum, Integer owner, Timestamp dateA, Timestamp dateB, Boolean includeLocked, Boolean includeDeleted, String orderBy, String asc)
 	{
-		QueryBuilder q = new QueryBuilder("SELECT * FROM THREAD");
+		QueryBuilder q = new QueryBuilder();
 		
-		q.add(title, "title LIKE ?");
-		q.add(forum, "forum = ?");
-		q.add(owner, "owner LIKE ?");
-		q.add(dateA, "dateA <= ?");
-		q.add(dateB, "dateB >= ?");
-		q.add(includeLocked, "locked <= ?");
-		q.add(includeDeleted, "deleted <= ?");
-		q.orderBy("sticky", "ASC");
-		q.orderBy(orderBy, asc);
+		q.and(title, "title LIKE ?")
+		.and(forum, "forum = ?")
+		.and(owner, "owner LIKE ?")
+		.and(dateA, "dateA <= ?")
+		.and(dateB, "dateB >= ?")
+		.and(includeLocked, "locked <= ?")
+		.and(includeDeleted, "deleted <= ?")
+		.orderBy("sticky", "ASC")
+		.orderBy(orderBy, asc);
 
 		return processMany(q);
 	}
 	
-	public Thread findById(int id)
-	{
-		try (Connection conn = Connector.get(); PreparedStatement stmt = conn.prepareStatement("SELECT * FROM THREAD WHERE id=?;");)
-		{
+	public Thread findById(int id, int role) {
+		try (Connection conn = Connector.get(); PreparedStatement stmt = conn.prepareStatement(
+				"SELECT * FROM THREAD WHERE id=? AND deleted <= ?;");) {
 			stmt.setObject(1, id);
+			stmt.setObject(2, role == User.Role.ADMIN);
 			return processOne(stmt);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		catch (Exception e) {e.printStackTrace();}
 		return null;
 	}
 	

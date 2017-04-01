@@ -1,6 +1,5 @@
 Modal = {
-	_modals : {},
-	
+		
 	getPage : function(name, cls) {
 		name = name + 'Modal';
 		return `
@@ -17,7 +16,7 @@ Modal = {
 	},
 	
 	byName : function(name) {
-		return this._modals[name];
+		return $(`#${name}Modal.modal`).data('modalObject');
 	},
 	
 	display : function(doDisplay=true) {
@@ -43,16 +42,13 @@ Modal = {
 		$('body').append(modal.getPage(name, cls));
 		
 		// Add the modal object to fields that can receive html
-		$(modal.container).data(`modal`, modal);
+		$(modal.container).data(`modalObject`, modal);
 		
-		// Register it
-		this._modals[name] = modal;
 		return modal;
 	},
 	
 	destroy : function() {
 		$(this.container).remove();
-		delete this._modals[this.name];
 	}
 	
 };

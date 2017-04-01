@@ -1,7 +1,6 @@
 package controller;
 
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 
 import javax.servlet.ServletException;
@@ -14,7 +13,6 @@ import controller.util.Responder;
 import model.Forum;
 import model.User;
 import model.dao.ForumDAO;
-import model.dao.UserDAO;
 import util.Cookies;
 import views.Views;
 
@@ -28,25 +26,18 @@ public class ForumController extends HttpServlet {
     	User current = Cookies.getUser(request);
     	ParamProcessor pp = new ParamProcessor(request);
 		
-    	// Let's check for singular search
     	Integer id = pp.integer("id");
-		if (id != null)
-		{
-			Forum result = new ForumDAO().findById(id);
+		if (id != null) {
+			Forum result = new ForumDAO().findById(id, current.getRole());
 			if (result != null)
-				if (current.getId() == id)
-				{
+				if (current.getId() == id) {
 					Responder.out(response, result, Views.getPersonal(current));
-				}
-				else
-				{
+				} else {
 					Responder.out(response, result, Views.forUser(current));
+				} else {
+					Responder.out(response, "notFound");
 				}
-				
-			else response.sendError(404, "Forum not found.");
-		}
-		else
-		{
+		} else {
 			ArrayList<Object> results = new ForumDAO().filter(pp, current.getRole());
 			Responder.out(response, results, Views.forUser(current));
 		}
@@ -57,6 +48,7 @@ public class ForumController extends HttpServlet {
 		
 		// First initialize variables
 		ParamProcessor pp = new ParamProcessor(request);
+		User current = Cookies.getUser(request);
 		
 		Integer id = pp.integer("id");
 		String title = pp.string("title");
@@ -68,14 +60,12 @@ public class ForumController extends HttpServlet {
 		Boolean deleted = pp.bool("deleted");
 		String reqType = pp.string("reqType");
 		
-		User current = Cookies.getUser(request);
-		
 		// Done
 		
 		if (reqType.equals("update")) {
 			
 			if (id != null && current.isAdmin()) {
-				Forum entry = new ForumDAO().findById(id);
+				Forum entry = new ForumDAO().findById(id, current.getRole());
 				
 					new ForumDAO().update(entry);
 			}
@@ -83,7 +73,7 @@ public class ForumController extends HttpServlet {
 		
 		if (reqType.equals("lock")) {
 			if (id != null && current.isAdmin()) {
-				Forum entry = new ForumDAO().findById(id);
+				Forum entry = new ForumDAO().findById(id, current.getRole());
 				if (locked != null) {
 					entry.setLocked(locked);
 					new ForumDAO().lock(entry, locked);
@@ -93,7 +83,7 @@ public class ForumController extends HttpServlet {
 		
 		if (reqType.equals("delete")) {
 			if (id != null && current.isAdmin()) {
-				Forum entry = new ForumDAO().findById(id);
+				Forum entry = new ForumDAO().findById(id, current.getRole());
 				if (deleted != null) {
 					new ForumDAO().softDelete(entry, (boolean) deleted);
 				}

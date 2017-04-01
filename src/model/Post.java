@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Post
+public class Post implements DataObject
 {
 	private Integer id;
 	private String text;

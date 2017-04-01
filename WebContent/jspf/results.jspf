@@ -1,9 +1,0 @@
-	<%  String loadResults = (request.getQueryString() != null) ? "" : "hidden"; %>
-	<div id="resultsContainer" class="pageborder <%=loadResults%>">
-		<div class="page">
-			<div class="pageheader">Results
-				<button id="toggleResultsHidden" name="toggleBtn" class="small btn right">_</button>
-			</div>
-			<div id="userSearchResultsPage" class="pagecontent"></div>
-		</div>
-	</div>

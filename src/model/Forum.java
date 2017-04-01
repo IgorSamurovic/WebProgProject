@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import model.dao.ForumDAO;
 import model.dao.UserDAO;
 
-public class Forum
+public class Forum implements DataObject
 {
 	private Integer id;
 	private String title;
@@ -82,12 +82,11 @@ public class Forum
 	}
 
 	@JsonProperty("_parentTitle")
-	public String getParentTitle()
-	{
+	public String getParentTitle() {
 		if (this.parent == null || this.parent == 0) {
-			return "Site";
+			return "Forum";
 		} else {
-			return new ForumDAO().findById(this.parent).getTitle();
+			return new ForumDAO().findById(this.parent, User.Role.ADMIN).getTitle();
 		}
 	}
 	
