@@ -24,7 +24,7 @@ public class UserController extends HttpServlet {
 		
 		Integer id = pp.integer("id");
 		if (id != null) {
-			User result = new UserDAO().findById(id, current.getRole());
+			User result = new UserDAO().findById(id, current);
 			if (result != null)
 				if (current.getId() == id) {
 					Responder.out(response, result, Views.getPersonal(current));
@@ -34,7 +34,7 @@ public class UserController extends HttpServlet {
 					Responder.out(response, "notFound");
 				}
 		} else {
-			ArrayList<Object> results = new UserDAO().filter(pp, current.getRole());
+			ArrayList<Object> results = new UserDAO().filter(pp, current);
 			Responder.out(response, results, Views.forUser(current));
 		}
 	}
@@ -43,26 +43,23 @@ public class UserController extends HttpServlet {
     private String getProblems(User entry)
     {
     	// Just for the record, a return value of null means everything is fine
-    	try
-    	{
+    	try {
         	if (!entry.getUsername().matches("[a-zA-Z0-9_]{3,20}"))
-        		return "Username can only contain between 3 and 20 alphanumeric characters.";
+        		return "username";//"Username can only contain between 3 and 20 alphanumeric characters.";
         	
         	if (!entry.getPassword().matches(".{6,20}"))
-        		return "Password must be between 6 and 20 characters long.";
+        		return "password";//"Password must be between 6 and 20 characters long.";
         	
         	if (!entry.getEmail().matches(".*@.*"))
-        		return "Email address needs to be written in the proper \"something@somewhere\" format and have a maximum of 60 characters.";
+        		return "email";//"Email address needs to be written in the proper \"something@somewhere\" format and have a maximum of 60 characters.";
         	
         	if (entry.getName() != null && !entry.getName().matches(".{0,40}"))
-        		return "Maximum name length is 40 characters.";
+        		return "name";//"Maximum name length is 40 characters.";
     		
         	if (entry.getSurname() != null && !entry.getSurname().matches(".{0,40}"))
-        		return "Maximum surname length is 40 characters.";
-    	}
-    	catch (Exception e)
-    	{
-    		return "Please fill out all required (*) fields.";
+        		return "surname";//"Maximum surname length is 40 characters.";
+    	} catch (Exception e) {
+    		return "*";//"Please fill out all required (*) fields.";
     	}
 
     	return null;
@@ -100,7 +97,7 @@ public class UserController extends HttpServlet {
 					String problems = getProblems(entry);
 					if (problems == null) {
 						new UserDAO().insert(entry);
-						response.getWriter().print(new UserDAO().findByUsername(username).getId());
+						response.getWriter().print(new UserDAO().findByUsername(username, current).getId());
 					} else {
 						response.getWriter().print("error");
 					}
@@ -133,12 +130,12 @@ public class UserController extends HttpServlet {
 		
 		else if (reqType.equals("update")) {
 			if (id != null && current.getId() != null && (id.equals(current.getId()) || current.getRole() >= User.Role.ADMIN)) {
-				User entry = new UserDAO().findById(id, current.getRole());
+				User entry = new UserDAO().findById(id, current);
 				User emailCheck = null;
 				
 				if (email != null) {
 					entry.setEmail(email);
-					emailCheck = new UserDAO().findByEmail(email);
+					emailCheck = new UserDAO().findByEmail(email, current);
 				}
 				
 				entry.setName(name);	
@@ -166,7 +163,7 @@ public class UserController extends HttpServlet {
 		{
 			if (id != null && current.getId() != null && current.getRole() >= User.Role.ADMIN && banned != null)
 			{
-				User entry = new UserDAO().findById(id, current.getRole());
+				User entry = new UserDAO().findById(id, current);
 				entry.setBanned(banned);
 				
 				new UserDAO().update(entry);
@@ -189,7 +186,7 @@ public class UserController extends HttpServlet {
 			User toDelete = null;
 			
 			if (id != null)
-				toDelete = new UserDAO().findById(id, current.getRole());
+				toDelete = new UserDAO().findById(id, current);
 			
 			if (id != null && current.getId() != null && current.getRole() >= User.Role.ADMIN && deleted != null && toDelete != null)
 				if (current.getRole() >= User.Role.ADMIN)

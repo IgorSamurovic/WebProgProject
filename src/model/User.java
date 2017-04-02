@@ -101,6 +101,10 @@ public class User implements DataObject
 		this.deleted = false;
 	}
 
+	public int getPermissionLevel() {
+		return Role.getPermissionLevel(this.role);
+	}
+	
 	public Integer getId() {
 		return id;
 	}

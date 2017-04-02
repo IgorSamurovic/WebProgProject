@@ -71,8 +71,8 @@ Modals = {
 		const content = `
 			<div class='boldText'>${question}</div>
 			<div class='buttons'>
-				${H.btn('Yes', 'YesBtn', cls='big btn2', null)}
-				${H.btn('No ', 'NoBtn',  cls='big btn', null)}
+				${H.btn('Yes', 'YesBtn', cls='big', null)}
+				${H.btn('No ', 'NoBtn',  cls='big', null)}
 			</div>
 		`;
 		

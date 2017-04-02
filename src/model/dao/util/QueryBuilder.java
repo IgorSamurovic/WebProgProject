@@ -4,14 +4,19 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import controller.util.ParamProcessor;
 
 public class QueryBuilder
 {
-	//  /\$[^\s]+/g
+	private static final String PARAM_PATTERN_STRING = "\\$[^\\s]+";
+	private static final Pattern PARAM_PATTERN = Pattern.compile(PARAM_PATTERN_STRING);
+	
 	private String query;
 	private String start;
+	private String join;
 	
 	private ArrayList<Object> params;
 	private ArrayList<Boolean> inexact;
@@ -43,6 +48,7 @@ public class QueryBuilder
 		this.alreadySorting = false;
 		this.numRecords = 0;
 		this.pp = null;
+		this.join = "";
 	}
 	
 	public QueryBuilder(ParamProcessor pp) {
@@ -53,6 +59,12 @@ public class QueryBuilder
 	public QueryBuilder setStart(String start)
 	{
 		this.start = start;
+		return this;
+	}
+	
+	public QueryBuilder setJoin(String join)
+	{
+		this.join = join;
 		return this;
 	}
 	
@@ -70,57 +82,92 @@ public class QueryBuilder
 	
 	public String getQuery()
 	{
-		return this.start + " " + this.query;
+		return this.start + " " + this.join + " " + this.query;
 	}
 	
+	// Checks if a string has $something at the start, then returns the something value
+	// From the parameter processor
 	private String prep(String part) {
 		if (part != null && part.charAt(0) == '$' && this.pp != null) {
+			System.err.println("prep: " + part.substring(1, part.length()));
 			return this.pp.string(part.substring(1, part.length()));
 		}
 		return part;
 	}
 	
-	public QueryBuilder and(Object o, String part)
-	{
-		part = prep(part);
-		if (o != null)
-		{
+	// Goes through a string (like "id = $id") and replaces $id with ?
+	// Also adds $id values from parameter processor to the stack
+	private String processPart(String part) {
+
+		boolean proper = true;
+		System.err.println("PART!!!!!!!  " + part);
+		String tmp;
+		Matcher m = PARAM_PATTERN.matcher(part);
+		
+		while (m.find()) {
+			tmp = prep(m.group(0));
+			System.err.println("TMP!!!!!!!!  " + tmp);
+		    if (tmp == null) {
+		    	proper = false;
+		    } else {
+		    	if (part.contains("LIKE")) {
+		    		addParam(tmp, true);
+		    	} else {
+		    		addParam(tmp);
+		    	}
+		    }
+		}
+		
+		return proper ? part.replaceAll(PARAM_PATTERN_STRING, " ? ") : null;
+	}
+	
+	// "id = ?", id
+	public QueryBuilder and(String part, Object o) {
+		System.err.println("PART: " + part);
+		
+		part = processPart(part);
+		if (part != null && o != null) {
 			query += andString();
 			query += part;
 			addParam(o, part.toUpperCase().contains("LIKE"));
 			hasArgs = true;
 		}
-		
+		System.err.println();
 		return this;
 	}
 	
-	public QueryBuilder and(Object o, String part, String alternative)
-	{
-		part = prep(part);
-		alternative = prep(alternative);
-		if (o != null)
-		{
+	// "id = ?", "id = 0", id
+	public QueryBuilder and(String part, String alternative, Object o) {
+		if (o != null) {
+			part = processPart(part);
+			if (part != null) { 
+				query += andString();
+				query += part;
+				addParam(o, part.toUpperCase().contains("LIKE"));
+				hasArgs = true;
+			}
+		} else {
+			processPart(alternative);
+			if (alternative != null) { 
+				query += andString();
+				query += alternative;
+				hasArgs = true;
+			}
+		}
+		
+		return this;
+	}
+
+	// and("id = $id")
+	public QueryBuilder and(String part) {
+		part = processPart(part);
+		System.err.println("PART!FIXED!  " + part);
+		if (part != null) {
 			query += andString();
 			query += part;
-			addParam(o, part.toUpperCase().contains("LIKE"));
 			hasArgs = true;
 		}
-		else
-		{
-			query += andString();
-			query += alternative;
-			hasArgs = true;
-		}
-		
-		return this;
-	}
-	
-	public QueryBuilder and(String part)
-	{
-		part = prep(part);
-		query += andString();
-		query += part;
-		hasArgs = true;
+		System.err.println();
 		return this;
 	}
 	
@@ -169,9 +216,11 @@ public class QueryBuilder
 		if (orderBy == null) orderBy = "ID";
 		if (asc == null) asc = "TRUE";
 		
+		System.err.println("OrderBy = " + orderBy);
+		System.err.println("ASC     = " + asc);
 		
 		
-		if (orderBy != null && orderBy.matches("[A-Za-z]{1,20}")) {
+		if (orderBy != null) {
 			query += orderByString() + orderBy;
 			if (asc != null && !asc.equals("")) {
 				asc = asc.toUpperCase();
@@ -182,10 +231,11 @@ public class QueryBuilder
 					asc = "DESC";
 					query += " " + asc;
 				}
-			}	
+			}
+			this.alreadySorting = true;
 		}
-		this.alreadySorting = true;
-		return orderBy.toUpperCase().equals("ID") ? this : this.orderBy("ID", "TRUE");
+		
+		return this;
 	}
 	
 	static final int MAX_PER_PAGE = 50;
@@ -197,7 +247,7 @@ public class QueryBuilder
 		{
 			ResultSet rs = this.getResultSet();
 			if(rs.next()) {
-				this.numRecords = rs.getInt("COUNT(id)");
+				this.numRecords = rs.getInt("COUNT(obj.id)");
 				return numRecords;
 			}
 		}

@@ -14,18 +14,42 @@ public class ParamProcessor
 	private Map<String, String[]> map;
 	private static final Pattern INDEX_PATTERN = Pattern.compile("\\[(.*?)\\]");
 	
+	@SuppressWarnings("unchecked")
 	public ParamProcessor(HttpServletRequest request)
 	{
 		this.request = request;
-		this.map = request.getParameterMap();
+		this.map = new HashMap<String, String[]>();
+		map.putAll(request.getParameterMap());
+	}
+	
+	public void printDebug() {
 		for (String key : this.map.keySet()) {
-			//System.err.println(key + " : " + this.map.get(key)[0]);
+			System.err.println(key + " : " + this.map.get(key)[0]);
 		}
+		System.err.println();
+	}
+	
+	public void add(String key, String value) {
+		String[] ary = {value};
+		this.map.put(key, ary);
+	}
+	
+	public void remove(String key) {
+		this.map.remove(key);
+	}
+	
+	public String get(String key) {
+		String[] ary = this.map.get(key);
+		return (ary == null) ? null : ary[0];
+	}
+	
+	public Map<String, String[]> getMap() {
+		return this.map;
 	}
 	
 	public Boolean bool(String param)
 	{
-		String test = request.getParameter(param);
+		String test = get(param);
 		Boolean val = null;
 		
 		if (test != null && !test.equals("null") && !test.isEmpty())
@@ -37,28 +61,10 @@ public class ParamProcessor
 		return val;
 	}
 	
-	private int getIndex(String param) {
-		Matcher m = INDEX_PATTERN.matcher(param);
-		String matcher = "";
-		while (m.find()) {
-		    matcher = m.group(1);
-		}
-		try {
-			return (matcher == null || matcher.length() <= 0) ? 0 : Integer.valueOf(m.group(1));
-		} catch (Exception e) {
-			return 0;
-		}
-	}
-	
-	private String getTestString(String param) {
-		return this.map.get(param)[this.getIndex(param)];
-	}
-	
 	public String string(String param)
 	{
 		try {
-			//String test = request.getParameter(param);
-			String test = getTestString(param);
+			String test = get(param);
 			String val = null;
 			
 			if (test != null && !test.equals("null") && !test.isEmpty()) {
@@ -75,7 +81,7 @@ public class ParamProcessor
 	
 	public Timestamp time(String param)
 	{
-		String test = request.getParameter(param);
+		String test = get(param);
 		Timestamp val = null;
 		
 		if (test != null && !test.equals("null") && !test.isEmpty())
@@ -100,7 +106,7 @@ public class ParamProcessor
 	
 	public Integer integer(String param)
 	{
-		String test = request.getParameter(param);
+		String test = get(param);
 		Integer val = null;
 		
 		if (test != null && !test.equals("null") && !test.isEmpty())
@@ -113,10 +119,6 @@ public class ParamProcessor
 		}
 		
 		return val;
-	}
-
-	public Map<String, String[]> getMap() {
-		return this.map;
 	}
 	
 }

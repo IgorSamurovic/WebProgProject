@@ -1,6 +1,7 @@
 // Extends jQuery functionality a bit
 
 (function($) {
+	
 	// Hides objects identified by the obj string in JQuery
 	$.fn.show = function(doShow=true) {
 		if (doShow) {
@@ -11,6 +12,17 @@
 		return this;
 	};
 	
+	$.fn.isShown = function() {
+		return !this.hasClass('hidden');
+	};
+	
+	$.fn.showToggle = function() {
+		if (this.isShown()) {
+			this.show(false);
+		} else {
+			this.show(true);
+		}
+	};
 	
 	// Maps all form fields into properties of their name
 	$.fn.loadFields = function() {

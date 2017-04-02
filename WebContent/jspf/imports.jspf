@@ -14,6 +14,7 @@
 <script src="js/objects/dataobj.js"></script>
 <script src="js/objects/user.js"></script>
 <script src="js/objects/forum.js"></script>
+<script src="js/objects/foruminput.js"></script>
 <!--<script src="js/objects/thread.js"></script> TODO-->
 <!--<script src="js/objects/post.js"></script> TODO-->
 

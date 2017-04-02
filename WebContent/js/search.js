@@ -19,7 +19,11 @@
 
 /*
  * Parent
- *   Container
+ * 	 Container
+ *   Search Container
+ *     Fields
+ *     Search Button
+ *   Result Container
  *     Buttons Pages
  *       Button1 Page
  *       Button2 Page
@@ -52,10 +56,8 @@ Search = {
 	},
 
 	getButton : function(pageId, btnType) {
-		return [
-		    '<button name="changePageBtn" data-page="{pageId}" class="page btn{btnType} ',
-		    (pageId==this.getParams().page ? 'selected{btnType}' : ''),
-		    '">{pageId}</button>'].supplant({pageId:pageId, btnType:btnType});
+		const cls = this.getParams().page === pageId ? 'selected' : "";
+		return H.btn(pageId, 'changePageBtn', cls, pageId);
 	},
 	
 	getButtons : function(totalRecords) {
@@ -104,8 +106,16 @@ Search = {
 		return "#" + this.settings.parent;
 	},
 	
-	selContainer : function() {
+	selFilterContainer : function() {
+		return "#" + this.settings.prefix + "SearchFilterContainer";
+	},
+	
+	selResultsContainer : function() {
 		return "#" + this.settings.prefix + "SearchResultsContainer";
+	},
+	
+	selContainer : function() {
+		return "#" + this.settings.prefix + "SearchContainer";
 	},
 	
 	selResults : function() {
@@ -117,7 +127,7 @@ Search = {
 	},
 	
 	getSearch : function(sel) {
-		return $(sel).closest('div[name="container"]').data('searchObject');
+		return $(sel).closest('[id$="SearchContainer"]').data('searchObject');
 	},
 	
 	DEFAULT_PERPAGE : 10,
@@ -136,13 +146,8 @@ Search = {
 		// Render fitting HTML
 		if (data !== null && data !== undefined) {
 			
-			html = '<div id="{prefix}SearchResultsContainer" name="container" class="searchresults"></div>'.supplant({prefix:this.settings.prefix});
-			$(this.selParent()).html(html);
-			$(this.selContainer()).data('searchObject', this);
-			
 			if (data.totalRecords === 0) {
-
-				$(this.selContainer()).html('<div class="boldText">The search has returned no results.</div>');
+				$(this.selResultsContainer()).html('<div class="boldText">The search has returned no results.</div>');
 			} else if (data.totalRecords) {
 				
 				var needPush = false;
@@ -195,7 +200,7 @@ Search = {
 					prefix: this.settings.prefix
 				});
 				
-				$(this.selContainer()).html(result);
+				$(this.selResultsContainer()).html(result);
 				
 				// Create actual results to fill out the list
 				
@@ -243,14 +248,36 @@ Search = {
 	
 	// Creates a search result environment
 	create : function(settings) {
+		
+		// Instantiate
 		var obj = Object.create(this);
 		obj.settings = settings;
+		
+		// If we are not using params, we're making sure to create a container for them
 		if (!obj.settings.useParams) {
 			obj.settings._params = {};
 			obj.settings.useParams = false;
 		} else {
 			obj.settings.useParams = true;
 		}
+
+		// Creating the base for search results
+		var html = `
+			<div id="${settings.prefix}SearchContainer" class="searchContainer">
+				<div id="${settings.prefix}SearchFilterContainer">
+					<form class="rowFlex wide" name="searchFilterForm">
+						${settings.filter ?	settings.filter : ""}
+						${settings.filter ? H.btn("Reset", "searchReset", cls="", null, type='reset') : ""}
+						${settings.filter ? H.btn("Filter", "searchFilter", cls="", null, type='submit') : ""}
+					</form>
+				</div>
+				<div id="${settings.prefix}SearchResultsContainer" class="searchContainer"></div>
+			</div>
+		`;
+		
+		$(obj.selParent()).append(html);
+		$(obj.selContainer()).data('searchObject', obj);
+		
 		return obj;
 	},
 	
@@ -273,11 +300,11 @@ Search = {
 $(document).ready(function() {
 	
 	$(document).on('click', '[name=changePageBtn]', function(button) {
-		var searchObject = $(this).closest('[name="container"]').data('searchObject');
+		var searchObject = $(this).closest('[id$="SearchContainer"]').data('searchObject');
 		var params = searchObject.getParams();
 		
-		if (params.page != $(this).data('page')) {
-			params.page = $(this).data('page');
+		if (params.page != $(this).data('val')) {
+			params.page = $(this).data('val');
 			G.pushState(searchObject.settings.useParams);
 
 			searchObject.loadResults();
@@ -285,7 +312,7 @@ $(document).ready(function() {
 	});
 	
 	$(document).on('change', '[name=resultPerPage]', function(button) {
-		var searchObject = $(this).closest('[name="container"]').data('searchObject');
+		var searchObject = $(this).closest('[id$="SearchContainer"]').data('searchObject');
 		var params = searchObject.getParams();
 		
 		if (params.perPage != $(this).val()) {
@@ -295,6 +322,19 @@ $(document).ready(function() {
 			searchObject.loadResults();
 		}
 
+	});
+	
+	$(document).on('click', '[name=searchFilter]', function(e) {
+		e.stopPropagation();
+		e.preventDefault();
+		const searchObject = $(this).closest('[id$="SearchContainer"]').data('searchObject');
+		const form = $(this).closest('[name="searchFilterForm"]');
+		var params = searchObject.getParams();
+		
+		$.extend(params, G.input.loadFields(form));
+
+		G.pushState(searchObject.settings.useParams);
+		searchObject.loadResults();
 	});
 });
 

@@ -6,6 +6,54 @@
 
 H = {
 	
+	inputBase : function(args) {
+		const cls = args.cls || "";
+		const name = args.name || "name";
+		const type = args.type || "text";
+		const placeholder = args.placeholder !== undefined ? args.placeholder : name.capitalize();
+		const maxlength = args.maxlength || null;
+		const pattern = args.pattern !== undefined ? args.pattern : null;
+		const error = args.error !== undefined ? args.error : null;
+		
+		return `
+			<input
+				class="${cls} flex1"
+				name="${name}"
+				type="${type}"
+				placeholder="${placeholder}"
+				maxlength="${maxlength}"
+				pattern = "${pattern ? pattern : ''}"
+				${error ? "oninvalid=setCustomValidity('${error}');" : ""}
+				${error ? "oninput=setCustomValidity('');" : ""}
+			/>`;
+	},
+	
+	selectBase : function(args) {
+		const cls = args.cls || "";
+		const name = args.name || "name";
+		const selected = args.selected || "0";
+		var options = args.options || [];
+		var option;
+		var sel = "";
+		
+		for (var i=0; i<options.length; i++) {
+			option = options[i];
+			sel = (selected === i) ? "selected" : "";
+			
+			if (!$.isArray(option)) {
+				option = [
+					option,
+					option.capitalize(),
+				];
+			}
+			options[i] = `<option ${sel} value="${option[0]}">${option[1]}</option>`;
+		}
+		
+		return `<select name="${name}" class="${cls}">
+				    ${options.join("")}
+				</select>`;
+	},
+		
 	page : function(args) {
 		const name = args.name;
 		const title = "" || args.title;
@@ -41,14 +89,18 @@ H = {
 	},
 		
 	pageHideBtn : function() {
-		return `<button name="pageHideBtn" class="small btn right">_</button>`;
+		return `<button name="pageHideBtn" class="">_</button>`;
 	},
 	
 	pageExitBtn : function() {
-		return `<button name="pageExitBtn" class="small btn right">&times</button>`;
+		return `<button name="pageExitBtn" class="small right">&times</button>`;
+	},
+	
+	filterBtn : function() {
+		return `<button name="filterBtn" class="small right">&times</button>`;
 	},
 		
-	btn : function(label, name, cls="small btn", val=null, type='button') {
+	btn : function(label, name, cls="", val=null, type='button') {
 	    return `<button
 	    			name="${name}"
 	    			type="${type}"
@@ -116,7 +168,7 @@ H = {
 		
 		banned : function(cls, name="banned", selected=true) {
 			return exclusionSelect(cls, name, "banned", selected);
-		}, 
+		 }, 
 		
 		deleted : function(cls, name="deleted", selected=true) {
 			return exclusionSelect(cls, name, "deleted", selected);
@@ -211,6 +263,11 @@ H = {
 			const modal = $(this).closest(".modal").data('modalObject');
 			if (modal) modal.destroy();
 			$(this).closest(".page").remove();
+		});	
+		
+		$(document).on('click', "[name=filterBtn]", function(event) {
+			event.preventDefault();
+			const modal = $(this).closest(".page").find('[id$="searchFilter]').show(false);
 		});	
 	});
 

@@ -21,20 +21,23 @@ var G = {
 		
 	// Shows a 'loading' gif in the middle of the screen
 	loading : function(isLoading) {
+		if (this._loadingInitialized === undefined) {
+			$('body').append(`
+					<div id="asyncLoadingImage" class="modalImage">
+						<img height="200" width="200" src="res/img/loading.gif"/>
+					</div>
+				`);	
+			this._loadingInitialized = true;	
+		}
+		
 		if (this._loading === undefined) this._loading = 0;
 		if (isLoading)
 			this._loading += 1;
 		else
 			this._loading -= 1;
 		
-		var modal = Modal.byName('loading');
-		if (!modal && this._loading > 0) {
-			modal = Modal.create('loading', 'small');
-			$(modal.title).html('Loading...');
-			modal.display();
-		} else if (modal && this._loading <= 0) {
-			modal.destroy();
-		}
+		$(`#asyncLoadingImage`).show(this._loading > 0);
+
 	},
 	
 	// Checks an id value against null, undefined and greater than 0

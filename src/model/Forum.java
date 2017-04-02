@@ -86,7 +86,7 @@ public class Forum implements DataObject
 		if (this.parent == null || this.parent == 0) {
 			return "Forum";
 		} else {
-			return new ForumDAO().findById(this.parent, User.Role.ADMIN).getTitle();
+			return new ForumDAO().findById(this.parent, null).getTitle();
 		}
 	}
 	
@@ -101,9 +101,8 @@ public class Forum implements DataObject
 	}
 	
 	@JsonProperty("_ownerUsername")
-	public String getOwnerName()
-	{
-		return new UserDAO().findById(this.owner, User.Role.ADMIN).getUsername();
+	public String getOwnerName() {
+		return new UserDAO().findById(this.owner, null).getUsername();
 	}
 
 	public void setOwner(Integer owner)

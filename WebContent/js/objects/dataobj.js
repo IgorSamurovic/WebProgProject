@@ -1,5 +1,22 @@
 DataObj = {
 
+	selectAsc : function() {
+		return H.selectBase({
+			name : "asc",
+			options : ['Asc', 'Desc'],
+			selected : 1
+		});	
+	},
+		
+	selectOrderBy : function(options) {
+		return [`<div class="boldText">Order by:</div>`, H.selectBase({
+			name : "orderBy",
+			options : options || []
+		}), this.selectAsc()].join("");
+	}, 
+	
+ 
+		
 	renderYesNo : function(prop) {
 		if (this.data[prop] === undefined) {
 			return 'Undefined';
@@ -15,7 +32,8 @@ DataObj = {
 	},
 
 	renderVistype: function() {
-		const vistype = this.data.vistype || this.xtra.vistype
+		console.log(this.data.vistype);
+		const vistype = this.data.vistype !== undefined ? this.data.vistype : this.xtra.vistype;
 		switch (vistype) {
 		case (0): return "Public";
 		case (1): return "Private";

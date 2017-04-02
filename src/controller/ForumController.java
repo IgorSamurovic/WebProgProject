@@ -28,7 +28,7 @@ public class ForumController extends HttpServlet {
 		
     	Integer id = pp.integer("id");
 		if (id != null) {
-			Forum result = new ForumDAO().findById(id, current.getRole());
+			Forum result = new ForumDAO().findById(id, current);
 			if (result != null)
 				if (current.getId() == id) {
 					Responder.out(response, result, Views.getPersonal(current));
@@ -38,7 +38,7 @@ public class ForumController extends HttpServlet {
 					Responder.out(response, "notFound");
 				}
 		} else {
-			ArrayList<Object> results = new ForumDAO().filter(pp, current.getRole());
+			ArrayList<Object> results = new ForumDAO().filter(pp, current);
 			Responder.out(response, results, Views.forUser(current));
 		}
 	}
@@ -65,7 +65,7 @@ public class ForumController extends HttpServlet {
 		if (reqType.equals("update")) {
 			
 			if (id != null && current.isAdmin()) {
-				Forum entry = new ForumDAO().findById(id, current.getRole());
+				Forum entry = new ForumDAO().findById(id, current);
 				
 					new ForumDAO().update(entry);
 			}
@@ -73,7 +73,7 @@ public class ForumController extends HttpServlet {
 		
 		if (reqType.equals("lock")) {
 			if (id != null && current.isAdmin()) {
-				Forum entry = new ForumDAO().findById(id, current.getRole());
+				Forum entry = new ForumDAO().findById(id, current);
 				if (locked != null) {
 					entry.setLocked(locked);
 					new ForumDAO().lock(entry, locked);
@@ -83,9 +83,9 @@ public class ForumController extends HttpServlet {
 		
 		if (reqType.equals("delete")) {
 			if (id != null && current.isAdmin()) {
-				Forum entry = new ForumDAO().findById(id, current.getRole());
+				Forum entry = new ForumDAO().findById(id, current);
 				if (deleted != null) {
-					new ForumDAO().softDelete(entry, (boolean) deleted);
+					new ForumDAO().delete(entry, current, (boolean) deleted, false);
 				}
 			}
 		}
