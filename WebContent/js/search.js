@@ -55,9 +55,22 @@ Search = {
 		return numPages;
 	},
 
+	getPerPageSelector : function() {
+		var perPage = this.getParams().perPage;
+
+		if (this.getParams().id === undefined) {
+			return H.input.perPage('', "resultPerPage", perPage);
+		}
+	},
+	
 	getButton : function(pageId, btnType) {
 		const cls = this.getParams().page === pageId ? 'selected' : "";
 		return H.btn(pageId, 'changePageBtn', cls, pageId);
+	},
+	
+	getAddButton : function() {
+		if (this.settings.add)
+		return H.btn(this.settings.add.label, 'addObjectToggle', 'special right');
 	},
 	
 	getButtons : function(totalRecords) {
@@ -84,6 +97,7 @@ Search = {
 				s.push(this.getButton(i, ""));
 			}
 
+			s.push(this.getAddButton());
 			s.push('</div>');
 			
 			s = s.join("");
@@ -92,34 +106,44 @@ Search = {
 		return s;
 	},
 	
-	getPerPageSelector : function() {
-		var perPage = this.getParams().perPage;
-		
-		if (this.data.totalRecords <= 1) {
-			return "";
-		} else {
-			return H.input.perPage('', "resultPerPage", perPage);
+	drawAdd : function() {
+		if (!$(this.selAddContainer()).html()) {
+			$(this.selAddContainer()).html(`
+				<div class="itemContainer">
+					<div class="subpagetitle">
+						${this.settings.add.title}
+					</div>
+					<form id="${this.settings.prefix}AddObjectForm">
+				${G.interpret(this.settings.add.html)}
+				${H.btn(this.settings.add.title, "addObject", cls="big special", null, type='submit')}
+					</form>
+				</div>
+			`);
 		}
 	},
 	
 	selParent : function() {
-		return "#" + this.settings.parent;
+		return `${this.settings.parent}`;
 	},
 	
 	selFilterContainer : function() {
-		return "#" + this.settings.prefix + "SearchFilterContainer";
+		return `#${this.settings.prefix}SearchFilterContainer`;
 	},
 	
 	selResultsContainer : function() {
-		return "#" + this.settings.prefix + "SearchResultsContainer";
+		return `#${this.settings.prefix}SearchResultsContainer`;
+	},
+	
+	selAddContainer : function() {
+		return `#${this.settings.prefix}SearchAddContainer`;
 	},
 	
 	selContainer : function() {
-		return "#" + this.settings.prefix + "SearchContainer";
+		return `#${this.settings.prefix}SearchContainer`;
 	},
 	
 	selResults : function() {
-		return "#" + this.settings.prefix + "SearchResults";
+		return `#${this.settings.prefix}SearchResults`;
 	},
 	
 	getObject : function(sel) {
@@ -145,87 +169,90 @@ Search = {
 		
 		// Render fitting HTML
 		if (data !== null && data !== undefined) {
+
 			
-			if (data.totalRecords === 0) {
-				$(this.selResultsContainer()).html('<div class="boldText">The search has returned no results.</div>');
-			} else if (data.totalRecords) {
+			var needPush = false;
+			
+			if (data.totalRecords > 1) {
+				// Fix perPage property if needed
+				if (!$.isNumeric(params.perPage)) {
+					params.perPage = this.DEFAULT_PERPAGE;
+					needPush = true;
+				} else if (params.perPage <= 0) {
+					params.perPage = this.DEFAULT_PERPAGE;
+					needPush = true;
+				} else if (params.perPage > this.MAX_PERPAGE) {
+					params.perPage = this.MAX_PERPAGE;
+					needPush = true;
+				} else if ($.inArray(params.perPage, H.input._perPageValues) <= -1) {
+					params.perPage = this.DEFAULT_PERPAGE;
+					needPush = true;
+				}
 				
-				var needPush = false;
-				
-				if (data.totalRecords > 1) {
-					// Fix perPage property if needed
-					if (!$.isNumeric(params.perPage)) {
-						params.perPage = this.DEFAULT_PERPAGE;
+				// Fix page number if needed
+				var numPages = this.getNumPages();
+				if ($.isNumeric(params.page)) {
+					if (params.page > numPages) {
+						params.page = numPages;
 						needPush = true;
-					} else if (params.perPage <= 0) {
-						params.perPage = this.DEFAULT_PERPAGE;
-						needPush = true;
-					} else if (params.perPage > this.MAX_PERPAGE) {
-						params.perPage = this.MAX_PERPAGE;
-						needPush = true;
-					} else if ($.inArray(params.perPage, H.input._perPageValues) <= -1) {
-						params.perPage = this.DEFAULT_PERPAGE;
-						needPush = true;
-					}
-					
-					// Fix page number if needed
-					var numPages = this.getNumPages();
-					if ($.isNumeric(params.page)) {
-						if (params.page > numPages) {
-							params.page = numPages;
-							needPush = true;
-						} else if (params.page <= 0) {
-							params.page = 1;
-							needPush = true;
-						}
-					} else {
+					} else if (params.page <= 0) {
 						params.page = 1;
 						needPush = true;
 					}
-					
-					if (needPush) {
-						G.replaceState(useParams);
-					}
+				} else {
+					params.page = 1;
+					needPush = true;
 				}
 				
-				// Create an outline for search results
-				var pageBtns = this.getButtons();
-				
-				var result = [
-			    	'<div class="searchresults" id="{prefix}SearchResults" name="results"></div>',
-			    	pageBtns,
-				];
-				
-				result = result.supplant({
-					prefix: this.settings.prefix
-				});
-				
-				$(this.selResultsContainer()).html(result);
-				
-				// Create actual results to fill out the list
-				
-				// Now process all objects and render all elements 
+				if (needPush) {
+					G.replaceState(useParams);
+				}
+			}
+			
+			// Create an outline for search results
+			var pageBtns = this.getButtons();
+			
+			var flex = "";
+			
+			if (this.settings.flexType === "row") {
+				flex = 'rowFlex';
+			} else if (this.settings.flexType === "col") {
+				flex = 'columnFlex';
+			}
+			
+			$(this.selResultsContainer()).html(`
+		    	<div class="searchresults ${flex}" id="${this.settings.prefix}SearchResults" name="results"></div>
+		    	${pageBtns}
+			`);
+			
+			
+			// Create actual results to fill out the list
+			
+			// Now process all objects and render all elements 
+			if (data.totalRecords === 0) {
+				$(this.selResults()).html(`<div class="boldText">The search has returned no results.</div>`);
+			} else if (data.totalRecords) {
+			
 				for (var i=0; i<data.length; i++) {
 					
 					// Convert every raw JSON object to a proper G object with methods
-					data[i] = G.create(this.settings.objType, data[i]);
-					
-					result = [
-					    '<div class="searchresult" id="{prefix}SearchResult{i}" name="result">'.supplant({prefix: this.settings.prefix, i:i}),
-					    this.settings.renderFunc(data[i]),
-					    '</div>'
-					];
+					data[i] = this.settings.objType.create(data[i]);
 
 					// Add the generated HTML to the results
-					$(this.selResults()).append(result.join(""));
+					$(this.selResults()).append(`
+						<div class="itemContainer" id="${this.settings.prefix}SearchResult${i}" name="result">
+					    	${this.settings.renderFunc(data[i])}
+					    </div>
+					`);
 					
 					// Attach the last processed object to the last added HTML element
 					$(this.selResults()).children().last().data("obj", data[i]);
 				}
 				
-				// In case this initialized with an object, lets destroy it
-				this.settings.data = null;
 			}
+			
+			// In case this initialized with an object, lets destroy it
+			this.settings.data = null;
 		}
 	},
 	
@@ -259,19 +286,45 @@ Search = {
 			obj.settings.useParams = false;
 		} else {
 			obj.settings.useParams = true;
+			settings.allowed = (settings.allowed !== undefined) ? settings.allowed : [];
 		}
+		
+		if (settings.dataArgs)
+			settings.dataArgs.data = (settings.dataArgs.data !== undefined) ? settings.dataArgs.data : obj.getParams(); 
 
+		// Fixing all the properties
+		
+		settings.dataFunc = (settings.dataFunc !== undefined) ? settings.dataFunc : G.dbGet;
+		
+		
+		const filter = typeof settings.filter === 'function' ? settings.filter() : settings.filter;
+		
+		const searchFilter = settings.filter !== undefined ? `
+			<div id="${settings.prefix}SearchFilterContainer" class="hidden itemContainer">
+				<div class="subpagetitle">Filter...</div>
+				<form class="rowFlex wide" id="${settings.prefix}SearchFilterForm">
+					${filter ? filter : ""}
+						<div class="columnFlex flex2">
+							${filter ? settings.objType.selectOrderBy() : ""}
+						</div>
+						<div class="columnFlex ">
+							${filter ? H.btn("Reset", "searchReset", cls="", null, type='reset') : ""}
+							${filter ? H.btn("Filter", "searchFilter", cls="special", null, type='submit') : ""}
+						</div>
+				</form>
+			</div>` : "";
+				
+		const searchResults = `<div id="${settings.prefix}SearchResultsContainer" class="searchresults"></div>`;
+		const searchAdd = settings.add !== undefined ? `
+			<div id="${settings.prefix}SearchAddContainer" class="hidden searchresults"></div>
+			` : "";
+		
 		// Creating the base for search results
 		var html = `
-			<div id="${settings.prefix}SearchContainer" class="searchContainer">
-				<div id="${settings.prefix}SearchFilterContainer">
-					<form class="rowFlex wide" name="searchFilterForm">
-						${settings.filter ?	settings.filter : ""}
-						${settings.filter ? H.btn("Reset", "searchReset", cls="", null, type='reset') : ""}
-						${settings.filter ? H.btn("Filter", "searchFilter", cls="", null, type='submit') : ""}
-					</form>
-				</div>
-				<div id="${settings.prefix}SearchResultsContainer" class="searchContainer"></div>
+			<div id="${settings.prefix}SearchContainer" class="searchresults">
+				${searchFilter}
+				${searchResults}
+				${searchAdd}
 			</div>
 		`;
 		
@@ -325,16 +378,47 @@ $(document).ready(function() {
 	});
 	
 	$(document).on('click', '[name=searchFilter]', function(e) {
-		e.stopPropagation();
 		e.preventDefault();
-		const searchObject = $(this).closest('[id$="SearchContainer"]').data('searchObject');
-		const form = $(this).closest('[name="searchFilterForm"]');
+		const searchObject = Search.getSearch(this);
+		const form = $(this).closest('[id$="SearchFilterForm"]');
 		var params = searchObject.getParams();
 		
 		$.extend(params, G.input.loadFields(form));
 
 		G.pushState(searchObject.settings.useParams);
 		searchObject.loadResults();
+	});
+	
+	$(document).on('click', '[name=searchReset]', function(e) {
+		e.preventDefault();
+		const searchObject = Search.getSearch(this);
+		const form = $(this).closest('[id$="SearchFilterForm"]');
+		var params = searchObject.getParams();
+		
+		$(form)[0].reset();
+		$.extend(params, G.input.loadFields(form));
+
+		G.pushState(searchObject.settings.useParams);
+		searchObject.loadResults();
+	});
+	
+	$(document).on('click', '[name=addObjectToggle]', function(e) {
+		e.preventDefault();
+		const searchObject = Search.getSearch(this);
+		searchObject.drawAdd();
+		$(searchObject.selAddContainer()).showToggle();
+	});
+	
+	$(document).on('submit', '[id$=AddObjectForm]', function(e) {
+		e.preventDefault();
+		const searchObject = Search.getSearch(this);
+		const args = {};
+		const objData = $.extend({}, G.interpret(searchObject.settings.add.data), $(this).loadFields());
+
+		searchObject.settings.objType.add(objData, function(data) {
+			console.log(data);
+			searchObject.loadResults();
+		});
 	});
 });
 

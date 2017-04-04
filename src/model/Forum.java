@@ -19,8 +19,66 @@ public class Forum implements DataObject
 	private Boolean locked;
 	private Boolean deleted;
 	
+	public boolean isChildOf(Forum ancestor) {
+		// daddy forum
+		if (this.id == 1 || this.getId() == ancestor.getId()) return false;
+		int ancestorId = ancestor.getId();
+		
+		Forum child = this;
+		
+		while(child.getId() != 1 && child.getParent() != 1) {
+			if (child.getParent() == ancestorId) {
+				return true;
+			} else {
+				child = new ForumDAO().findById(child.getParent(), null);
+				System.err.println(child.getTitle());
+			}
+		}
+		
+		return false;
+	}
+	
+	public String valid() {
+		
+		if (title == null || !title.matches(".{3,40}")) {
+			return "title";
+		}
+		
+		if (descript != null && descript.length() > 250) {
+			return "descript";
+		}
+		
+		if (vistype == null || vistype < 0 || vistype > 2)
+			return "vistype";
+
+		if (!(id == 1)) {
+			Forum parentTest = new ForumDAO().findById(parent, null);
+			if (parentTest == null || parentTest.getId() == this.getId() || (parentTest != null && parentTest.isChildOf(this))) {
+		        return "parent";
+			}
+		} else {
+			parent = null;
+		}
+		
+		if (owner == null || new UserDAO().findById(owner, null) == null) {
+			return "owner";
+		}
+		
+		if (locked == null) {
+			return "locked";
+		}
+		
+		if (deleted == null) {
+			return "deleted";
+		}
+		
+		return "";
+	}
+
 	public Forum()
 	{
+		this.parent = 1;
+		this.owner = 1;
 		this.locked = false;
 		this.deleted = false;
 	}

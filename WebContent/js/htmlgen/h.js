@@ -4,20 +4,60 @@
 // This allows me to have a clearer picture of the object hierarchy.	       			    //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-H = {
-	
-	inputBase : function(args) {
+H = {	
+		
+	textareaBase : function(args) {
+		if (args.alt) {
+			$.extend(args, args.alt);
+		}
+		
+		const required = args.required ? "required" : "";
+		const disabled = args.disabled ? "disabled" : "";
 		const cls = args.cls || "";
-		const name = args.name || "name";
+		const name = args.name || "textarea";
+		const placeholder = args.placeholder !== undefined ? args.placeholder : name.capitalize();
+		const maxlength = args.maxlength || null;
+		const rows = args.rows || '3';
+		const height = args.height || rows * 25;
+		const val = args.val !== undefined ? args.val : "";
+		
+		return `
+				<textarea
+					${required} 
+					${disabled} 
+					class="${cls}"
+					name="${name}"
+					maxlength="${maxlength}"
+					rows="${rows}"
+					style="height:${height}px;"
+					placeholder="${placeholder}"
+					data-val="${val}"
+				></textarea>
+				<div name="textareaCounter"> </div>
+	`
+	},
+		
+	inputBase : function(args) {
+		if (args.alt) {
+			$.extend(args, args.alt);
+		}
+		
+		const required = args.required ? "required" : "";
+		const disabled = args.disabled ? "disabled" : "";
+		const cls = args.cls || "";
+		const name = args.name || "input";
 		const type = args.type || "text";
 		const placeholder = args.placeholder !== undefined ? args.placeholder : name.capitalize();
 		const maxlength = args.maxlength || null;
 		const pattern = args.pattern !== undefined ? args.pattern : null;
 		const error = args.error !== undefined ? args.error : null;
+		const val = args.val !== undefined ? args.val : "";
 		
 		return `
 			<input
-				class="${cls} flex1"
+				${required} 
+				${disabled} 
+				class="${cls}"
 				name="${name}"
 				type="${type}"
 				placeholder="${placeholder}"
@@ -25,16 +65,25 @@ H = {
 				pattern = "${pattern ? pattern : ''}"
 				${error ? "oninvalid=setCustomValidity('${error}');" : ""}
 				${error ? "oninput=setCustomValidity('');" : ""}
+				data-val="${val}"
 			/>`;
 	},
 	
 	selectBase : function(args) {
+		if (args.alt) {
+			$.extend(args, args.alt);
+		}
+		
+		const required = args.required ? "required" : "";
+		const disabled = args.disabled ? "disabled" : "";
 		const cls = args.cls || "";
-		const name = args.name || "name";
+		const name = args.name || "select";
 		const selected = args.selected || "0";
+		const prefix = args.prefix !== undefined ? args.prefix : "";
 		var options = args.options || [];
 		var option;
 		var sel = "";
+		const val = args.val !== undefined ? args.val : "";
 		
 		for (var i=0; i<options.length; i++) {
 			option = options[i];
@@ -46,15 +95,25 @@ H = {
 					option.capitalize(),
 				];
 			}
-			options[i] = `<option ${sel} value="${option[0]}">${option[1]}</option>`;
+			options[i] = `<option ${sel} value="${option[0]}">${prefix} ${option[1]}</option>`;
 		}
 		
-		return `<select name="${name}" class="${cls}">
-				    ${options.join("")}
+		return `<select
+					data-val="${val}"
+					${required}
+					${disabled}
+					name="${name}"
+					class="${cls}">
+				    	${options.join("")}
 				</select>`;
 	},
 		
 	page : function(args) {
+		if (args.alt) {
+			$.extend(args, args.alt);
+		}
+		
+		const draggable = args.draggable || "";
 		const name = args.name;
 		const title = "" || args.title;
 		const hidden = args.hidden;
@@ -62,11 +121,12 @@ H = {
 		const hiddenHeader = args.hiddenHeader;
 		const hiddenContent = args.hiddenContent;
 		const headerButtons = [];
-		if (args.canExit) headerButtons.push(H.pageExitBtn());
-		if (args.canHide) headerButtons.push(H.pageHideBtn());
+		if (args.canExit)   headerButtons.push(H.pageExitBtn());
+		if (args.canHide)   headerButtons.push(H.pageHideBtn());
+		if (args.canFilter) headerButtons.push(H.pageFilterBtn());
 		
 		return `
-			<div class="${hidden ? "hidden" : ""} ${cls} page" id="${name}Page">
+			<div draggable="${draggable}" class="${hidden ? "hidden" : ""} ${cls} page" id="${name}Page">
 				<div class="${hiddenHeader ? "hidden" : ""} pageheader" id="${name}PageHeader">
 					<div class="pagetitle" id="${name}PageTitle">${title}</div>
 					${headerButtons.join("")}
@@ -89,15 +149,15 @@ H = {
 	},
 		
 	pageHideBtn : function() {
-		return `<button name="pageHideBtn" class="">_</button>`;
+		return `<button name="pageHideBtn" class="small right"><div>_</div></button>`;
 	},
 	
 	pageExitBtn : function() {
-		return `<button name="pageExitBtn" class="small right">&times</button>`;
+		return `<button name="pageExitBtn" class="small right"><div>&times</div></button>`;
 	},
 	
-	filterBtn : function() {
-		return `<button name="filterBtn" class="small right">&times</button>`;
+	pageFilterBtn : function() {
+		return `<button name="pageFilterBtn" class="small left"><div>Filter</div></button>`;
 	},
 		
 	btn : function(label, name, cls="", val=null, type='button') {
@@ -106,7 +166,9 @@ H = {
 	    			type="${type}"
 	    			${val!==null ? 'data-val="'+val+'"' : ''}
 	    			class="${cls}">
-	    			${label}
+	    			<div>
+	    				${label}
+	    			</div>
 	    		</button>`;
 	},
 	
@@ -249,13 +311,7 @@ H = {
 	{
 		$(document).on('click', "[name=pageHideBtn]", function(event) {
 			event.preventDefault();
-			var container = $(this).closest(".pageheader").siblings(".pagecontent");
-			
-			if ($(container).hasClass("hidden")) {
-				$(container).removeClass("hidden");
-			} else {
-				$(container).addClass("hidden");
-			}
+			$(this).closest(".page").children(".pagecontent").showToggle();
 		});	
 		
 		$(document).on('click', "[name=pageExitBtn]", function(event) {
@@ -265,9 +321,21 @@ H = {
 			$(this).closest(".page").remove();
 		});	
 		
-		$(document).on('click', "[name=filterBtn]", function(event) {
+		$(document).on('click', "[name=pageFilterBtn]", function(event) {
 			event.preventDefault();
-			const modal = $(this).closest(".page").find('[id$="searchFilter]').show(false);
+			$(this).closest(".page").find('[id$="SearchFilterContainer"]').showToggle();
+		});	
+		
+		$(document).on('input', "textarea", function(event) {
+			const counter = $(this).siblings('[name="textareaCounter"]');
+			const length = $(this).val().length;
+			const maxlength = $(this).attr('maxlength');
+			
+			if (length > 0) {
+				$(counter).html(`${length}/${maxlength}`);
+			} else {
+				$(counter).html("");
+			}
 		});	
 	});
 

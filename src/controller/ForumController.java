@@ -21,7 +21,7 @@ import views.Views;
  */
 public class ForumController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-
+	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     	User current = Cookies.getUser(request);
     	ParamProcessor pp = new ParamProcessor(request);
@@ -47,8 +47,15 @@ public class ForumController extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		// First initialize variables
-		ParamProcessor pp = new ParamProcessor(request);
 		User current = Cookies.getUser(request);
+		if (!current.isAdmin()) {
+			Responder.out(response, "ACCESS DENIED");
+			return;
+		}
+		
+		ParamProcessor pp = new ParamProcessor(request);
+		Forum obj = null;
+		String valid = "";
 		
 		Integer id = pp.integer("id");
 		String title = pp.string("title");
@@ -60,32 +67,60 @@ public class ForumController extends HttpServlet {
 		Boolean deleted = pp.bool("deleted");
 		String reqType = pp.string("reqType");
 		
+		if (reqType == null) return;
+		
 		// Done
 		
-		if (reqType.equals("update")) {
-			
-			if (id != null && current.isAdmin()) {
-				Forum entry = new ForumDAO().findById(id, current);
+		if (reqType.equals("add") || reqType.equals("edit")) {
+
+			if (reqType.equals("add")) {
+				obj = new Forum();
+				obj.setTitle(title);
+				obj.setDescript(descript);
+				obj.setParent(parent);
+				obj.setOwner(owner);
+				obj.setVistype(vistype);
 				
-					new ForumDAO().update(entry);
+				valid = obj.valid();
+				
+				if (!valid.equals("")) {
+					Responder.out(response, valid);
+					return;
+				}
+				
+				new ForumDAO().insert(obj);
+			} else {
+				obj = new ForumDAO().findById(id, null);
+				if (title != null) obj.setTitle(title);
+				if (descript != null) obj.setDescript(descript);
+				if (parent != null) obj.setParent(parent);
+				if (owner != null) obj.setOwner(owner);
+				if (vistype != null) obj.setVistype(vistype);
+				
+				valid = obj.valid();
+				
+				if (!valid.equals("")) {
+					Responder.out(response, valid);
+					return;
+				}
+				System.err.println(obj);
+				new ForumDAO().update(obj);
 			}
 		}
 		
 		if (reqType.equals("lock")) {
-			if (id != null && current.isAdmin()) {
-				Forum entry = new ForumDAO().findById(id, current);
-				if (locked != null) {
-					entry.setLocked(locked);
-					new ForumDAO().lock(entry, locked);
-				}
+			if (id != null && locked != null) {
+				obj = new ForumDAO().findById(id, current);
+				obj.setLocked(locked);
+				new ForumDAO().lock(obj, locked);
 			}
 		}
 		
-		if (reqType.equals("delete")) {
-			if (id != null && current.isAdmin()) {
-				Forum entry = new ForumDAO().findById(id, current);
+		if (reqType.equals("del")) {
+			if (id != null) {
 				if (deleted != null) {
-					new ForumDAO().delete(entry, current, (boolean) deleted, false);
+					obj = new ForumDAO().findById(id, current);
+					new ForumDAO().delete(obj, current, deleted, pp.bool("preferHard"));
 				}
 			}
 		}

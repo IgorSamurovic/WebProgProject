@@ -138,32 +138,32 @@ public class UserDAO {
 			.and("deleted = FALSE")
 			.orderBy(fixOrderBy(pp.string("orderBy"), user), pp.string("asc"));
 			*/
-		} else { /*
+		} else { 
 			qb
-			.and(pp.string("username"), "username LIKE ?")
-			.and(pp.string("name"), "name LIKE ?")
-			.and(pp.string("surname"), "surname LIKE ?")
-			.and(pp.string("email"), "email LIKE ?")
-			.and(pp.time("dateA"), "date <= ?")
-			.and(pp.time("dateB"), "date >= ?")
-			.and(pp.integer("role"), "role = ?")
-			.and(pp.bool("includeBanned"), "banned <= ?", "banned = FALSE")
-			.and(pp.bool("includeDeleted"), "deleted <= ?", "deleted = FALSE")
-			.orderBy(fixOrderBy(pp.string("orderBy"), user), pp.string("asc"));
-			*/
+			.and("username LIKE $username")
+			.and("name LIKE $name")
+			.and("surname LIKE $surname")
+			.and("email LIKE $email")
+			.and("date >= $dateA")
+			.and("date <= $dateB")
+			.and("role = $role")
+			.and("banned <= $banned")
+			.and("deleted <= $deleted")
+			.orderBy("deleted", "DESC")
+			.orderBy("$orderBy", "$asc");
 		}
 	}
 
 	public ArrayList<Object> filter(ParamProcessor pp, User user) {
 		ArrayList<Object> list = new ArrayList<Object>();
-		QueryBuilder qb = new QueryBuilder();
+		QueryBuilder qb = new QueryBuilder(pp);
 		processFilter(qb, pp, user);
-
-		qb.setStart("SELECT COUNT(ID) FROM USER");
+		pp.printDebug();
+		qb.setStart("SELECT COUNT(obj.ID) FROM USER obj");
 
 		list.add(qb.getNumRecords());
 
-		qb.setStart("SELECT * FROM USER");
+		qb.setStart("SELECT * FROM USER obj");
 		qb.limit(pp.integer("page"), pp.integer("perPage"));
 		list.add(processMany(qb));
 

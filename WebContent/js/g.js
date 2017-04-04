@@ -7,6 +7,14 @@
 
 var G = {
 
+	interpret(obj) {
+		if (typeof obj === 'function') {
+			return obj();
+		} else {
+			return obj;
+		}
+	},
+		
 	clone : function(obj) {
 		return $.extend(true, {}, obj);
 	}, 
@@ -21,10 +29,10 @@ var G = {
 		
 	// Shows a 'loading' gif in the middle of the screen
 	loading : function(isLoading) {
-		if (this._loadingInitialized === undefined) {
+		if (false && this._loadingInitialized === undefined) {
 			$('body').append(`
-					<div id="asyncLoadingImage" class="modalImage">
-						<img height="200" width="200" src="res/img/loading.gif"/>
+					<div id="asyncLoadingImage" class="modal">
+						<img class="loadingImage" height="200" width="200" src="res/img/loading.gif"/>
 					</div>
 				`);	
 			this._loadingInitialized = true;	
@@ -50,7 +58,7 @@ var G = {
 		// Maps all form fields into properties of their name
 		loadFields : function(selector) {
 			const data = {};
-			$(selector).children('input, select').each(function () {
+			$(selector).find('input, select, textarea').each(function () {
 				data[$(this).attr(`name`)] = $(this).val();
 			});
 			return data;
@@ -59,10 +67,16 @@ var G = {
 		// Sets all form fields by passing an object that contains
 		// values mapped by their name
 		setFields : function(selector, data) {
-			$(selector).children('input, select').each(function () {
-				$(this).val(data[$(this).attr(`name`)]);
-			});
-			return data;
+			if (data) {
+				$(selector).find('input, select, textarea').each(function () {
+					$(this).val(data[$(this).attr(`name`)]);
+				});
+				return data;
+			} else {
+				$(selector).find('input, select, textarea').each(function () {
+					$(this).val(null);
+				});
+			}
 		},	
 	},
 	
@@ -216,10 +230,39 @@ var G = {
 		if (really) window.history.replaceState("", document.title, window.location.href.split("?")[0] +"?" + $.param(this._params));
 	},
 	
-	// Posts a json object
+	// Posts a json object in args. {reqtype, table, data}
 	dbPost : function(args, callback) {
+		// Make the object if it does not already exist
+		if (!args) {
+			args = {}
+		}
+		
+		// Confirm its a post method
 		args.method = "post";
+		if (!args.data) {
+			args.data = {};
+		}
+		
+		// Relocate reqType to data
+		if (args.reqType !== undefined) {
+			args.data.reqType = args.reqType;
+			delete args.reqType;
+		}
+		
+		// Relocate ID to data
+		if (args.id !== undefined) {
+			args.data.id = args.id;
+			delete args.id;
+		}
+
+		// Relocate everything from xtra to data
+		if (args.xtra) {
+			$.extend(args.data, args.xtra);
+		}
+		
+		args.url = args.url || args.table;
 		args.success = (args.success || callback);
+		console.log(args);
 		$.ajax(args);
 	},
 	

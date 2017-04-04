@@ -7,16 +7,21 @@
 
 <!-- General purpose functions and HTML string generation -->
 <script src="js/g.js"></script>
-<script src="js/h.js"></script>
 <script src="js/myjsaddons.js"></script>
 
-<!-- Objects -->
+<script src="js/htmlgen/h.js"></script>
+
 <script src="js/objects/dataobj.js"></script>
-<script src="js/objects/user.js"></script>
+<script src="js/htmlgen/dataobjinput.js"></script>
+<script src="js/htmlgen/dataobjrender.js"></script>
+
 <script src="js/objects/forum.js"></script>
-<script src="js/objects/foruminput.js"></script>
-<!--<script src="js/objects/thread.js"></script> TODO-->
-<!--<script src="js/objects/post.js"></script> TODO-->
+<script src="js/htmlgen/foruminput.js"></script>
+<script src="js/htmlgen/forumrender.js"></script>
+
+<script src="js/objects/user.js"></script>
+<script src="js/htmlgen/userinput.js"></script>
+<script src="js/htmlgen/userrender.js"></script>
 
 <script src="js/modal.js"></script>
 <script src="js/search.js"></script>

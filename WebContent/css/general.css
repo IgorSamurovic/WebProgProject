@@ -37,9 +37,13 @@
 .left {float:left;}
 .right{float:right;}
 
+.flex05{flex: 0.5 !important;}
 .flex1{flex: 1 !important;}
 .flex2{flex: 2 !important;}
 .flex3{flex: 3 !important;}
+.flex4{flex: 4 !important;}
+.flex5{flex: 5 !important;}
+.flex6{flex: 6 !important;}
 
 .center
 {
@@ -65,7 +69,44 @@
 	padding: 0;
 	display: flex;
 	flex-direction: row;
+	flex-wrap: wrap;
 }
+
+.rowFlex, .rowFlexAlways input, select {
+	min-width: 25px;
+}
+  
+.rowflex, .rowFlexAlways button {
+  	min-width: 75px
+ }
+ 
+ .rowFlexAlways {
+	align-items: stretch;
+	min-height: 0;
+	margin: 0 auto;
+	padding: 0;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+ 
+.columnFlex {
+	flex : 1;
+	align-items: stretch;
+	min-height: 0;
+	margin: 0 auto;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	flex-wrap: wrap;
+}
+
+.columnFlex input, select {
+	min-width: 100px;
+}
+  
+.columnFlex button {
+ }
 
 .navigation li {
 	font-size: x-large;
@@ -82,20 +123,7 @@
 
 /* !MODAL -------------------------------------------------- */
 
-div.modalImage {
-    position:relative;
-    height: 100%;
-    width:100%;
-}
-
-html, body
-{
-    height: 100%;
-    margin:0;
-    padding:0;
-}
-
-div.modalImage img {
+div.modal img.loadingImage  {
     position:absolute;
     top:0;
     left:0;
@@ -116,26 +144,48 @@ div.modal {
     background-color: rgba(0,0,0,0.4);
 }
 
+div.modalWindow div.page {
+	flex:1;
+}
+
 div.modalWindow {
+	
+	position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    margin:auto;
+	
+	max-height: calc(100vh);
+    overflow-y: auto;
+	
     position: fixed;
     margin: 100px auto; 
     z-index: 1; 
     
     width: 100%;
-    height: 100%; 
     overflow: auto;
+    
+     display: flex;
+	  align-items: center;
+	  justify-content: center;
+    
 }
 
 /* !BTNS and !LINKS -------------------------------------------------- */
 
 button {
+	overflow: hidden;
+	min-width: 25px;
+	text-align:center;
 	height: 40px;
+	line-height: 1em;
 	cursor: pointer;
-	padding: 8px 8px;
     margin: 2px;
     border: 2px solid var(--darker);
     font-weight: bold;
-    font-size: medium;
+    font-size: 1em;
     box-sizing: border-box;
     color: var(--lighttext);
     background-color: var(--darker);
@@ -144,11 +194,26 @@ button {
     vertical-align: middle;
 }
 
-.btn2 {
-	text-decoration: none;
-	font-weight: bold;
+button div {
+	overflow: hidden;
+	width:100%;
+	text-align: center;
+	display: inline;
+	vertical-align: middle;
+}
+
+button.big, a.big {
+	font-size: x-large;
+	height: 40px;
+}
+
+button.small, a.small {
+	font-size: medium;
+	max-height: 25px;
+}
+
+.special {
 	background-color: var(--darker2);
-	cursor: pointer;
     color: var(--lighttext2);
 }
 
@@ -167,19 +232,19 @@ button {
 }
 
 button:hover  {background: var(--dark);}
-.btn2:hover {background: var(--dark2);}
+.special:hover {background: var(--dark2);}
 
 .link:hover  {color: var(--dark);}
 .link2:hover {color: var(--dark2);}
 
 button:active {background: var(--light);}
-.btn2:active {background: var(--light2);}
+.special:active {background: var(--light2);}
 
 .link:active {color: var(--darker);}
 .link2:active {color: var(--light2);}
 
 .selected {border: 2px solid var(--dark) !important;}
-.selected2 {border: 2px solid var(--dark2) !important;}
+.specialselected {border: 2px solid var(--dark2) !important;}
 
 .unselectable {user-select: none;}
 
@@ -206,7 +271,7 @@ footer:a {
 
 /* !INPUTs and !SELECTs -------------------------------------------------- */
 
-input, select {
+input, select, textarea {
 	height: 40px;
 	min-width: 100px;
 	padding: 8px 8px;
@@ -218,7 +283,17 @@ input, select {
     color: var(--lighttext);
     background-color: var(--darkestest);
     flex: 1;
-    display: inline;
+}
+
+input, select {
+	max-height: 40px;
+}
+
+textarea {
+	font-size: large;
+	display: inline;
+    resize: vertical;
+    width: 100%;
 }
 
 ::-webkit-input-placeholder {
@@ -229,22 +304,23 @@ input, select {
     width: 100%;
 }
 
-div, button, input, select, a, img, ul
+div, button, input, select, textarea, a, img, ul
 {
 	border-radius: 10px;
+	color: white;
 }
 
 div.boldText, p.boldText, span.boldText
 {
-	line-height: 40px;
+	display: inline;
     text-align: center;
 	color: white;
     font-weight: bold;
     font-size: large;
-    margin: 4px;
+    margin: 4px auto;
     vertical-align: middle;   
-    height: 40px;
-    padding: 0;         
+    height: 40px;  
+    width : 100% !important;     
 }
 
 div.inputRow
@@ -255,24 +331,17 @@ div.inputRow
 	margin: 0 auto;
 }
 
-
-
-input[type=datetime-local].half
+.wide
 {
 	width: 100%;
 }
 
-div.wide, span.wide
-{
-	width: 100%;
-}
-
-div.half, span.half
+.half
 {
 	width: 50%;
 }
 
-input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, input[type=datetime-local]:focus, select:focus {
+input:focus, select:focus, textarea:focus {
     outline: none;
     border: 2px solid var(--dark2);
 }
@@ -280,14 +349,13 @@ input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, inp
 @media all and (max-width: 600px)
 {
   input,select {
-    width:100% !important;
   }
   
-  .rowFlex {
-	width: 100%;
+  .rowFlex, .columnFlex {
+	width: 100% !important;
 	flex-direction: column !important;
 	flex-wrap: wrap;
-	flex: 1;
+	flex: 1 !important;
   }
   
   div.inputRow
@@ -337,7 +405,9 @@ div.msg
 }
 
 
-
+input[type=datetime-local] {
+	min-width: 200px !important;
+}
 
 
 input[type=file]
@@ -347,21 +417,7 @@ input[type=file]
 	opacity:0 !important;
 }
 
-input[type=submit].big, input[type=reset].big, button.big, a.big
-{
-	font-size: x-large;
-	text-align:center;
-    padding: 14px 25px !important;
-}
 
-input[type=submit].small, input[type=reset].small, button.small, a.small
-{
-	font-size: medium;
-	text-align:center;
-	min-width: 25px;
-	max-height: 25px;
-	padding: 4px 2px;
-}
 
 div.stdSpacer
 {
@@ -472,6 +528,16 @@ div.pagetitle {
     color: white;
 }
 
+div.subpagetitle {
+	width: 100%;
+	font-size: large;
+	font-weight: bold;
+	text-align:left;
+	margin: 4px;
+    color: white;
+    flex: 10;
+}
+
 widthspanned
 {
 	width: 100%;
@@ -484,7 +550,7 @@ div.large {
 }
 
 div.small {
-	max-width: 600px;
+	max-width: 800px;
 }
 
 div.tiny {
@@ -496,32 +562,17 @@ div.searchresults {
 	margin: 0 auto;
 }
 
-div.searchresult {
-	text-align: center;
-	margin: 5px auto;
-}
-
-div.userProfile {
+div.itemContainer {
 	box-sizing:border-box;
-	display: flex;
 	border: 2px solid var(--darker);
-	text-align: left;
+		text-align: center;
+	margin: 5px auto;
+	flex: 1;
 	width: 100%;
-	min-height: 100px;
 	background-color: var(--darkestest);
 	background-color: var(--darkestestRGBA);
 	
 	padding: 5px;
-	flex-wrap: row wrap;
-}
-
-div.useravatar {
-	flex: 1;
-	background-color: var(--darker);
-	width: 120px;
-	height: 120px;
-	border: 2px solid var(--darker);
-	margin: 4px;
 }
 
 
@@ -541,50 +592,31 @@ div.useravatarsetup {
 }
 
 img.useravatar {
-	margin: 0 auto;
-	position: relative;
-	border: none;
 	border: 2px solid var(--darker)
 }
 
-div.useravatar:hover, img.useravatar:hover {
-	
+img.useravatar:hover {
 	border: 2px solid var(--dark);
-	
 }
 
-div.useravatar:focus, img.useravatar:focus {
-	
+img.useravatar:focus {
 	border: 2px solid var(--light);
-	
 }
-
-iframe
-{
-	margin: 0;
-	padding: 0;
-	border: none;
-	width: value;
-	height: value;
-}
-
 
 div.userinfo {
 	box-sizing:border-box;
 	overflow: hidden;
-	flex: 1;
 	width: 80px;
 	height: 100px;
 }
 
-
-
 dl.userinfo {
+	text-align: left;
 	overflow: visible;
-	width: 100%;
 	padding: 0;
 	margin: 4px;
 	margin-left: 8px !important;
+	flex: 1;
   
 }
 

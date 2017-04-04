@@ -9,13 +9,15 @@ $(document).ready(function() {
 	G.addPage(H.page({
 		name: 'subforums',
 		title: 'Subforums',
+		canHide : true,
+		canFilter : true
 	}));
-	
+	/*
 	G.addPage(H.page({
 		name: 'threads',
 		title: 'Threads',
 	}));
-	
+	*/
 	(function () {
 		const params = G.getParams();
 		
@@ -36,8 +38,9 @@ $(document).ready(function() {
 			
 				if (data.totalRecords === 1) {
 					Search.create({
+						useParams  : true,
 						prefix     : "forum",
-						parent     : "forumPageContent",
+						parent     : "#forumPageContent",
 						objType    : Forum,
 						data       : data,
 						dataFunc   : G.dbGet,
@@ -53,7 +56,7 @@ $(document).ready(function() {
 					}).loadResults();
 					
 					var forumData = data;
-					var forum = G.create(Forum, data[0]);
+					var forum = Forum.create(data[0]);
 					
 	
 					
@@ -65,7 +68,7 @@ $(document).ready(function() {
 						allowed    : ['owner', 'page', 'perPage'],
 						useParams  : false,
 						prefix     : "subforums",
-						parent     : "subforumsPageContent",
+						parent     : "#subforumsPageContent",
 						objType    : Forum,
 						dataFunc   : G.dbGet,
 						dataArgs   : {
@@ -80,13 +83,17 @@ $(document).ready(function() {
 							},
 						},
 						renderFunc : Forum.render,
-						filter     : `
-							${Forum.inputTitle()}
-							${Forum.inputOwner()}
-							${Forum.inputDate('dateA')}
-							${Forum.inputDate('dateB')}
-							${Forum.selectOrderBy()}
-						`
+						filter     : Forum.renderFilter,
+						add : {
+							html  : Forum.renderAdd,
+							label : 'Add a subforum',
+							title : 'New subforum',
+							data  : function() {
+								return {
+									parent  : params.id,
+								}
+							}
+						}
 					}).loadResults();
 					
 					

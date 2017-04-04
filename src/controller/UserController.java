@@ -81,6 +81,8 @@ public class UserController extends HttpServlet {
 		
 		String reqType = pp.string("reqType");
 		
+		if (reqType == null) return;
+		
 		if (reqType.equals("register")) {
 			if (current.isGuest()) {
 				User entry = new User();
@@ -107,7 +109,7 @@ public class UserController extends HttpServlet {
 			}
 		}
 		
-		else if (reqType.equals("insert")) {
+		else if (reqType.equals("add")) {
 			if (current.getRole() >= 2) {
 				User entry = new User();
 				entry.setUsername(username);
@@ -128,7 +130,7 @@ public class UserController extends HttpServlet {
 			}
 		}
 		
-		else if (reqType.equals("update")) {
+		else if (reqType.equals("edit")) {
 			if (id != null && current.getId() != null && (id.equals(current.getId()) || current.getRole() >= User.Role.ADMIN)) {
 				User entry = new UserDAO().findById(id, current);
 				User emailCheck = null;

@@ -3,26 +3,26 @@ package controller.util;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
 public class ParamProcessor
 {
-	private HttpServletRequest request;
 	private Map<String, String[]> map;
+	@SuppressWarnings("unused")
 	private static final Pattern INDEX_PATTERN = Pattern.compile("\\[(.*?)\\]");
 	
 	@SuppressWarnings("unchecked")
 	public ParamProcessor(HttpServletRequest request)
 	{
-		this.request = request;
+
 		this.map = new HashMap<String, String[]>();
 		map.putAll(request.getParameterMap());
 	}
 	
 	public void printDebug() {
+		System.err.println();
 		for (String key : this.map.keySet()) {
 			System.err.println(key + " : " + this.map.get(key)[0]);
 		}

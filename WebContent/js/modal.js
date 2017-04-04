@@ -1,15 +1,12 @@
 Modal = {
 		
-	getPage : function(name, cls) {
-		name = name + 'Modal';
+	getPage : function(name, pageArgs) {
+		pageArgs.name = name + 'Modal';
+		console.log(pageArgs);
 		return `
-			<div class='hidden modal' id='${name}'>
+			<div class='hidden modal' id='${pageArgs.name}'>
 				<div class='modalWindow'>
-				${H.page({
-					name : name,
-					cls : cls,
-					canExit : true
-				})}
+					${H.page(pageArgs)}
 				</div>
 			</div>
 		`;
@@ -27,7 +24,7 @@ Modal = {
 		}
 	},
 	
-	create : function(name, cls) {
+	create : function(name, newArgs) {
 		const modal = Object.create(this);
 
 		// Set modal's properties
@@ -38,8 +35,16 @@ Modal = {
 		modal.title     = `#${name}ModalPageTitle`;
 		modal.content   = `#${name}ModalPageContent`;
 		
+		if (!newArgs) newArgs = {};
+		
 		// Add the hidden modal object to the page
-		$('body').append(modal.getPage(name, cls));
+		const pageArgs = $.extend({
+			name : name,
+			cls : "small",
+			canExit : true,
+		}, newArgs);
+		
+		$('body').append(modal.getPage(name, pageArgs));
 		
 		// Add the modal object to fields that can receive html
 		$(modal.container).data(`modalObject`, modal);
@@ -76,7 +81,7 @@ Modals = {
 			</div>
 		`;
 		
-		const modal = Modal.create('confirm', 'tiny');
+		const modal = Modal.create('confirm', {cls:'tiny'});
 		
 		$(modal.content).html(content);
 		
@@ -95,6 +100,60 @@ Modals = {
 		    event.stopPropagation();
 		    event.preventDefault();
 		    if (noFunc) noFunc();
+		    modal.destroy();
+		});
+		
+		modal.display(true);
+	},
+	
+	deleteDialog(object, doDelete, callback) {
+		const question = 'Are you sure?';
+		const title = 'Confirmation';
+		const user = User.getCurrent();
+		var buttons = [];
+		
+		if (doDelete) {
+			buttons.push(H.btn('Yes (Soft delete)', 'YesBtn1', cls='special big', null));
+			if (user.isAdmin()) {
+				buttons.push(H.btn('Attempt hard delete', 'YesBtn2', cls='small', null));
+			}
+		} else {
+			buttons.push(H.btn('Yes (Undelete)', 'YesBtn1', cls='big', null));
+		}
+		buttons.push(H.btn('No ', 'NoBtn',  cls='big', null));
+		
+		const content = `
+			<div class='boldText'>${question}</div>
+			<div class='buttons'>
+				${buttons.join("")}
+			</div>
+		`;
+		
+		const modal = Modal.create('confirmDelete', {cls:'tiny'});
+		
+		$(modal.content).html(content);
+		
+		$(`[name='YesBtn1']`).focus();
+		
+		$(modal.title).html(title);
+		
+		$(modal.content).on('click', '[name="YesBtn1"]', function(event) {
+		    event.stopPropagation();
+		    event.preventDefault();
+		    object.del(doDelete, false, callback);
+		    modal.destroy();
+		});
+		
+		$(modal.content).on('click', '[name="YesBtn2"]', function(event) {
+		    event.stopPropagation();
+		    event.preventDefault();
+		    object.del(doDelete, true, callback);
+		    modal.destroy();
+		});
+		
+		$(modal.content).on('click', '[name="NoBtn"]', function(event) {
+		    event.stopPropagation();
+		    event.preventDefault();
 		    modal.destroy();
 		});
 		

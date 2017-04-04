@@ -27,19 +27,25 @@
 	// Maps all form fields into properties of their name
 	$.fn.loadFields = function() {
 		const data = {};
-		this.children('input, select').each(function () {
-			data[$(this).attr(`name`)] = $(this).val();
+		var name;
+		this.find('input, select, textarea').each(function () {
+			name = $(this).attr(`name`);
+			if (!name.startsWith('!')) {
+				data[name] = $(this).val();
+			}
 		});
 		return data;
 	};
 	
 	// Sets all form fields by passing an object that contains
 	// values mapped by their name
-	setFields = function(data) {
-		this.children('input, select').each(function () {
+	$.fn.setFields = function(data) {
+		this.find('input, select, textarea').each(function () {
 			$(this).val(data[$(this).attr(`name`)]);
 		});
 		return data;
 	};
+	
+	
 	
 }) (jQuery);

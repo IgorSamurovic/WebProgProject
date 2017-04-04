@@ -1,58 +1,11 @@
-DataObj = {
+const DataObj = {
 
-	selectAsc : function() {
-		return H.selectBase({
-			name : "asc",
-			options : ['Asc', 'Desc'],
-			selected : 1
-		});	
-	},
-		
-	selectOrderBy : function(options) {
-		return [`<div class="boldText">Order by:</div>`, H.selectBase({
-			name : "orderBy",
-			options : options || []
-		}), this.selectAsc()].join("");
-	}, 
-	
- 
-		
-	renderYesNo : function(prop) {
-		if (this.data[prop] === undefined) {
-			return 'Undefined';
-		} else if (this.data[prop] === true) {
-			return 'Yes';
-		} else {
-			return 'No';
-		}
+	// Checks whether the object gets special treatment because it is a ROOT administrator or core FORUM
+	isGod : function(id=this.data.id) {
+		return id == 1;
 	},
 	
-	renderOwner : function() {
-		return '<a class="link2" href="profile.jsp?id={id}">{username}</a>'.supplant({id:this.data.owner, username:this.xtra.ownerUsername});
-	},
-
-	renderVistype: function() {
-		console.log(this.data.vistype);
-		const vistype = this.data.vistype !== undefined ? this.data.vistype : this.xtra.vistype;
-		switch (vistype) {
-		case (0): return "Public";
-		case (1): return "Private";
-		case (2): return "Closed";
-		}
-	},
-	
-	renderDate: function() {
-		return this.data.date.substring(0, 16);
-	},
-	
-	renderLocked: function() {
-		return this.renderYesNo('locked');
-	},
-	
-	renderDeleted: function() {
-		return this.renderYesNo('deleted');
-	},
-	
+	// Creates a JSON object from literal data that was already taken from the database
 	create : function(objData) {
 		var obj = Object.create(this);
 		obj.xtra = {};
@@ -72,5 +25,122 @@ DataObj = {
 		
 		return obj;
 	},
+	
+	// Changes an object from the database, then calls the callback function
+	add: function(data, callback) {
+		console.log("in add");
+		console.log(data);
 		
+		G.dbPost({
+			reqType : 'add',
+			url     : this._table,
+			data    : data,
+			success : callback
+		});
+	},
+	
+	// Changes an object from the database, then calls the callback function
+	edit: function(data=this.data, callback) {
+		G.dbPost({
+			reqType : 'edit',
+			url     : this._table,
+			id      : this.data.id,
+			data    : data,
+			success : callback
+		});
+	},
+	
+	// Deletes an object from the database, then calls the callback function
+	del: function(doDelete, preferHard=false, callback) {
+		G.dbPost({
+			url  : this._table,
+			data : {
+				reqType : 'del',
+				id      :  this.data.id,
+				deleted :  doDelete,
+				preferHard : preferHard
+			},
+			success : callback
+		});
+	},
+
+	openSelectModal : function(elementTarget) {
+		const modal = Modal.create(`select`, {cls:`small`, canFilter:true});
+
+		this.renderSelectModal(modal.content, elementTarget);
+		
+		$(modal.title).html(`Select ${this._table}`);
+		modal.display();
+	}, 
+	
+	openEditModal : function(obj=this, callback) {
+		const formBase = 'editModalForm';
+		const form = `#${formBase}`;
+		
+		const modal = Modal.create(`edit`, {cls:`small`});
+
+		$(modal.content).html(`<form id="${formBase}"></form>`);
+		this.renderEdit(form, obj);
+		
+		// Submit
+		$(form).submit(function(event) {
+			event.preventDefault();
+			
+			var data = $(form).loadFields();
+			
+			obj.edit(data,  function(error) {
+				if (!error) {
+					if (modal) {
+						modal.destroy();
+					}
+					callback(error);
+				} else {
+					G.msg('editModal', error, false);
+				}
+			});
+				
+		});
+		
+		$(form).append(`
+			${H.msg('editModal')}
+			<div class="rowFlex">
+				${H.btn('Reset', 'reset', 'big btn flex1')}
+				${H.btn('Edit', 'edit', 'big btn2 flex3', null, 'submit')}
+				${H.btn('Cancel', 'cancel', 'big btn flex1')}
+			</div>
+		`);
+		
+		// Cancel
+		$(form).on('click', '[name="cancel"]', function(btn) {
+			if (modal) {
+				modal.destroy();
+			}
+		});
+		
+		// Reset
+		$(form).on('click', '[name="reset"]', function(btn) {
+			$(form).setFields(user.data);
+		});	
+		
+		$(modal.title).html(`Editing ${this._table} ${this.getTitle()}`);
+		modal.display();
+	},
 }
+
+$(document).ready(function() {
+	
+	$(document).on('click', '[name="editBtn"]', function(button) {
+		const that = this;
+		Search.getObject(this).openEditModal(undefined, function() {
+			Search.getSearch(that).loadResults();
+		});
+	});
+	
+	$(document).on('click', '[name="deleteBtn"]', function(button) {
+		const that = this;
+		Modals.deleteDialog(Search.getObject(this), $(this).data("val"), function() {
+			Search.getSearch(that).loadResults();
+		});
+	});
+});
+

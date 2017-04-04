@@ -4,10 +4,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import controller.util.ParamProcessor;
+import model.User;
 
 public class QueryBuilder
 {
@@ -25,6 +27,18 @@ public class QueryBuilder
 	private Connection conn;
 	private boolean hasArgs;
 	ParamProcessor pp;
+	
+	public String checkTable(String orderBy, String[] tables) {
+		System.err.println(orderBy);
+		System.err.println(tables);
+		String fix = tables[0];
+		if (orderBy == null)
+			return fix;
+		orderBy = orderBy.toLowerCase();
+		ArrayList<String> valid = new ArrayList<String>(Arrays.asList(tables));
+
+		return orderBy != null && valid.contains(orderBy) ? orderBy : fix;
+	}
 	
 	private Integer numRecords;
 	
@@ -89,7 +103,7 @@ public class QueryBuilder
 	// From the parameter processor
 	private String prep(String part) {
 		if (part != null && part.charAt(0) == '$' && this.pp != null) {
-			System.err.println("prep: " + part.substring(1, part.length()));
+			//System.err.println("prep: " + part.substring(1, part.length()));
 			return this.pp.string(part.substring(1, part.length()));
 		}
 		return part;
@@ -100,13 +114,13 @@ public class QueryBuilder
 	private String processPart(String part) {
 
 		boolean proper = true;
-		System.err.println("PART!!!!!!!  " + part);
+		//System.err.println("PART!!!!!!!  " + part);
 		String tmp;
 		Matcher m = PARAM_PATTERN.matcher(part);
 		
 		while (m.find()) {
 			tmp = prep(m.group(0));
-			System.err.println("TMP!!!!!!!!  " + tmp);
+			//System.err.println("TMP!!!!!!!!  " + tmp);
 		    if (tmp == null) {
 		    	proper = false;
 		    } else {
@@ -123,7 +137,7 @@ public class QueryBuilder
 	
 	// "id = ?", id
 	public QueryBuilder and(String part, Object o) {
-		System.err.println("PART: " + part);
+		//System.err.println("PART: " + part);
 		
 		part = processPart(part);
 		if (part != null && o != null) {
@@ -132,7 +146,7 @@ public class QueryBuilder
 			addParam(o, part.toUpperCase().contains("LIKE"));
 			hasArgs = true;
 		}
-		System.err.println();
+		//System.err.println();
 		return this;
 	}
 	
@@ -161,13 +175,13 @@ public class QueryBuilder
 	// and("id = $id")
 	public QueryBuilder and(String part) {
 		part = processPart(part);
-		System.err.println("PART!FIXED!  " + part);
+		//System.err.println("PART!FIXED!  " + part);
 		if (part != null) {
 			query += andString();
 			query += part;
 			hasArgs = true;
 		}
-		System.err.println();
+		//System.err.println();
 		return this;
 	}
 	
@@ -209,16 +223,18 @@ public class QueryBuilder
 		} catch (Exception e) {e.printStackTrace();}
 	}
 	
+	public QueryBuilder orderBy(String orderBy, String asc, String[] tables) {
+		orderBy = prep(orderBy);
+		asc = prep(asc);
+		return this.orderBy(checkTable(orderBy, tables), asc);
+	}
+	
 	public QueryBuilder orderBy(String orderBy, String asc) {
 		orderBy = prep(orderBy);
 		asc = prep(asc);
 		
 		if (orderBy == null) orderBy = "ID";
 		if (asc == null) asc = "TRUE";
-		
-		System.err.println("OrderBy = " + orderBy);
-		System.err.println("ASC     = " + asc);
-		
 		
 		if (orderBy != null) {
 			query += orderByString() + orderBy;
@@ -268,10 +284,17 @@ public class QueryBuilder
 	
 	private static int[] perPageValues = {1, 5, 10, 20, 50};
 	
+	public QueryBuilder limit(String page, String perPage) {
+		try {
+			limit(Integer.valueOf(prep(page)), Integer.valueOf(prep(perPage)));
+		} catch (Exception e) {
+			limit(1, 10);
+		}
+		return this;
+	}
+	
 	public QueryBuilder limit(Integer page, Integer perPage)
 	{
-
-		
 		if (page == null || page <= 0) {
 			page = 1;
 		}

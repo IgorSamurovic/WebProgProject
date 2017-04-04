@@ -3,10 +3,7 @@ package model.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 
 import controller.util.ParamProcessor;
 import model.Forum;
@@ -16,20 +13,7 @@ import model.dao.util.QueryBuilder;
 
 public class ForumDAO {
 	
-	static String[] tables = { "title", "parent", "owner", "name", "surname", "role" };
-
-	private String checkTable(String orderBy, User user) {
-		String fix = "username";
-		if (orderBy == null)
-			return fix;
-		orderBy = orderBy.toLowerCase();
-		ArrayList<String> valid = new ArrayList<String>(Arrays.asList(tables));
-		if (user.getRole() >= User.Role.ADMIN) {
-			valid.add("deleted");
-		}
-
-		return orderBy != null && valid.contains(orderBy) ? orderBy : fix;
-	}
+	static String[] tables = {"obj.date", "obj.title", "usrowner.username"};
 	
 	private Forum process(ResultSet rs) throws Exception {
 		Forum f =  new Forum (
@@ -60,7 +44,7 @@ public class ForumDAO {
 			.and("date >= $dataB")
 			.and("locked <= $includeLocked")
 			.and("deleted = FALSE")
-			.orderBy("$orderBy", "$asc")
+			.orderBy("$orderBy", "$asc", tables)
 			.orderBy("deleted", "DESC");
 		} else {
 			qb
@@ -73,8 +57,8 @@ public class ForumDAO {
 			.and("date >= $dataB")
 			.and("locked <= $includeLocked")
 			.and("deleted <= $includeDeleted")
-			.orderBy("$orderBy", "$asc")
-			.orderBy("obj.deleted", "DESC");
+			.orderBy("obj.deleted", "asc")
+			.orderBy("$orderBy", "$asc", tables);
 		}
 	}
 
@@ -83,33 +67,31 @@ public class ForumDAO {
 		ArrayList<Object> list = new ArrayList<Object>();
 		QueryBuilder qb = new QueryBuilder(pp);
 		
-		// Preprocess attributes
-		String ownerUsername = pp.string("ownerUsername");
-		//pp.remove("ownerUsername");
-		//if (ownerUsername != null) {
-		//	User u = new UserDAO().findByUsername(ownerUsername, user);
-		//	if (u != null) {
-		//		pp.add("owner", u.getId().toString());
-		//	}
-		//}
+		Boolean useAncestor = pp.bool("ancestor");
+		Integer ancestorId = null;
 		
+		// Let's see if we're searching through ancestry and not parenthood
+		if (useAncestor != null && useAncestor) {
+			ancestorId = pp.integer("parent");
+			pp.remove("parent");
+		}
+		
+		// Create part of the query that deals with filters
 		processFilter(qb, pp, user);
 		qb.setStart("SELECT COUNT(obj.ID) FROM FORUM obj");
 		qb.setJoin("LEFT JOIN USER usrowner "
 				+  "ON obj.owner = usrowner.id");
 		
+		// Add number of records to list[0]
 		list.add(qb.getNumRecords());
 
-
-		System.err.println();
-		pp.printDebug();
+		//pp.printDebug();
 		
 		qb.setStart("SELECT obj.*, usrowner.username FROM FORUM obj");
-		
-		qb.limit(pp.integer("page"), pp.integer("perPage"));
+		qb.limit("$page", "$perPage");
 		
 		list.add(processMany(qb));
-		System.err.println(qb.getQuery());
+		//System.err.println(qb.getQuery());
 		return list;
 	}
 
@@ -166,14 +148,15 @@ public class ForumDAO {
 	{
 		try (Connection conn = Connector.get();)
 		{
-			PreparedStatement stmt = conn.prepareStatement("UPDATE FORUM SET title=?, descript=?, parent=?, owner=?, vistype=?, locked=? WHERE id=?;");
+			PreparedStatement stmt = conn.prepareStatement("UPDATE FORUM SET title=?, descript=?, parent=?, owner=?, vistype=?, locked=?, deleted=? WHERE id=?;");
 			stmt.setObject(1, o.getTitle());
 			stmt.setObject(2, o.getDescript());
 			stmt.setObject(3, o.getParent());
 			stmt.setObject(4, o.getOwner());
 			stmt.setObject(5, o.getVistype());
 			stmt.setObject(6, o.getLocked());
-			stmt.setObject(7, o.getId());
+			stmt.setObject(7, o.getDeleted());
+			stmt.setObject(8, o.getId());
 			return stmt.executeUpdate();
 		}
 		catch (Exception e)
@@ -184,8 +167,8 @@ public class ForumDAO {
 	}
 	
 
-	public boolean delete(Forum o, User user, boolean doDelete, boolean preferHard) {
-		if (preferHard) {
+	public boolean delete(Forum o, User user, boolean doDelete, Boolean preferHard) {
+		if (preferHard != null && preferHard) {
 			return hardDelete(o);
 		} else {
 			return softDelete(o, doDelete);
@@ -206,10 +189,11 @@ public class ForumDAO {
 
 	private boolean hardDelete(Forum o) {
 		try (Connection conn = Connector.get();) {
-			PreparedStatement stmt = conn.prepareStatement("DELETE FORUM WHERE id=?;");
+			PreparedStatement stmt = conn.prepareStatement("DELETE FROM FORUM WHERE id=?;");
 			stmt.setObject(1, o.getId());
 			return stmt.execute();
 		} catch (Exception e) {
+			softDelete(o, true);
 			e.printStackTrace();
 		}
 		return false;
