@@ -14,11 +14,13 @@ public class ParamProcessor
 	private static final Pattern INDEX_PATTERN = Pattern.compile("\\[(.*?)\\]");
 	
 	@SuppressWarnings("unchecked")
-	public ParamProcessor(HttpServletRequest request)
-	{
-
+	public ParamProcessor(HttpServletRequest request) {
 		this.map = new HashMap<String, String[]>();
 		map.putAll(request.getParameterMap());
+	}
+	
+	public ParamProcessor(HashMap<String, String[]> newMap) {
+		this.map = newMap;
 	}
 	
 	public void printDebug() {

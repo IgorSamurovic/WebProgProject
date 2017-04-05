@@ -7,6 +7,14 @@
 
 var G = {
 
+	_enableLogging : true, 
+	
+	log : function(txt) {
+		if (this._enableLogging) {
+			console.log(txt);
+		}
+	}, 
+		
 	interpret(obj) {
 		if (typeof obj === 'function') {
 			return obj();
@@ -53,32 +61,7 @@ var G = {
 		val = parseInt(val, 10);
 		return (val !== undefined && val !== null && typeof val === 'number' && val > 0);
 	},
-	
-	input : {
-		// Maps all form fields into properties of their name
-		loadFields : function(selector) {
-			const data = {};
-			$(selector).find('input, select, textarea').each(function () {
-				data[$(this).attr(`name`)] = $(this).val();
-			});
-			return data;
-		},
-		
-		// Sets all form fields by passing an object that contains
-		// values mapped by their name
-		setFields : function(selector, data) {
-			if (data) {
-				$(selector).find('input, select, textarea').each(function () {
-					$(this).val(data[$(this).attr(`name`)]);
-				});
-				return data;
-			} else {
-				$(selector).find('input, select, textarea').each(function () {
-					$(this).val(null);
-				});
-			}
-		},	
-	},
+
 	
 	// Goes to the location
 	href : function(url) {
@@ -262,7 +245,10 @@ var G = {
 		
 		args.url = args.url || args.table;
 		args.success = (args.success || callback);
-		console.log(args);
+		
+		G.log('Passing this to POST:');
+		G.log(args);
+		G.log("");
 		$.ajax(args);
 	},
 	
@@ -313,7 +299,9 @@ var G = {
 			G.loading(false);
 			callback(data);
 		};
-		
+		G.log('Passing this to GET:');
+		G.log(params);
+		G.log("");
 		$.ajax(params);
 	},
 	

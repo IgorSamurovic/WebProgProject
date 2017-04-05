@@ -29,24 +29,12 @@ $.extend(DataObj, {
 			val       : 'selectId',
 		});
 	},
+
 	
-	inputForum : function(alt, alt2) {
-		alt = $.extend({
-			name      : '!title',
-			placeholder : "Forum",
-			maxlength : '40',
-			pattern   : '.{3,40}',
-			error     : 'Must be at least 3 characters long.',
-			val       : 'selectForum',
-		}, alt);
-		
-		return this.inputObject(alt, alt2);
-	},
-	
-	inputUser : function(alt, alt2) {
+	inputUser : function(alt, alt2, btnLabel="user") {
 		const input = User.inputUsername(alt);
 		const inputId = this.inputId(alt2);
-		const button = H.btn('Select user', 'selectUser', cls='flex1');
+		const button = H.btn(`Select ${btnLabel}`, 'selectUser', cls='flex1');
 		
 		return `
 			<div class="rowFlexAlways">
@@ -57,10 +45,10 @@ $.extend(DataObj, {
 		`;
 	},
 	
-	inputForum : function(alt, alt2) {
+	inputForum : function(alt, alt2, btnLabel="forum" ) {
 		const input = Forum.inputTitle(alt);
 		const inputId = this.inputId(alt2);
-		const button = H.btn('Select forum', 'selectForum', cls='flex1');
+		const button = H.btn(`Select ${btnLabel}`, 'selectForum', cls='flex1');
 		
 		return `
 			<div class="rowFlexAlways">
@@ -70,5 +58,16 @@ $.extend(DataObj, {
 			</div>
 		`;
 	},
+	
+	selectDescendants : function(alt) {
+		return H.selectBase({
+			alt  : alt,
+			name : "showDescendants",
+			options : [
+				[false, "Children"],
+				[true, "Descendants"]
+			],
+		});
+	}, 
 	
 });

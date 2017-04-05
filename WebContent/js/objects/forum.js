@@ -45,7 +45,7 @@ $(document).ready(function() {
 		Modals.confirmation({
 			yesFunc : function() {  
 				Search.getObject(that).lock($(that).data("val"), function() {
-					Search.getSearch(that).loadResults();
+					Search.reloadAll();
 				});
 			}
 		});

@@ -1,4 +1,4 @@
-$.extend(Forum, {
+$.extend(Thread, {
 
 	// Renders the specified field into HTML
 	
@@ -6,16 +6,15 @@ $.extend(Forum, {
 		const modal = $(target).closest('.modal').data('modalObject');
 		
 		Search.create({
-			allowed    : ['owner', 'page', 'perPage'],
 			useParams  : false,
-			prefix     : "selectForum",
+			prefix     : "selectThread",
 			parent     : target,
 			flexType   : "row",
-			objType    : Forum,
-			filter     : Forum.renderFilterSimple,
+			objType    : Thread,
+			filter     : Thread.renderFilterSimple,
 			dataFunc   : G.dbGet,
 			dataArgs   : {
-				url    : "forum",
+				url    : "thread",
 				data   : function() {
 					return {
 						orderBy : "obj.date",
@@ -23,8 +22,7 @@ $.extend(Forum, {
 					};
 				},
 			},
-			renderFunc : Forum.renderSelect,
-			//filter     : User.renderFilter,
+			renderFunc : Thread.renderSelect,
 		}).loadResults();
 
 		// Select
@@ -46,7 +44,9 @@ $.extend(Forum, {
 			<div class="columnFlex wide">
 				<div class="rowFlex">
 					<div class="columnFlex">
-						${Forum.inputTitle()}
+						${Thread.inputTitle()}
+						${Thread.inputDescript()}
+						${Thread.inputText()}
 						${!isMainForum ? Forum.selectType() : ""}
 					</div>
 					<div class="columnFlex">
@@ -63,19 +63,27 @@ $.extend(Forum, {
 		$(target).append(html);
 		$(target).setFields(obj.data);	
 		$(target).find('[name="!ownerUsername"]').val(obj.xtra.ownerUsername);
-		$(target).find('[name="!parentTitle"]').val(obj.xtra.parentTitle);
+		$(target).find('[name="!forumTitle"]').val(obj.xtra.forumTitle);
 	},
 	
 	renderTitle : function(cls) {
-		return `<a class="link2 ${cls}" href="forum.jsp?id=${this.data.id}">${this.data.title}</a>`;
+		return `<a class="link2 ${cls}" href="thread.jsp?id=${this.data.id}">${this.data.title}</a>`;
 	},
 	
 	renderDescript : function() {
 		return (this.data.descript !== undefined && this.data.descript !== null) ? this.data.descript.shorten(80) : "No description";
 	},
 	
-	renderParent : function() {
-		return `<a class="link2" href="forum.jsp?id=${this.data.parent}">${this.xtra.parentTitle}</a>`;
+	renderText : function() {
+		return (this.data.text !== undefined && this.data.text !== null) ? this.data.text.shorten(100) : "No text";
+	},
+	
+	renderForum : function() {
+		return `<a class="link2" href="forum.jsp?id=${this.data.forum}">${this.xtra.forumTitle}</a>`;
+	},
+	
+	renderSticky: function() {
+		return this.renderYesNo('sticky');
 	},
 	
 	renderAdd : function () {
@@ -127,25 +135,24 @@ $.extend(Forum, {
 		`;
 	},
 	
-	render : function(forum=this) {
+	render : function(thread=this) {
 		
 		var currentUser = User.getCurrent();
 		var isAdmin = currentUser.isAdmin();
-		var isGod = forum.isGod();
-		var isDeleted = forum.data.deleted;
-		var isOwner = currentUser.data.id == forum.data.owner; 
+		var isDeleted = thread.data.deleted;
+		var isOwner = currentUser.data.id == thread.data.owner; 
 		
 		// Let's make buttons first!
 		var buttons = [`<div class="buttons">`];
 		
 		if (isAdmin) {
 			if (!isDeleted) buttons.push(H.btn('Edit', 'editBtn', 'small special'));
-			if (!isGod) {
-				if (forum.xtra.deletable)
-					buttons.push(H.toggleBtn(['Delete', 'Undelete'], 'deleteBtn', 'small', !forum.data.deleted));
-				if (!isDeleted && forum.xtra.lockable)
-					buttons.push(H.toggleBtn(['Lock', 'Unlock'], 'forumLockBtn', 'small', !forum.data.locked));
-			}
+			if (thread.xtra.deletable)
+				buttons.push(H.toggleBtn(['Delete', 'Undelete'], 'deleteBtn', 'small', !thread.data.deleted));
+			if (!isDeleted && thread.xtra.lockable)
+				buttons.push(H.toggleBtn(['Lock', 'Unlock'], 'threadLockBtn', 'small', !thread.data.locked));
+			if (!isDeleted) 
+				buttons.push(H.toggleBtn(['Stick', 'Unstick'], 'threadStickBtn', 'small', !thread.data.sticky));
 		}
 		
 		// Close buttons!
@@ -154,8 +161,8 @@ $.extend(Forum, {
 		// Now render the rest of it!
 		var s = [`<div class="rowFlex">`];
 		s.push('{Avatar}');
-		var dlFields = ['Title', 'Descript', 'Parent', 'Owner'];
-		var dlFields2 = ['Visibility', 'Date', 'Locked'];
+		var dlFields = ['Title', 'Descript', 'Text', 'Forum', 'Owner'];
+		var dlFields2 = ['Date', 'Sticky', 'Locked'];
 		if (isAdmin) dlFields2.push('Deleted');
 		
 		s.push(H.dl(dlFields, 'flex2'), H.dl(dlFields2, 'flex1'));
@@ -163,15 +170,16 @@ $.extend(Forum, {
 		s.push(buttons);
 		s.push([`</div>`]);
 		s = s.supplant({
-			Avatar     : User.renderAvatarLink(forum.data.owner, 80, 80),
-			Title      : forum.renderTitle(),
-			Descript   : forum.renderDescript(),
-			Parent     : forum.renderParent(),
-			Owner      : forum.renderOwner(),
-			Visibility : forum.renderVistype(),
-			Date       : forum.renderDate(),
-			Locked     : forum.renderLocked(),
-			Deleted    : forum.renderDeleted()
+			Avatar     : User.renderAvatarLink(thread.data.owner, 80, 80),
+			Title      : thread.renderTitle(),
+			Descript   : thread.renderDescript(),
+			Text       : thread.renderText(),
+			Forum      : thread.renderForum(),
+			Owner      : thread.renderOwner(),
+			Date       : thread.renderDate(),
+			Sticky     : thread.renderSticky(),
+			Locked     : thread.renderLocked(),
+			Deleted    : thread.renderDeleted()
 		});
 		
 		return s;

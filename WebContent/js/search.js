@@ -39,6 +39,12 @@
 
 Search = {
 	
+	reloadAll : function() {
+		$(document).find('[id$="SearchContainer"]').each(function() {
+			$(this).data('searchObject').loadResults();
+		});
+	},
+		
 	getParams() {
 		if (this.settings.useParams) {
 			return G.getParams();
@@ -52,58 +58,59 @@ Search = {
 			numPages = Math.floor(this.data.totalRecords/params.perPage);
 		if (this.data.totalRecords % params.perPage > 0)
 			numPages += 1;
-		return numPages;
+		return numPages || 0;
 	},
 
 	getPerPageSelector : function() {
 		var perPage = this.getParams().perPage;
 
 		if (this.getParams().id === undefined) {
-			return H.input.perPage('', "resultPerPage", perPage);
+			return H.input.perPage('flex1', "resultPerPage", perPage);
 		}
 	},
 	
 	getButton : function(pageId, btnType) {
 		const cls = this.getParams().page === pageId ? 'selected' : "";
-		return H.btn(pageId, 'changePageBtn', cls, pageId);
+		return H.btn(pageId, 'changePageBtn', `${cls} ${btnType}`, pageId);
 	},
 	
 	getAddButton : function() {
-		if (this.settings.add)
-		return H.btn(this.settings.add.label, 'addObjectToggle', 'special right');
+		return this.settings.add ? H.btn(this.settings.add.label, 'addObjectToggle', 'special flex1') : "";
 	},
 	
 	getButtons : function(totalRecords) {
 		var params = this.getParams(),
-			numPages = this.getNumPages(),
-			startPage = 1,
+			isSingled = params.id !== undefined;
+		if (isSingled) return "";
+		
+		var numPages = this.getNumPages(),
+			startPage = 1;
 			endPage = numPages;
-		
-		if (params.page !== null)
-		{
-			startPage = Math.max(1, params.page-10);
-			endPage = Math.min(params.page+10, numPages);
+			
+		if (params.page !== null) {
+			// The number of additional pages that can be added to right
+			startPage = Math.max(1, params.page-5);
+			endPage = Math.min(params.page + 5, numPages);
 		}
 		
-		var s = "";
-		if (true) {//numPages > 1) {
-			
-			s = [];
-			
-			s.push('<div class="pages">');
-			s.push(this.getPerPageSelector());
-			
-			for (var i = startPage; i <= endPage; i++) {
-				s.push(this.getButton(i, ""));
+		pageBtns = [];
+		if (numPages > 1) {
+			pageBtns.push(this.getButton(1, "special"));
+			for (var i = startPage+1; i <= endPage-1; i++) {
+				pageBtns.push(this.getButton(i, ""));
 			}
-
-			s.push(this.getAddButton());
-			s.push('</div>');
-			
-			s = s.join("");
+			pageBtns.push(this.getButton(numPages, "special"));
 		}
-
-		return s;
+		
+		return `
+			<div class="rowFlex">
+				${this.getPerPageSelector()}
+		    	<div class="pages flex4">
+		    		${pageBtns.join("")}
+				</div>
+		    	${this.getAddButton()}
+		    </div>`;
+		
 	},
 	
 	drawAdd : function() {
@@ -383,7 +390,7 @@ $(document).ready(function() {
 		const form = $(this).closest('[id$="SearchFilterForm"]');
 		var params = searchObject.getParams();
 		
-		$.extend(params, G.input.loadFields(form));
+		$.extend(params, $(form).loadFields());
 
 		G.pushState(searchObject.settings.useParams);
 		searchObject.loadResults();
@@ -396,7 +403,7 @@ $(document).ready(function() {
 		var params = searchObject.getParams();
 		
 		$(form)[0].reset();
-		$.extend(params, G.input.loadFields(form));
+		$.extend(params, $(form).loadFields());
 
 		G.pushState(searchObject.settings.useParams);
 		searchObject.loadResults();
@@ -411,13 +418,14 @@ $(document).ready(function() {
 	
 	$(document).on('submit', '[id$=AddObjectForm]', function(e) {
 		e.preventDefault();
+		const that = this;
 		const searchObject = Search.getSearch(this);
 		const args = {};
 		const objData = $.extend({}, G.interpret(searchObject.settings.add.data), $(this).loadFields());
 
 		searchObject.settings.objType.add(objData, function(data) {
-			console.log(data);
-			searchObject.loadResults();
+			$(that).setFields();
+			searchObject.reloadAll();
 		});
 	});
 });

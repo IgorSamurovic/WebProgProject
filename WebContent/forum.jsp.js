@@ -12,12 +12,14 @@ $(document).ready(function() {
 		canHide : true,
 		canFilter : true
 	}));
-	/*
+	
 	G.addPage(H.page({
 		name: 'threads',
 		title: 'Threads',
+		canHide : true,
+		canFilter : true
 	}));
-	*/
+	
 	(function () {
 		const params = G.getParams();
 		
@@ -58,14 +60,11 @@ $(document).ready(function() {
 					var forumData = data;
 					var forum = Forum.create(data[0]);
 					
-	
-					
 					// Init successful							
 					// Render forum page
 					$("#forumPageTitle").html(forum.data.title);
 					
 					Search.create({
-						allowed    : ['owner', 'page', 'perPage'],
 						useParams  : false,
 						prefix     : "subforums",
 						parent     : "#subforumsPageContent",
@@ -86,7 +85,7 @@ $(document).ready(function() {
 						filter     : Forum.renderFilter,
 						add : {
 							html  : Forum.renderAdd,
-							label : 'Add a subforum',
+							label : 'New subforum',
 							title : 'New subforum',
 							data  : function() {
 								return {
@@ -96,11 +95,39 @@ $(document).ready(function() {
 						}
 					}).loadResults();
 					
+					// Threads
+					Search.create({
+						useParams  : false,
+						prefix     : "threads",
+						parent     : "#threadsPageContent",
+						objType    : Thread,
+						dataFunc   : G.dbGet,
+						dataArgs   : {
+							url    : "thread",
+							data   : function() {
+								return {
+									orderBy : "obj.DATE",
+									asc     : "FALSE",
+									forum   : params.id,
+								};
+							},
+						},
+						renderFunc : Thread.render,
+						filter     : Thread.renderFilter,
+						add : {
+							html  : Thread.renderAdd,
+							label : 'New thread',
+							title : 'New thread',
+							data  : function() {
+								return {
+									forum  : params.id,
+								}
+							}
+						}
+					}).loadResults();
 					
-					//Page.createSearchObjects();
 					G.protectParam('id');
 					G.popStateHandler();
-					//Page.render();
 					
 				} else {
 					Page.redirect();	
@@ -110,67 +137,9 @@ $(document).ready(function() {
 	
 });
 
-Page = {
-	
-	render : function() {
-		this.threadsSearch.display();
-	},
+const Page = {
 	
 	redirect : function() {
 		G.goHome();
 	},
-	
-	createSearchObjects : function() {
-		Page.searchObjects = [];
-		
-		var search;
-		var settings;
-		var params = G.getParams();
-		
-		// Profile
-		settings = {
-			allowed    : [],
-			prefix     : "profile",
-			parent     : "pageContent",
-			objType    : User,
-			dataFunc   : G.dbGet,
-			dataArgs   : {
-				url    : "user",
-				data   : function() {
-					return {
-						id : params.id
-					};
-				},
-			},
-			renderFunc : User.render 
-		};
-		
-		search = Search.create(settings);
-		Page.searchObjects.push(search);
-		
-		// Forums
-		settings = {
-			allowed    : ['page', 'perPage'],
-			prefix     : "forums",
-			parent     : "pageContent",
-			objType    : Forum,
-			dataFunc   : G.dbGet,
-			dataArgs   : {
-				url    : "forum",
-				data   : function() {
-					return {
-						orderBy : "DATE",
-						asc     : "FALSE",
-						owner   : params.id,
-						page    : params.page,
-						perPage : params.perPage
-					};
-				},
-			},
-			renderFunc : Forums.render 
-		};
-		
-		search = Search.create(settings);
-		Page.searchObjects.push(search);
-	}
 };

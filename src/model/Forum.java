@@ -19,19 +19,21 @@ public class Forum implements DataObject
 	private Boolean locked;
 	private Boolean deleted;
 	
+	private String ownerUsername;
+	private String parentTitle;
+	
 	public boolean isChildOf(Forum ancestor) {
 		// daddy forum
 		if (this.id == 1 || this.getId() == ancestor.getId()) return false;
 		int ancestorId = ancestor.getId();
 		
 		Forum child = this;
-		
-		while(child.getId() != 1 && child.getParent() != 1) {
+		while(child.getId() != 1) {
 			if (child.getParent() == ancestorId) {
 				return true;
 			} else {
 				child = new ForumDAO().findById(child.getParent(), null);
-				System.err.println(child.getTitle());
+
 			}
 		}
 		
@@ -40,6 +42,8 @@ public class Forum implements DataObject
 	
 	public String valid() {
 		
+		Forum parentObj = null;
+		
 		if (title == null || !title.matches(".{3,40}")) {
 			return "title";
 		}
@@ -47,29 +51,46 @@ public class Forum implements DataObject
 		if (descript != null && descript.length() > 250) {
 			return "descript";
 		}
-		
-		if (vistype == null || vistype < 0 || vistype > 2)
-			return "vistype";
 
-		if (!(id == 1)) {
-			Forum parentTest = new ForumDAO().findById(parent, null);
-			if (parentTest == null || parentTest.getId() == this.getId() || (parentTest != null && parentTest.isChildOf(this))) {
+		if (id != null && id == 1) parent = null;
+		
+		if (id != null && parent != null && id != 1) {
+			parentObj = new ForumDAO().findById(parent, null);
+			if (parentObj == null || parentObj.getId() == this.getId() || (parentObj != null && parentObj.isChildOf(this))) {
 		        return "parent";
 			}
-		} else {
-			parent = null;
+		} 
+		
+		if (id != null && (id!= 1 && parent == null)) {
+			return "parent";
 		}
 		
 		if (owner == null || new UserDAO().findById(owner, null) == null) {
 			return "owner";
 		}
 		
+		if (vistype == null || vistype < 0 || vistype > 2) {
+			return "vistype";
+		} else if (id != null && parentObj != null) {
+			if (vistype < parentObj.getVistype()) {
+				return "vistype";
+			}
+		}
+		
 		if (locked == null) {
 			return "locked";
+		} else if (id != null && parentObj != null) {
+			if (!locked && parentObj.getLocked()) {
+				return "locked";
+			}
 		}
 		
 		if (deleted == null) {
 			return "deleted";
+		} else if (id != null && parentObj != null) {
+			if (!deleted && parentObj.getDeleted()) {
+				return "deleted";
+			}
 		}
 		
 		return "";
@@ -90,8 +111,8 @@ public class Forum implements DataObject
 				+ "]";
 	}
 
-	public Forum(Integer id, String title, String descript, Integer parent, Integer owner, Integer vistype, Timestamp date, Boolean locked, Boolean deleted)
-	{
+	public Forum(Integer id, String title, String descript, Integer parent, Integer owner, Integer vistype,
+		Timestamp date, Boolean locked, Boolean deleted, String ownerUsername, String parentTitle) {
 		super();
 		this.id = id;
 		this.title = title;
@@ -102,6 +123,8 @@ public class Forum implements DataObject
 		this.date = date;
 		this.locked = locked;
 		this.deleted = deleted;
+		this.ownerUsername = ownerUsername;
+		this.parentTitle = parentTitle;
 	}
 
 	public Integer getId()
@@ -143,8 +166,28 @@ public class Forum implements DataObject
 	public String getParentTitle() {
 		if (this.parent == null || this.parent == 0) {
 			return "Forum";
-		} else {
+		} else if (this.parentTitle == null) {
 			return new ForumDAO().findById(this.parent, null).getTitle();
+		} else {
+			return this.parentTitle;
+		}
+	}
+	
+	@JsonProperty("_deletable")
+	public Boolean getDeletable() {
+		if (this.parent != null && this.id != 1) {
+			return !(new ForumDAO().findById(this.parent, null).getDeleted());
+		} else {
+			return false; 
+		}
+	}
+	
+	@JsonProperty("_lockable")
+	public Boolean getLockable() {
+		if (this.parent != null && this.id != 1) {
+			return !(new ForumDAO().findById(this.parent, null).getLocked());
+		} else {
+			return false; 
 		}
 	}
 	
@@ -160,7 +203,11 @@ public class Forum implements DataObject
 	
 	@JsonProperty("_ownerUsername")
 	public String getOwnerName() {
-		return new UserDAO().findById(this.owner, null).getUsername();
+		if (this.ownerUsername == null) {
+			return new UserDAO().findById(this.owner, null).getUsername();
+		} else {
+			return this.ownerUsername;
+		}
 	}
 
 	public void setOwner(Integer owner)

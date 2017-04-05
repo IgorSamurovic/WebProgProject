@@ -70,48 +70,57 @@ public class ForumController extends HttpServlet {
 		if (reqType == null) return;
 		
 		// Done
-		
-		if (reqType.equals("add") || reqType.equals("edit")) {
 
-			if (reqType.equals("add")) {
-				obj = new Forum();
-				obj.setTitle(title);
-				obj.setDescript(descript);
-				obj.setParent(parent);
-				obj.setOwner(owner);
-				obj.setVistype(vistype);
-				
-				valid = obj.valid();
-				
-				if (!valid.equals("")) {
-					Responder.out(response, valid);
-					return;
-				}
-				
-				new ForumDAO().insert(obj);
-			} else {
-				obj = new ForumDAO().findById(id, null);
-				if (title != null) obj.setTitle(title);
-				if (descript != null) obj.setDescript(descript);
-				if (parent != null) obj.setParent(parent);
-				if (owner != null) obj.setOwner(owner);
-				if (vistype != null) obj.setVistype(vistype);
-				
-				valid = obj.valid();
-				
-				if (!valid.equals("")) {
-					Responder.out(response, valid);
-					return;
-				}
-				System.err.println(obj);
-				new ForumDAO().update(obj);
+		if (reqType.equals("add")) {
+			obj = new Forum();
+			obj.setTitle(title);
+			obj.setDescript(descript);
+			obj.setParent(parent);
+			obj.setOwner(owner);
+			obj.setVistype(vistype);
+			
+			valid = obj.valid();
+			pp.printDebug();
+
+
+			if (!valid.equals("")) {
+				Responder.out(response, valid);
+				return;
 			}
+			
+			new ForumDAO().insert(obj);
+		} 
+
+		if (reqType.equals("edit")) {
+			obj = new ForumDAO().findById(id);
+			if (title != null) obj.setTitle(title);
+			if (descript != null) obj.setDescript(descript);
+			if (parent != null) obj.setParent(parent);
+			if (owner != null) obj.setOwner(owner);
+			if (vistype != null) obj.setVistype(vistype);
+			
+			valid = obj.valid();
+			
+			if (!valid.equals("")) {
+				Responder.out(response, valid);
+				return;
+			}
+			//currenSystem.err.println(obj);
+			new ForumDAO().update(obj);
 		}
 		
 		if (reqType.equals("lock")) {
 			if (id != null && locked != null) {
 				obj = new ForumDAO().findById(id, current);
 				obj.setLocked(locked);
+				
+				valid = obj.valid();
+				
+				if (!valid.equals("")) {
+					Responder.out(response, valid);
+					return;
+				}
+				
 				new ForumDAO().lock(obj, locked);
 			}
 		}
@@ -119,7 +128,16 @@ public class ForumController extends HttpServlet {
 		if (reqType.equals("del")) {
 			if (id != null) {
 				if (deleted != null) {
-					obj = new ForumDAO().findById(id, current);
+					obj = new ForumDAO().findById(id);
+					
+					obj.setDeleted(deleted);
+					valid = obj.valid();
+					
+					if (!valid.equals("")) {
+						Responder.out(response, valid);
+						return;
+					}
+					
 					new ForumDAO().delete(obj, current, deleted, pp.bool("preferHard"));
 				}
 			}

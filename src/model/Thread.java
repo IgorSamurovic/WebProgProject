@@ -3,21 +3,95 @@ package model;
 import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
+
+import model.dao.ForumDAO;
+import model.dao.UserDAO;
+import views.Views;
 
 public class Thread implements DataObject
 {
+	@JsonView(Views.Public.class)
 	private Integer id;
+	
+	@JsonView(Views.Public.class)
 	private String title;
+	
+	@JsonView(Views.Public.class)
 	private String descript;
+	
+	@JsonView(Views.Public.class)
 	private String text;
+	
+	@JsonView(Views.Public.class)
 	private Integer forum;
+	
+	@JsonView(Views.Public.class)
 	private Integer owner;
+	
+	@JsonView(Views.Public.class)
 	private Timestamp date;
+	
+	@JsonView(Views.Public.class)
 	private Boolean sticky;
+	
+	@JsonView(Views.Public.class)
 	private Boolean locked;
+	
+	@JsonView(Views.Admin.class)
 	private Boolean deleted;
 	
-	public Thread(Integer id, String title, String descript, String text, Integer forum, Integer owner, Timestamp date, Boolean sticky, Boolean locked, Boolean deleted)
+	private String ownerUsername;
+	private String forumTitle;
+	
+public String valid() {
+		
+		Forum forumObj = null;
+		User ownerObj = null;
+		
+		if (title == null || !title.matches(".{3,40}")) {
+			return "title";
+		}
+		
+		if (descript != null && descript.length() > 250) {
+			return "descript";
+		}
+		
+		if (text != null && text.length() > 1000) {
+			return "descript";
+		}
+
+		if (forum != null) {
+			forumObj = new ForumDAO().findById(forum);
+			if (forumObj == null) {
+				return "forum";
+			}
+		}
+		
+		if (owner != null) {
+			ownerObj = new UserDAO().findById(owner, null);
+			if (ownerObj == null) {
+				return "owner";
+			}
+		}
+		
+		if (sticky == null) {
+			return "sticky";
+		}
+		
+		if (deleted == null) {
+			return "deleted";
+		} else if (id != null && forumObj != null) {
+			if (!deleted && forumObj.getDeleted()) {
+				return "deleted";
+			}
+		}
+		
+		return "";
+	}
+	
+	public Thread(Integer id, String title, String descript, String text, Integer forum, Integer owner,
+	Timestamp date, Boolean sticky, Boolean locked, Boolean deleted, String ownerUsername, String forumTitle)
 	{
 		super();
 		this.id = id;
@@ -30,13 +104,34 @@ public class Thread implements DataObject
 		this.sticky = sticky;
 		this.locked = locked;
 		this.deleted = deleted;
+		this.ownerUsername = ownerUsername;
+		this.forumTitle = forumTitle;
 	}
 	
 	public Thread()
 	{
 		super();
+		this.sticky = false;
 		this.locked = false;
 		this.deleted = false;
+	}
+	
+	@JsonProperty("_deletable")
+	public Boolean getDeletable() {
+		if (this.forum != null) {
+			return !(new ForumDAO().findById(this.forum, null).getDeleted());
+		} else {
+			return false; 
+		}
+	}
+	
+	@JsonProperty("_lockable")
+	public Boolean getLockable() {
+		if (this.forum != null) {
+			return !(new ForumDAO().findById(this.forum, null).getLocked());
+		} else {
+			return false; 
+		}
 	}
 	
 	public Integer getId()
@@ -79,6 +174,17 @@ public class Thread implements DataObject
 		this.text = text;
 	}
 	
+	@JsonProperty("_forumTitle")
+	public String getForumTitle() {
+		if (this.forum == null || this.forum == 0) {
+			return "Forum";
+		} else if (this.forumTitle == null) {
+			return new ForumDAO().findById(this.forum, null).getTitle();
+		} else {
+			return this.forumTitle;
+		}
+	}
+	
 	public Integer getForum()
 	{
 		return forum;
@@ -87,6 +193,15 @@ public class Thread implements DataObject
 	public void setForum(Integer forum)
 	{
 		this.forum = forum;
+	}
+	
+	@JsonProperty("_ownerUsername")
+	public String getOwnerName() {
+		if (this.ownerUsername == null) {
+			return new UserDAO().findById(this.owner, null).getUsername();
+		} else {
+			return this.ownerUsername;
+		}
 	}
 	
 	public Integer getOwner()

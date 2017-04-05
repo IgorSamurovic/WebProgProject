@@ -1,9 +1,9 @@
 $.extend(Forum, {
 
 	_orderByOptions : [
-		['obj.DATE', 'Date'],
-		['obj.TITLE', 'Title'],
-		['usrowner.USERNAME', 'Owner']
+		['obj.date', 'Date'],
+		['obj.title', 'Title'],
+		['usr.username', 'Owner']
 	],
 	
 	selectType : function(alt) {
@@ -53,7 +53,7 @@ $.extend(Forum, {
 			placeholder : 'Id',
 		}, alt2);
 		
-		return this.inputUser(alt, alt2);
+		return this.inputUser(alt, alt2, 'owner');
 	},
 	
 	inputParent : function(alt, alt2) {
@@ -67,7 +67,7 @@ $.extend(Forum, {
 			placeholder : 'Id',
 		}, alt2);
 		
-		return this.inputForum(alt, alt2);
+		return this.inputForum(alt, alt2, 'parent');
 	},
 	
 	inputDate : function(alt) {
@@ -79,4 +79,14 @@ $.extend(Forum, {
 		});
 	},
 		
+	inputShowDescendants : function(alt) {
+		return H.inputBase({
+			alt    : alt,
+			type   : 'checkbox',
+			value  : true,
+			name   : 'showDescendants',
+			label  : "Show descendants",
+		});
+	}
+	
 });

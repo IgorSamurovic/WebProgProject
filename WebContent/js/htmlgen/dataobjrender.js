@@ -18,7 +18,7 @@ $.extend(DataObj, {
 		const vistype = this.data.vistype !== undefined ? this.data.vistype : this.xtra.vistype;
 		switch (vistype) {
 		case (0): return "Public";
-		case (1): return "Private";
+		case (1): return "Open";
 		case (2): return "Closed";
 		}
 	},

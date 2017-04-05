@@ -74,8 +74,8 @@ $.extend(User, {
 		return '<img src="avatar?id=' +id+ '" class="useravatar" height="' +height+ '" width="' +width+ '"/>';
 	},
 	
-	renderAvatarLink: function (id=this.data.id, height=120, width=120) {
-		return '<a href="profile.jsp?id=' + id + '">' + this.renderAvatar(id, height, width) + '</a>';
+	renderAvatarLink: function (id=this.data.id, height=120, width=120, cls="") {
+		return '<a class="cls" href="profile.jsp?id=' + id + '">' + this.renderAvatar(id, height, width) + '</a>';
 	},
 	
 	renderUsername : function() {
@@ -153,14 +153,14 @@ $.extend(User, {
 			$(document).on('click', '[name="userDeleteBtn"]', function(button) {
 				var that = this;
 				Search.getObject(this).del($(that).data("val"), function() {
-					Search.getSearch(that).loadResults();
+					Search.reloadAll();
 				});
 			});
 			
 			$(document).on('click', '[name="userBanBtn"]', function(button) {
 				var that = this;
 				Search.getObject(this).ban($(that).data("val"), function() {
-					Search.getSearch(that).loadResults();
+					Search.getSearch(that).reloadAll();
 				});
 			});
 			
@@ -184,12 +184,12 @@ $.extend(User, {
 		
 		return `
 			<div class="columnFlex">
-				${user.renderAvatarLink(user.data.id, height=60, width=60)}
+				${user.renderAvatarLink(user.data.id, height=60, width=60, 'flex1')}
 				${user.renderUsername()}
-	            ${user.renderRole()}
-				<div class="buttons">
-					${H.btn('Select', 'select', "")}
-			 	</div>
+		        ${user.renderRole()}
+
+				${H.btn('Select', 'select', "flex1")}
+
 			 </div>
 		`;
 	}

@@ -15,21 +15,7 @@ import model.dao.util.QueryBuilder;
 
 public class UserDAO {
 
-	static String[] tables = { "username", "email", "date", "name", "surname", "role" };
-
-	private String fixOrderBy(String orderBy, User user) {
-		String fix = "username";
-		if (orderBy == null)
-			return fix;
-		orderBy = orderBy.toLowerCase();
-		ArrayList<String> valid = new ArrayList<String>(Arrays.asList(tables));
-		if (user.getRole() >= User.Role.ADMIN) {
-			valid.add("banned");
-			valid.add("deleted");
-		}
-
-		return orderBy != null && valid.contains(orderBy) ? orderBy : fix;
-	}
+	static String[] tables = { "obj.username", "obj.email", "obj.date", "obj.name", "obj.surname", "obj.role" };
 
 	private User process(ResultSet rs) throws Exception {
 		return new User(
@@ -158,7 +144,7 @@ public class UserDAO {
 		ArrayList<Object> list = new ArrayList<Object>();
 		QueryBuilder qb = new QueryBuilder(pp);
 		processFilter(qb, pp, user);
-		pp.printDebug();
+
 		qb.setStart("SELECT COUNT(obj.ID) FROM USER obj");
 
 		list.add(qb.getNumRecords());

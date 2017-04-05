@@ -3,19 +3,38 @@ package model.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 
+import controller.util.ParamProcessor;
+import model.Forum;
 import model.Thread;
 import model.User;
 import model.dao.util.Connector;
 import model.dao.util.QueryBuilder;
 
 public class ThreadDAO
-{
+{	
+	static String TABLE_NAME = "THREAD";
+	static String[] tables = {"obj.id", "obj.date", "obj.title", "usr.username"};
+	
+	static final String COUNT_QUERY_START = 
+			"SELECT COUNT(obj.ID) FROM THREAD obj";
+	static final String FETCH_QUERY_START = 
+			" SELECT obj.*, usr.username, frm.title, frm.vistype FROM THREAD obj";
+			
+	static final String JOIN_STRING = 
+		    " LEFT JOIN USER usr " +
+			" ON obj.owner = usr.id " +
+			" LEFT JOIN FORUM frm " +
+			" ON obj.forum = frm.id ";
+
+	
+	// --------------------------------------------------------------------------------------------
+	// Processing
+
 	private Thread process(ResultSet rs) throws Exception
 	{
-		return new Thread
+		Thread t = new Thread
 		(
 			rs.getInt("id"),
 			rs.getString("title"),
@@ -25,65 +44,190 @@ public class ThreadDAO
 			rs.getInt("owner"),
 			rs.getTimestamp("date"),
 			rs.getBoolean("sticky"),
-			rs.getBoolean("banned"),
-			rs.getBoolean("deleted")		
+			rs.getBoolean("locked"),
+			rs.getBoolean("deleted"),	
+			rs.getString("usr.username"),
+			rs.getString("frm.title")
 		);
+		return t;
 	}
 	
-	private Thread processOne(PreparedStatement stmt)
-	{
-		try
-		{
-			stmt.execute();
-			ResultSet rs = stmt.getResultSet();
-			if (rs.next())
-				return process(rs);
-			else
-				return null;
-		} catch (Exception e) {e.printStackTrace();}
-		return null;
+	private void processFilter(QueryBuilder qb, ParamProcessor pp, User user) {
+		if (user.getRole() < User.Role.ADMIN) {
+			qb
+			.and("obj.title LIKE $title")
+			.and("frm.title LIKE $forumTitle")
+			.and("obj.forum = $forum")
+			.and("usr.username LIKE $ownerUsername")
+			.and("obj.owner = $owner")
+			.and("obj.date <= $dataA")
+			.and("obj.date >= $dataB")
+			.and("obj.locked <= $includeLocked")
+			.and("obj.deleted = FALSE")
+			.and("frm.vistype <= $vistype")
+			.and("frm.vistype <= " + user.getPermissionLevel())
+			.orderBy("obj.sticky", "desc")
+			.orderBy("obj.id", "asc")
+			.orderBy("$orderBy", "$asc", tables);
+		} else {
+			qb
+			.and("obj.title LIKE $title")
+			.and("frm.title LIKE $forumTitle")
+			.and("obj.forum = $forum")
+			.and("usr.username LIKE $ownerUsername")
+			.and("obj.owner = $owner")
+			.and("obj.date <= $dataA")
+			.and("obj.date >= $dataB")
+			.and("obj.locked <= $includeLocked")
+			.and("obj.deleted <= $includeDeleted")
+			.and("frm.vistype <= $vistype")
+			.orderBy("obj.sticky", "desc")
+			.orderBy("obj.id", "asc")
+			.orderBy("$orderBy", "$asc", tables);
+		}
 	}
 	
-	private ArrayList<Thread> processMany(QueryBuilder q)
-	{
-		try
-		{
-			ArrayList<Thread> list = new ArrayList<Thread>();
-			ResultSet rs = q.getResultSet();
-			while (rs.next())
-				list.add(process(rs));
-			return list;
-		} catch (Exception e) {e.printStackTrace();}
-		return null;
-	}
-	
-	public ArrayList<Thread> filter(String title, Integer forum, Integer owner, Timestamp dateA, Timestamp dateB, Boolean includeLocked, Boolean includeDeleted, String orderBy, String asc)
-	{
-		QueryBuilder q = new QueryBuilder();
-		
-		q.and(title, "title LIKE ?")
-		.and(forum, "forum = ?")
-		.and(owner, "owner LIKE ?")
-		.and(dateA, "dateA <= ?")
-		.and(dateB, "dateB >= ?")
-		.and(includeLocked, "locked <= ?")
-		.and(includeDeleted, "deleted <= ?")
-		.orderBy("sticky", "ASC")
-		.orderBy(orderBy, asc);
+	// --------------------------------------------------------------------------------------------
+	// Getters
 
-		return processMany(q);
+	public ArrayList<Object> filter(ParamProcessor pp, User user)
+	{
+		ArrayList<Object> list = new ArrayList<Object>();
+		QueryBuilder qb = new QueryBuilder(pp);
+		
+		Boolean showDescendants = pp.bool("showDescendants");
+		Integer ancestorId = null;
+		
+		// Let's see if we're searching through ancestry and not parenthood
+		if (showDescendants != null && showDescendants) {
+			ancestorId = pp.integer("forum");
+			pp.remove("forum");
+		}
+		
+		// Create part of the query that deals with filters
+		processFilter(qb, pp, user);
+		qb.setJoin(JOIN_STRING);
+		
+		if (ancestorId == null) {
+			qb.setStart(COUNT_QUERY_START);
+			list.add(qb.getNumRecords());
+		} else {
+			list.add(0);
+		}
+
+		//pp.printDebug();
+		
+		qb.setStart(FETCH_QUERY_START);
+		qb.limit("$page", "$perPage");
+		
+		list.add(processMany(qb));
+		
+		// Let's see if parent is the descendant
+		if (ancestorId != null) {
+			@SuppressWarnings("unchecked")
+			ArrayList<Object> objs = (ArrayList<Object>) list.get(1);
+			Forum ancestor = new ForumDAO().findById(ancestorId, user);
+			
+			for (int i=0; i<objs.size(); i++) {
+				if (!new ForumDAO().findById(((Thread) objs.get(i)).getForum()).isChildOf(ancestor)) {
+					objs.remove(i);
+				}
+			}
+			list.set(0, objs.size());
+		}
+		
+		return list;
 	}
-	
-	public Thread findById(int id, int role) {
-		try (Connection conn = Connector.get(); PreparedStatement stmt = conn.prepareStatement(
-				"SELECT * FROM THREAD WHERE id=? AND deleted <= ?;");) {
+
+	public Thread findById(int id, User user) {
+		boolean adminAccess = (user == null) ? true : user.getRole() == User.Role.ADMIN; 
+		try (Connection conn = Connector.get();
+				PreparedStatement stmt = conn.prepareStatement(
+					FETCH_QUERY_START + JOIN_STRING + " WHERE obj.id=? AND obj.deleted <= ?;");) {
 			stmt.setObject(1, id);
-			stmt.setObject(2, role == User.Role.ADMIN);
+			stmt.setObject(2, adminAccess);
 			return processOne(stmt);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	public Thread findById(int id) {
+		return findById(id, null);
+	}
+	
+	
+	// --------------------------------------------------------------------------------------------
+	// SPECIAL OPERATIONS
+	
+	public int stick(Thread o, Boolean doStick) {
+		o.setLocked(doStick);
+		try (Connection conn = Connector.get();) {
+			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET sticky=? WHERE id=?;");
+			stmt.setObject(1, doStick);
+			stmt.setObject(2, o.getId());
+			return stmt.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		return 0;
+	}
+	
+	public int lock(Thread o, Boolean doLock) {
+		o.setLocked(doLock);
+		//propagate(o, "locked", "locked < ?", o.getLocked());
+		try (Connection conn = Connector.get();) {
+			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET locked=? WHERE id=?;");
+			stmt.setObject(1, doLock);
+			stmt.setObject(2, o.getId());
+			return stmt.executeUpdate();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		return 0;
+	}
+	
+	// --------------------------------------------------------------------------------------------
+	// Standard Operations
+	
+	private void propagate(Thread o, String column, String when, Object val) {
+		
+		try (Connection conn = Connector.get();) {
+				
+			PreparedStatement stmt;
+			
+			// Select all children
+			stmt = conn.prepareStatement(
+					"SELECT * FROM " + TABLE_NAME + " WHERE " + when + " AND forum = ?;");
+			stmt.setObject(1, val);
+			stmt.setObject(2, o.getId());
+			stmt.execute();
+			ResultSet rs = stmt.getResultSet();
+			if (rs != null) {
+				ArrayList<Object> list = processMany(rs);
+				for (Object ob : list) {
+
+					new ThreadDAO().propagate((Thread) ob, column, when, val);
+				}
+			}
+			
+			// Update all children
+			stmt = conn.prepareStatement(
+					"UPDATE " + TABLE_NAME + " SET " + column + "=? WHERE " + when + " AND forum = ?;");
+			stmt.setObject(1, val);
+			stmt.setObject(2, val);
+			stmt.setObject(3, o.getId());
+			stmt.execute();
+			
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public boolean insert(Thread o)
@@ -107,9 +251,10 @@ public class ThreadDAO
 		}
 		return false;
 	}
-	
+
 	public int update(Thread o)
 	{
+		//propagate(o, "vistype", "vistype < ?", o.getVistype());
 		try (Connection conn = Connector.get();)
 		{
 			PreparedStatement stmt = conn.prepareStatement("UPDATE THREAD "
@@ -131,34 +276,82 @@ public class ThreadDAO
 		return 0;
 	}
 	
-	public boolean softDelete(Thread o, boolean delete)
-	{
-		try (Connection conn = Connector.get();)
-		{
-			PreparedStatement stmt = conn.prepareStatement("UPDATE THREAD SET deleted=? WHERE id=?;");
-			stmt.setObject(1, delete);
-			stmt.setObject(2, o.getId());
-			return stmt.execute();
+	// --------------------------------------------------------------------------------------------
+	// DELETION
+	
+	public boolean delete(Thread o, User user, boolean doDelete, Boolean preferHard) {
+		if (preferHard != null && preferHard) {
+			return hardDelete(o);
+		} else {
+			return softDelete(o, doDelete);
 		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		return true;
 	}
 	
-	public boolean hardDelete(Thread o)
-	{
-		try (Connection conn = Connector.get();)
-		{
-			PreparedStatement stmt = conn.prepareStatement("DELETE THREAD WHERE id=?;");
-			stmt.setObject(1, o.getId());
+	private boolean softDelete(Thread o, boolean doDelete) {
+		o.setDeleted(doDelete);
+		//propagate(o, "deleted", "deleted < ?", o.getDeleted());
+		try (Connection conn = Connector.get();) {
+			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET deleted=? WHERE id=?;");
+			stmt.setObject(1, doDelete);
+			stmt.setObject(2, o.getId());
 			return stmt.execute();
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return true;
 	}
+
+	private boolean hardDelete(Thread o) {
+		try (Connection conn = Connector.get();) {
+			PreparedStatement stmt = conn.prepareStatement("DELETE FROM " + TABLE_NAME + " WHERE id=?;");
+			stmt.setObject(1, o.getId());
+			return stmt.execute();
+		} catch (Exception e) {
+			softDelete(o, true);
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	private Thread processOne(PreparedStatement stmt) {
+		try {
+			stmt.execute();
+			ResultSet rs = stmt.getResultSet();
+			if (rs.next())
+				return process(rs);
+			else
+				return null;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private ArrayList<Object> processMany(QueryBuilder q) {
+		ArrayList<Object> list = new ArrayList<Object>();
+		try {
+			ResultSet rs = q.getResultSet();
+			while (rs.next())
+				list.add(process(rs));
+			return list;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			q.close();
+		}
+		return list;
+	}
+	
+	private ArrayList<Object> processMany(ResultSet rs) {
+		ArrayList<Object> list = new ArrayList<Object>();
+		try {
+			while (rs.next())
+				list.add(process(rs));
+			return list;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+		return list;
+	}
+	
 }

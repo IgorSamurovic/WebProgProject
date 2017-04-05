@@ -4,7 +4,7 @@
 // This allows me to have a clearer picture of the object hierarchy.	       			    //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-H = {	
+var H = {	
 		
 	textareaBase : function(args) {
 		if (args.alt) {
@@ -52,8 +52,11 @@ H = {
 		const pattern = args.pattern !== undefined ? args.pattern : null;
 		const error = args.error !== undefined ? args.error : null;
 		const val = args.val !== undefined ? args.val : "";
+		const value = args.value !== undefined ? args.value : "";
+		const label = args.label !== undefined ? args.label : null;
 		
 		return `
+			${label !== null && label !== undefined ? '<label cls="'+cls+'" >' : ""}
 			<input
 				${required} 
 				${disabled} 
@@ -66,7 +69,10 @@ H = {
 				${error ? "oninvalid=setCustomValidity('${error}');" : ""}
 				${error ? "oninput=setCustomValidity('');" : ""}
 				data-val="${val}"
-			/>`;
+				
+				value="${value}"
+			/>
+			${label !== null && label !== undefined ? label+'</label>' : ""}`;
 	},
 	
 	selectBase : function(args) {
@@ -80,7 +86,7 @@ H = {
 		const name = args.name || "select";
 		const selected = args.selected || "0";
 		const prefix = args.prefix !== undefined ? args.prefix : "";
-		var options = args.options || [];
+		var options = $.extend([], args.options) || [];
 		var option;
 		var sel = "";
 		const val = args.val !== undefined ? args.val : "";
@@ -107,7 +113,7 @@ H = {
 				    	${options.join("")}
 				</select>`;
 	},
-		
+	
 	page : function(args) {
 		if (args.alt) {
 			$.extend(args, args.alt);
@@ -305,10 +311,10 @@ H = {
 		
 };
 
-(function() {
+const HFUNC = (function() {
 
-	$(document).ready(function()
-	{
+	$(document).ready(function() {
+		
 		$(document).on('click', "[name=pageHideBtn]", function(event) {
 			event.preventDefault();
 			$(this).closest(".page").children(".pagecontent").showToggle();

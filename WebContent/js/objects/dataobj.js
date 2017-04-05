@@ -28,8 +28,6 @@ const DataObj = {
 	
 	// Changes an object from the database, then calls the callback function
 	add: function(data, callback) {
-		console.log("in add");
-		console.log(data);
 		
 		G.dbPost({
 			reqType : 'add',
@@ -65,7 +63,7 @@ const DataObj = {
 	},
 
 	openSelectModal : function(elementTarget) {
-		const modal = Modal.create(`select`, {cls:`small`, canFilter:true});
+		const modal = Modal.create(`select${this._table}`, {cls:`small`, canFilter:true});
 
 		this.renderSelectModal(modal.content, elementTarget);
 		
@@ -119,7 +117,7 @@ const DataObj = {
 		
 		// Reset
 		$(form).on('click', '[name="reset"]', function(btn) {
-			$(form).setFields(user.data);
+			$(form).setFields(obj.data);
 		});	
 		
 		$(modal.title).html(`Editing ${this._table} ${this.getTitle()}`);
@@ -132,14 +130,14 @@ $(document).ready(function() {
 	$(document).on('click', '[name="editBtn"]', function(button) {
 		const that = this;
 		Search.getObject(this).openEditModal(undefined, function() {
-			Search.getSearch(that).loadResults();
+			Search.reloadAll();
 		});
 	});
 	
 	$(document).on('click', '[name="deleteBtn"]', function(button) {
 		const that = this;
 		Modals.deleteDialog(Search.getObject(this), $(this).data("val"), function() {
-			Search.getSearch(that).loadResults();
+			Search.getSearch(that).reloadAll();
 		});
 	});
 });

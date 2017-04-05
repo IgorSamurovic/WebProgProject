@@ -19,6 +19,10 @@
 <script src="js/htmlgen/foruminput.js"></script>
 <script src="js/htmlgen/forumrender.js"></script>
 
+<script src="js/objects/thread.js"></script>
+<!-- <script src="js/htmlgen/threadinput.js"></script>   -->
+<script src="js/htmlgen/threadrender.js"></script>
+
 <script src="js/objects/user.js"></script>
 <script src="js/htmlgen/userinput.js"></script>
 <script src="js/htmlgen/userrender.js"></script>

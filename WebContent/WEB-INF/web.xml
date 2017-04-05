@@ -84,6 +84,9 @@
     <url-pattern>/forum</url-pattern>
   </servlet-mapping>
   <servlet>
+  
+
+  
     <description></description>
     <display-name>UserController</display-name>
     <servlet-name>UserController</servlet-name>
@@ -103,6 +106,17 @@
   <servlet-mapping>
     <servlet-name>PostController</servlet-name>
     <url-pattern>/post</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <description></description>
+    <display-name>ThreadController</display-name>
+    <servlet-name>ThreadController</servlet-name>
+    <servlet-class>controller.ThreadController</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>ThreadController</servlet-name>
+    <url-pattern>/thread</url-pattern>
   </servlet-mapping>
   
   <servlet>

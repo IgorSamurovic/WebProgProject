@@ -29,8 +29,6 @@ public class QueryBuilder
 	ParamProcessor pp;
 	
 	public String checkTable(String orderBy, String[] tables) {
-		System.err.println(orderBy);
-		System.err.println(tables);
 		String fix = tables[0];
 		if (orderBy == null)
 			return fix;
