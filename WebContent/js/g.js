@@ -14,7 +14,7 @@ var G = {
 			console.log(txt);
 		}
 	}, 
-		
+
 	interpret(obj) {
 		if (typeof obj === 'function') {
 			return obj();
@@ -270,8 +270,11 @@ var G = {
 		params.url = args.url;
 		params.method = "get";
 		params.success = function(data) {
-			
-			data = JSON.parse(data);
+			try {
+				data = JSON.parse(data);
+			} catch (err) {
+				callback(data);
+			}
 			
 			if (!data) {
 				data = null;

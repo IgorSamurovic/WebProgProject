@@ -11,7 +11,8 @@ import views.Views;
 
 public class User implements DataObject
 {
-
+	public final static User POWER_USER = new User(0, "POWER USER", "", "", "", "", null, Role.ADMIN, false, false);
+	
 	public static class Role
 	{
 		public static int getPermissionLevel(int role)
@@ -190,5 +191,11 @@ public class User implements DataObject
 		this.deleted = deleted;
 	}
 	
-	
+	public int canSeeDeleted() {
+		if (this.role >= Role.ADMIN) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
 }

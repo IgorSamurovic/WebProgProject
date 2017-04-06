@@ -1,8 +1,6 @@
 package controller;
 
 import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.ArrayList;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -11,7 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import controller.util.ParamProcessor;
 import controller.util.Responder;
-import model.Post;
 import model.User;
 import model.dao.PostDAO;
 import util.Cookies;
@@ -23,22 +20,7 @@ public class PostController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		User current = Cookies.getUser(request);
 		ParamProcessor pp = new ParamProcessor(request);
-		
-		Integer id = pp.integer("id");
-		if (id != null) {
-			Post result = new PostDAO().findById(id, current.getRole());
-			if (result != null)
-				if (current.getId() == id) {
-					Responder.out(response, result, Views.getPersonal(current));
-				} else {
-					Responder.out(response, result, Views.forUser(current));
-				} else {
-					Responder.out(response, "notFound");
-				}
-		} else {
-			ArrayList<Object> results = new PostDAO().filter(pp, current.getRole());
-			Responder.out(response, results, Views.forUser(current));
-		}
+		Responder.out(response, new PostDAO().filter(pp, current), Views.forUser(current));
     }
     
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

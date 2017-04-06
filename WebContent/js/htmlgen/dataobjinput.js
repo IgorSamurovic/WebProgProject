@@ -29,7 +29,15 @@ $.extend(DataObj, {
 			val       : 'selectId',
 		});
 	},
-
+	
+	inputDate : function(alt) {
+		return H.inputBase ({
+			alt       : alt,
+			cls       : '',
+			type      : 'datetime-local',
+			name      : name || 'date',
+		});
+	},
 	
 	inputUser : function(alt, alt2, btnLabel="user") {
 		const input = User.inputUsername(alt);
@@ -57,6 +65,34 @@ $.extend(DataObj, {
 				${button}
 			</div>
 		`;
+	},
+	
+	inputParent : function(alt, alt2) {
+		alt = $.extend({
+			name    : '!parentTitle',
+			placeholder : 'Parent',
+		}, alt);
+		
+		alt2 = $.extend({
+			name    : 'parent',
+			placeholder : 'Id',
+		}, alt2);
+		
+		return this.inputForum(alt, alt2, 'parent');
+	},
+	
+	inputOwner : function(alt, alt2) {
+		alt = $.extend({
+			name    : '!ownerUsername',
+			placeholder : 'Owner',
+		}, alt);
+		
+		alt2 = $.extend({
+			name    : 'owner',
+			placeholder : 'Id',
+		}, alt2);
+		
+		return this.inputUser(alt, alt2, 'owner');
 	},
 	
 	selectDescendants : function(alt) {

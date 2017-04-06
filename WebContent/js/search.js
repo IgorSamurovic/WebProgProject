@@ -39,6 +39,20 @@
 
 Search = {
 	
+	register : function(obj, prefix) {
+		if (this._searchObjects === undefined) {
+			this._searchObjects = {};
+		}
+		this._searchObjects[prefix] = obj;
+	},
+		
+	byPrefix : function(prefix) {
+		if (this._searchObjects === undefined) {
+			this._searchObjects = {};
+		}
+		return this._searchObjects[prefix];
+	},
+		
 	reloadAll : function() {
 		$(document).find('[id$="SearchContainer"]').each(function() {
 			$(this).data('searchObject').loadResults();
@@ -79,9 +93,9 @@ Search = {
 	},
 	
 	getButtons : function(totalRecords) {
-		var params = this.getParams(),
-			isSingled = params.id !== undefined;
-		if (isSingled) return "";
+		var params = this.getParams();
+		
+		if (this.settings.isSingle) return "";
 		
 		var numPages = this.getNumPages(),
 			startPage = 1;
@@ -108,7 +122,9 @@ Search = {
 		    	<div class="pages flex4">
 		    		${pageBtns.join("")}
 				</div>
-		    	${this.getAddButton()}
+		    	${this.settings.add && !this.settings.add.condition || (
+		    		this.settings.add && this.settings.add.condition && this.settings.add.condition()) ?
+		    		this.getAddButton() : ""}
 		    </div>`;
 		
 	},
@@ -121,8 +137,8 @@ Search = {
 						${this.settings.add.title}
 					</div>
 					<form id="${this.settings.prefix}AddObjectForm">
-				${G.interpret(this.settings.add.html)}
-				${H.btn(this.settings.add.title, "addObject", cls="big special", null, type='submit')}
+						${G.interpret(this.settings.add.html)}
+						${H.btn(this.settings.add.title, "addObject", cls="big special", null, type='submit')}
 					</form>
 				</div>
 			`);
@@ -153,8 +169,20 @@ Search = {
 		return `#${this.settings.prefix}SearchResults`;
 	},
 	
+	selHeader : function() {
+		return `#${this.settings.prefix}PageHeader`;
+	},
+	
+	selTitle : function() {
+		return `#${this.settings.prefix}PageTitle`;
+	},
+	
 	getObject : function(sel) {
 		return $(sel).closest('div[name="result"]').data('obj');
+	},
+	
+	getOnlyObject : function() {
+		return $(this.selResults()).find('div[name="result"]').data('obj');
 	},
 	
 	getSearch : function(sel) {
@@ -176,7 +204,6 @@ Search = {
 		
 		// Render fitting HTML
 		if (data !== null && data !== undefined) {
-
 			
 			var needPush = false;
 			
@@ -259,6 +286,9 @@ Search = {
 			}
 			
 			// In case this initialized with an object, lets destroy it
+			if (this.settings.updateFunc) {
+				this.settings.updateFunc();
+			}
 			this.settings.data = null;
 		}
 	},
@@ -287,6 +317,8 @@ Search = {
 		var obj = Object.create(this);
 		obj.settings = settings;
 		
+		this.register(obj, settings.prefix);
+		
 		// If we are not using params, we're making sure to create a container for them
 		if (!obj.settings.useParams) {
 			obj.settings._params = {};
@@ -299,6 +331,10 @@ Search = {
 		if (settings.dataArgs)
 			settings.dataArgs.data = (settings.dataArgs.data !== undefined) ? settings.dataArgs.data : obj.getParams(); 
 
+		if (settings.updateFunc) {
+			settings.updateFunc = settings.updateFunc.bind(obj);
+		}
+		
 		// Fixing all the properties
 		
 		settings.dataFunc = (settings.dataFunc !== undefined) ? settings.dataFunc : G.dbGet;
@@ -422,10 +458,16 @@ $(document).ready(function() {
 		const searchObject = Search.getSearch(this);
 		const args = {};
 		const objData = $.extend({}, G.interpret(searchObject.settings.add.data), $(this).loadFields());
-
+		G.log("Adding object:");
+		G.log(objData);
 		searchObject.settings.objType.add(objData, function(data) {
+			G.log("Created object ID:");
+			G.log(data);
 			$(that).setFields();
 			searchObject.reloadAll();
+			if (searchObject.settings.add.redirectTo) {
+				window.location.href = searchObject.settings.add.redirectTo(data);
+			}
 		});
 	});
 });

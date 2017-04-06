@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 
 import controller.util.ParamProcessor;
-import model.Forum;
 import model.Thread;
 import model.User;
 import model.dao.util.Connector;
@@ -15,12 +14,13 @@ import model.dao.util.QueryBuilder;
 public class ThreadDAO
 {	
 	static String TABLE_NAME = "THREAD";
-	static String[] tables = {"obj.id", "obj.date", "obj.title", "usr.username"};
+	static String[] tables = {"obj.date", "obj.title", "usr.username"};
 	
 	static final String COUNT_QUERY_START = 
-			"SELECT COUNT(obj.ID) FROM THREAD obj";
+			"SELECT COUNT(obj.ID) FROM "+ TABLE_NAME+ " obj";
+
 	static final String FETCH_QUERY_START = 
-			" SELECT obj.*, usr.username, frm.title, frm.vistype FROM THREAD obj";
+			" SELECT obj.*, usr.username, usr.role, frm.title FROM THREAD obj";
 			
 	static final String JOIN_STRING = 
 		    " LEFT JOIN USER usr " +
@@ -28,7 +28,6 @@ public class ThreadDAO
 			" LEFT JOIN FORUM frm " +
 			" ON obj.forum = frm.id ";
 
-	
 	// --------------------------------------------------------------------------------------------
 	// Processing
 
@@ -47,60 +46,43 @@ public class ThreadDAO
 			rs.getBoolean("locked"),
 			rs.getBoolean("deleted"),	
 			rs.getString("usr.username"),
-			rs.getString("frm.title")
+			rs.getString("frm.title"),
+			rs.getInt("usr.role")
 		);
 		return t;
 	}
 	
 	private void processFilter(QueryBuilder qb, ParamProcessor pp, User user) {
-		if (user.getRole() < User.Role.ADMIN) {
-			qb
-			.and("obj.title LIKE $title")
-			.and("frm.title LIKE $forumTitle")
-			.and("obj.forum = $forum")
-			.and("usr.username LIKE $ownerUsername")
-			.and("obj.owner = $owner")
-			.and("obj.date <= $dataA")
-			.and("obj.date >= $dataB")
-			.and("obj.locked <= $includeLocked")
-			.and("obj.deleted = FALSE")
-			.and("frm.vistype <= $vistype")
-			.and("frm.vistype <= " + user.getPermissionLevel())
-			.orderBy("obj.sticky", "desc")
-			.orderBy("obj.id", "asc")
-			.orderBy("$orderBy", "$asc", tables);
-		} else {
-			qb
-			.and("obj.title LIKE $title")
-			.and("frm.title LIKE $forumTitle")
-			.and("obj.forum = $forum")
-			.and("usr.username LIKE $ownerUsername")
-			.and("obj.owner = $owner")
-			.and("obj.date <= $dataA")
-			.and("obj.date >= $dataB")
-			.and("obj.locked <= $includeLocked")
-			.and("obj.deleted <= $includeDeleted")
-			.and("frm.vistype <= $vistype")
-			.orderBy("obj.sticky", "desc")
-			.orderBy("obj.id", "asc")
-			.orderBy("$orderBy", "$asc", tables);
-		}
+		qb
+		.and("obj.id = $id")
+		.and("obj.title LIKE $title")
+		.and("frm.title LIKE $forumTitle")
+		.and("obj.forum = $forum")
+		.and("obj.owner = $owner")
+		.and("usr.username LIKE $ownerUsername")
+		.and("obj.date <= $dataA")
+		.and("obj.date >= $dataB")
+		.and("frm.vistype <= " + user.getPermissionLevel())
+		.and("frm.deleted = FALSE")
+		.and("obj.deleted <= " + user.canSeeDeleted())
+		.and("obj.deleted <= $deleted")
+		.orderBy("obj.deleted", "asc")
+		.orderBy("obj.sticky", "desc")
+		.orderBy("$orderBy", "$asc", tables)
+		.orderBy("obj.id", "asc");
 	}
 	
 	// --------------------------------------------------------------------------------------------
 	// Getters
 
-	public ArrayList<Object> filter(ParamProcessor pp, User user)
-	{
+	public ArrayList<Object> filter(ParamProcessor pp, User user) {
 		ArrayList<Object> list = new ArrayList<Object>();
 		QueryBuilder qb = new QueryBuilder(pp);
 		
 		Boolean showDescendants = pp.bool("showDescendants");
-		Integer ancestorId = null;
 		
 		// Let's see if we're searching through ancestry and not parenthood
 		if (showDescendants != null && showDescendants) {
-			ancestorId = pp.integer("forum");
 			pp.remove("forum");
 		}
 		
@@ -108,12 +90,8 @@ public class ThreadDAO
 		processFilter(qb, pp, user);
 		qb.setJoin(JOIN_STRING);
 		
-		if (ancestorId == null) {
-			qb.setStart(COUNT_QUERY_START);
-			list.add(qb.getNumRecords());
-		} else {
-			list.add(0);
-		}
+		qb.setStart(COUNT_QUERY_START);
+		list.add(qb.getNumRecords());
 
 		//pp.printDebug();
 		
@@ -122,41 +100,8 @@ public class ThreadDAO
 		
 		list.add(processMany(qb));
 		
-		// Let's see if parent is the descendant
-		if (ancestorId != null) {
-			@SuppressWarnings("unchecked")
-			ArrayList<Object> objs = (ArrayList<Object>) list.get(1);
-			Forum ancestor = new ForumDAO().findById(ancestorId, user);
-			
-			for (int i=0; i<objs.size(); i++) {
-				if (!new ForumDAO().findById(((Thread) objs.get(i)).getForum()).isChildOf(ancestor)) {
-					objs.remove(i);
-				}
-			}
-			list.set(0, objs.size());
-		}
-		
 		return list;
 	}
-
-	public Thread findById(int id, User user) {
-		boolean adminAccess = (user == null) ? true : user.getRole() == User.Role.ADMIN; 
-		try (Connection conn = Connector.get();
-				PreparedStatement stmt = conn.prepareStatement(
-					FETCH_QUERY_START + JOIN_STRING + " WHERE obj.id=? AND obj.deleted <= ?;");) {
-			stmt.setObject(1, id);
-			stmt.setObject(2, adminAccess);
-			return processOne(stmt);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
-	public Thread findById(int id) {
-		return findById(id, null);
-	}
-	
 	
 	// --------------------------------------------------------------------------------------------
 	// SPECIAL OPERATIONS
@@ -195,45 +140,8 @@ public class ThreadDAO
 	// --------------------------------------------------------------------------------------------
 	// Standard Operations
 	
-	private void propagate(Thread o, String column, String when, Object val) {
-		
+	public boolean insert(Thread o) {
 		try (Connection conn = Connector.get();) {
-				
-			PreparedStatement stmt;
-			
-			// Select all children
-			stmt = conn.prepareStatement(
-					"SELECT * FROM " + TABLE_NAME + " WHERE " + when + " AND forum = ?;");
-			stmt.setObject(1, val);
-			stmt.setObject(2, o.getId());
-			stmt.execute();
-			ResultSet rs = stmt.getResultSet();
-			if (rs != null) {
-				ArrayList<Object> list = processMany(rs);
-				for (Object ob : list) {
-
-					new ThreadDAO().propagate((Thread) ob, column, when, val);
-				}
-			}
-			
-			// Update all children
-			stmt = conn.prepareStatement(
-					"UPDATE " + TABLE_NAME + " SET " + column + "=? WHERE " + when + " AND forum = ?;");
-			stmt.setObject(1, val);
-			stmt.setObject(2, val);
-			stmt.setObject(3, o.getId());
-			stmt.execute();
-			
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public boolean insert(Thread o)
-	{
-		try (Connection conn = Connector.get();)
-		{
 			PreparedStatement stmt = conn.prepareStatement("INSERT INTO THREAD "
 			+ "(title, descript, text, forum, owner, sticky, locked) VALUES (?,?,?,?,?,?,?);");
 			stmt.setObject(1, o.getTitle());
@@ -244,9 +152,7 @@ public class ThreadDAO
 			stmt.setObject(6, o.getSticky());
 			stmt.setObject(7, o.getLocked());
 			return stmt.execute();
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return false;
@@ -277,8 +183,32 @@ public class ThreadDAO
 	}
 	
 	// --------------------------------------------------------------------------------------------
-	// DELETION
+	// GENERIC STUFF
 	
+	@SuppressWarnings("unchecked")
+	public Thread findById(int id, User user) {
+		ParamProcessor pp = new ParamProcessor();
+		pp.add("id", id);
+		ArrayList<Object> all = filter(pp, user);
+		if ((Integer) all.get(0) == 1) {
+			return ((ArrayList<Thread>) all.get(1)).get(0);
+		}
+		return null;
+	}
+	
+	public Thread findById(int id) {
+		try (Connection conn = Connector.get();
+				PreparedStatement stmt = conn.prepareStatement(
+				FETCH_QUERY_START + JOIN_STRING + " WHERE obj.id = ?;");) {
+			
+			stmt.setObject(1, id);
+			return processOne(stmt);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	public boolean delete(Thread o, User user, boolean doDelete, Boolean preferHard) {
 		if (preferHard != null && preferHard) {
 			return hardDelete(o);
@@ -288,8 +218,6 @@ public class ThreadDAO
 	}
 	
 	private boolean softDelete(Thread o, boolean doDelete) {
-		o.setDeleted(doDelete);
-		//propagate(o, "deleted", "deleted < ?", o.getDeleted());
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET deleted=? WHERE id=?;");
 			stmt.setObject(1, doDelete);
@@ -300,7 +228,7 @@ public class ThreadDAO
 		}
 		return true;
 	}
-
+	
 	private boolean hardDelete(Thread o) {
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("DELETE FROM " + TABLE_NAME + " WHERE id=?;");
@@ -308,11 +236,10 @@ public class ThreadDAO
 			return stmt.execute();
 		} catch (Exception e) {
 			softDelete(o, true);
-			e.printStackTrace();
 		}
 		return false;
 	}
-	
+
 	private Thread processOne(PreparedStatement stmt) {
 		try {
 			stmt.execute();
@@ -326,7 +253,7 @@ public class ThreadDAO
 		}
 		return null;
 	}
-
+	
 	private ArrayList<Object> processMany(QueryBuilder q) {
 		ArrayList<Object> list = new ArrayList<Object>();
 		try {
@@ -341,17 +268,4 @@ public class ThreadDAO
 		}
 		return list;
 	}
-	
-	private ArrayList<Object> processMany(ResultSet rs) {
-		ArrayList<Object> list = new ArrayList<Object>();
-		try {
-			while (rs.next())
-				list.add(process(rs));
-			return list;
-		} catch (Exception e) {
-			e.printStackTrace();
-		} 
-		return list;
-	}
-	
 }

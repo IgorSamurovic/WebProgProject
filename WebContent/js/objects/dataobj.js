@@ -1,5 +1,17 @@
 const DataObj = {
 
+	isDeleted : function() {
+		return this.data.deleted;
+	},
+	
+	isLocked : function() {
+		return this.data.deleted;
+	},
+	
+	isOwnedBy : function(user) {
+		return this.data.owner == user.data.id;
+	},
+		
 	// Checks whether the object gets special treatment because it is a ROOT administrator or core FORUM
 	isGod : function(id=this.data.id) {
 		return id == 1;

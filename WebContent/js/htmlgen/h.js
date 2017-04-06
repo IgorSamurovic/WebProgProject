@@ -163,7 +163,7 @@ var H = {
 	},
 	
 	pageFilterBtn : function() {
-		return `<button name="pageFilterBtn" class="small left"><div>Filter</div></button>`;
+		return `<button name="pageFilterBtn" class="small right"><div>Filter</div></button>`;
 	},
 		
 	btn : function(label, name, cls="", val=null, type='button') {
@@ -333,7 +333,7 @@ const HFUNC = (function() {
 		});	
 		
 		$(document).on('input', "textarea", function(event) {
-			const counter = $(this).siblings('[name="textareaCounter"]');
+			const counter = $(this).next();
 			const length = $(this).val().length;
 			const maxlength = $(this).attr('maxlength');
 			

@@ -1,6 +1,7 @@
 package model;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -22,6 +23,8 @@ public class Forum implements DataObject
 	private String ownerUsername;
 	private String parentTitle;
 	
+	private ArrayList<String[]> parents;
+
 	public boolean isChildOf(Forum ancestor) {
 		// daddy forum
 		if (this.id == 1 || this.getId() == ancestor.getId()) return false;
@@ -32,7 +35,7 @@ public class Forum implements DataObject
 			if (child.getParent() == ancestorId) {
 				return true;
 			} else {
-				child = new ForumDAO().findById(child.getParent(), null);
+				child = new ForumDAO().findById(child.getParent());
 
 			}
 		}
@@ -55,7 +58,7 @@ public class Forum implements DataObject
 		if (id != null && id == 1) parent = null;
 		
 		if (id != null && parent != null && id != 1) {
-			parentObj = new ForumDAO().findById(parent, null);
+			parentObj = new ForumDAO().findById(parent);
 			if (parentObj == null || parentObj.getId() == this.getId() || (parentObj != null && parentObj.isChildOf(this))) {
 		        return "parent";
 			}
@@ -127,6 +130,15 @@ public class Forum implements DataObject
 		this.parentTitle = parentTitle;
 	}
 
+	@JsonProperty("_parents")
+	public ArrayList<String[]> getParents() {
+		return parents;
+	}
+
+	public void setParents(ArrayList<String[]> parents) {
+		this.parents = parents;
+	}
+	
 	public Integer getId()
 	{
 		return id;
@@ -173,23 +185,7 @@ public class Forum implements DataObject
 		}
 	}
 	
-	@JsonProperty("_deletable")
-	public Boolean getDeletable() {
-		if (this.parent != null && this.id != 1) {
-			return !(new ForumDAO().findById(this.parent, null).getDeleted());
-		} else {
-			return false; 
-		}
-	}
 	
-	@JsonProperty("_lockable")
-	public Boolean getLockable() {
-		if (this.parent != null && this.id != 1) {
-			return !(new ForumDAO().findById(this.parent, null).getLocked());
-		} else {
-			return false; 
-		}
-	}
 	
 	public void setParent(Integer parent)
 	{

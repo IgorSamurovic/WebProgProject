@@ -1,22 +1,10 @@
-$.extend(Forum, {
+$.extend(Thread, {
 
 	_orderByOptions : [
 		['obj.date', 'Date'],
 		['obj.title', 'Title'],
 		['usr.username', 'Owner']
 	],
-	
-	selectType : function(alt) {
-		return H.selectBase({
-			name : "vistype",
-			cls  : 'flex05',
-			options : [
-				['0', 'Public'],
-				['1', 'Open'],
-				['2', 'Closed']
-			]
-		});
-	},
 	
 	inputTitle : function(alt) {
 		return H.inputBase ({
@@ -42,4 +30,15 @@ $.extend(Forum, {
 		});
 	},
 	
+	inputText : function(alt) {
+		return H.textareaBase ({
+			alt       : alt,
+			cls       : '',
+			name      : 'text',
+			placeholder : 'Content...',
+			maxlength : '1000',
+			rows      : '8'
+		});
+	},
+
 });

@@ -25,25 +25,10 @@ public class ForumController extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     	User current = Cookies.getUser(request);
     	ParamProcessor pp = new ParamProcessor(request);
-		
-    	Integer id = pp.integer("id");
-		if (id != null) {
-			Forum result = new ForumDAO().findById(id, current);
-			if (result != null)
-				if (current.getId() == id) {
-					Responder.out(response, result, Views.getPersonal(current));
-				} else {
-					Responder.out(response, result, Views.forUser(current));
-				} else {
-					Responder.out(response, "notFound");
-				}
-		} else {
-			ArrayList<Object> results = new ForumDAO().filter(pp, current);
-			Responder.out(response, results, Views.forUser(current));
-		}
+    	Responder.out(response, new ForumDAO().filter(pp, current), Views.forUser(current));
 	}
 
-
+	@SuppressWarnings("unchecked")
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		// First initialize variables
@@ -89,12 +74,15 @@ public class ForumController extends HttpServlet {
 			}
 			
 			new ForumDAO().insert(obj);
+			pp.setForLast();
+			obj = ((ArrayList<Forum>) new ForumDAO().filter(pp, current).get(1)).get(0);
+			Responder.out(response, Integer.toString(obj.getId()));
 		} 
 
 		if (reqType.equals("edit")) {
 			obj = new ForumDAO().findById(id);
 			if (title != null) obj.setTitle(title);
-			if (descript != null) obj.setDescript(descript);
+			obj.setDescript(descript);
 			if (parent != null) obj.setParent(parent);
 			if (owner != null) obj.setOwner(owner);
 			if (vistype != null) obj.setVistype(vistype);

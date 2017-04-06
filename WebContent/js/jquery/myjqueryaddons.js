@@ -34,6 +34,8 @@
 
 			if (!name.startsWith('!')) {
 				data[name] = $(this).val();
+			} else {
+				data[name.substring(1, name.length)] = $(this).val();
 			}
 		});
 		

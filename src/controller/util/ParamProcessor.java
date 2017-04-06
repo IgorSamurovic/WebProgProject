@@ -13,6 +13,17 @@ public class ParamProcessor
 	@SuppressWarnings("unused")
 	private static final Pattern INDEX_PATTERN = Pattern.compile("\\[(.*?)\\]");
 	
+	public void setForLast() {
+		add("orderBy", "obj.DATE");
+		add("asc", "DESC");
+		add("page", "1");
+		add("perPage", "1");
+	}
+	
+	public ParamProcessor() {
+		this.map = new HashMap<String,String[]>();
+	}
+	
 	@SuppressWarnings("unchecked")
 	public ParamProcessor(HttpServletRequest request) {
 		this.map = new HashMap<String, String[]>();
@@ -33,6 +44,11 @@ public class ParamProcessor
 	
 	public void add(String key, String value) {
 		String[] ary = {value};
+		this.map.put(key, ary);
+	}
+	
+	public void add(String key, Object value) {
+		String[] ary = {String.valueOf(value)};
 		this.map.put(key, ary);
 	}
 	

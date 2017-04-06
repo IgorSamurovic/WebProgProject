@@ -14,18 +14,21 @@ import model.dao.util.QueryBuilder;
 public class ForumDAO {
 	
 	static final String TABLE_NAME = "FORUM";
-	static String[] tables = {"obj.id", "obj.date", "obj.title", "usr.username"};
+	static String[] tables = {"obj.date", "obj.title", "usr.username"};
 	
 	static final String COUNT_QUERY_START = 
 			"SELECT COUNT(obj.ID) FROM FORUM obj";
 	static final String FETCH_QUERY_START = 
-			" SELECT obj.*, usr.username, frm.title FROM FORUM obj";
+			" SELECT obj.*, usr.username, frm.title, anc.deleted FROM FORUM obj";
 			
 	static final String JOIN_STRING = 
 		    " LEFT JOIN USER usr " +
 			" ON obj.owner = usr.id " +
 			" LEFT JOIN FORUM frm " +
-			" ON obj.parent = frm.id ";
+			" ON obj.parent = frm.id " +
+			" LEFT JOIN (CLOSURE cls, FORUM anc) " + 
+			" ON (CLS.CHILD = OBJ.ID AND ANC.ID = OBJ.PARENT AND ANC.deleted = TRUE) ";
+
 	
 	// --------------------------------------------------------------------------------------------
 	// Processing
@@ -49,43 +52,29 @@ public class ForumDAO {
 	}
 
 	private void processFilter(QueryBuilder qb, ParamProcessor pp, User user) {
-		if (user.getRole() < User.Role.ADMIN) {
-			qb
-			.and("obj.title LIKE $title")
-			.and("obj.parent = $parent")
-			.and("usr.username LIKE $ownerUsername")
-			.and("obj.owner = $owner")
-			.and("obj.vistype <= $vistype")
-			.and("obj.vistype <= " + user.getPermissionLevel())
-			.and("obj.date <= $dataA")
-			.and("obj.date >= $dataB")
-			.and("obj.locked <= $includeLocked")
-			.and("obj.deleted = FALSE")
-			.orderBy("obj.id", "asc")
-			.orderBy("$orderBy", "$asc", tables)
-			.orderBy("obj.id", "asc");
-		} else {
-			qb
-			.and("obj.title LIKE $title")
-			.and("obj.parent = $parent")
-			.and("usr.username LIKE $ownerUsername")
-			.and("obj.owner = $owner")
-			.and("obj.vistype <= $vistype")
-			.and("obj.date <= $dataA")
-			.and("obj.date >= $dataB")
-			.and("obj.locked <= $includeLocked")
-			.and("obj.deleted <= $includeDeleted")
-			.orderBy("obj.deleted", "asc")
-			.orderBy("$orderBy", "$asc", tables)
-			.orderBy("obj.id", "asc");
-		}
+		qb
+		.and("obj.id = $id")
+		.and("obj.title LIKE $title")
+		.and("obj.parent = $parent")
+		.and("usr.username LIKE $ownerUsername")
+		.and("obj.owner = $owner")
+		.and("obj.date <= $dataA")
+		.and("obj.date >= $dataB")
+		.and("obj.vistype <= " + user.getPermissionLevel())
+		.and("(frm.deleted = FALSE OR obj.id = 1)")
+		.and("obj.deleted <= " + user.canSeeDeleted())
+		.and("obj.deleted <= $deleted")
+		.and("anc.deleted IS NULL")
+		.orderBy("obj.deleted", "asc")
+		.orderBy("$orderBy", "$asc", tables)
+		.orderBy("obj.id", "asc");
 	}
 
 	// --------------------------------------------------------------------------------------------
 	// Getters
 	
-	public ArrayList<Object> filter(ParamProcessor pp, User user)
-	{
+	@SuppressWarnings("unchecked")
+	public ArrayList<Object> filter(ParamProcessor pp, User user) {
 		ArrayList<Object> list = new ArrayList<Object>();
 		QueryBuilder qb = new QueryBuilder(pp);
 		
@@ -100,10 +89,7 @@ public class ForumDAO {
 		
 		// Create part of the query that deals with filters
 		processFilter(qb, pp, user);
-		qb.setJoin("LEFT JOIN USER usr "
-				+  "ON obj.owner = usr.id "
-				+  "LEFT JOIN FORUM frm "
-				+  "ON obj.parent = frm.id ");
+		qb.setJoin(JOIN_STRING);
 		
 		if (ancestorId == null) {
 			qb.setStart(COUNT_QUERY_START);
@@ -121,45 +107,103 @@ public class ForumDAO {
 		
 		// Let's see if parent is the descendant
 		if (ancestorId != null) {
-			@SuppressWarnings("unchecked")
 			ArrayList<Object> objs = (ArrayList<Object>) list.get(1);
 			Forum ancestor = new ForumDAO().findById(ancestorId, user);
 			
 			for (int i=0; i<objs.size(); i++) {
-				if (!((Forum) objs.get(i)).isChildOf(ancestor)) {
+				if (((Forum) objs.get(i)).isChildOf(ancestor)) {
+					System.err.println( ((Forum) (objs.get(i))).getTitle());
 					objs.remove(i);
 				}
 			}
 			list.set(0, objs.size());
 		}
 		
+		// Add parent list if it's singular result
+		if (pp.integer("id") != null && (Integer) list.get(0) > 0) {
+			getParentList(((ArrayList<Forum>) list.get(1)).get(0));
+		}
+		
 		return list;
 	}
 
-	public Forum findById(int id, User user) {
-		boolean adminAccess = (user == null) ? true : user.getRole() == User.Role.ADMIN; 
-		try (Connection conn = Connector.get();
-				PreparedStatement stmt = conn.prepareStatement(
-				    FETCH_QUERY_START + JOIN_STRING + " WHERE obj.id=? AND obj.deleted <= ?;");) {
-			stmt.setObject(1, id);
-			stmt.setObject(2, adminAccess);
-			return processOne(stmt);
+	public ArrayList<String[]> getParentList(Forum obj) {
+		
+		try (Connection conn = Connector.get()) {
+			PreparedStatement stmt;
+			
+			ArrayList<String[]> parents = new ArrayList<String[]>();
+			
+			Integer parentId = null;
+			
+			ResultSet rs;
+			
+			parentId = obj.getParent();
+			
+			if (parentId != null && parentId != 0) {
+				while (true) {
+					stmt = conn.prepareStatement("SELECT id, title, parent FROM FORUM WHERE id=?");
+					stmt.setObject(1, parentId);
+					stmt.execute();
+					rs = stmt.getResultSet();
+					if (rs.next()) {
+						parents.add(new String[] {rs.getString("id"), rs.getString("title")});
+						parentId = rs.getInt("parent");
+					} else {
+						break;
+					}
+					stmt.close();
+					
+				}
+			}
+			obj.setParents(parents);
+			return parents;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
 	
-	public Forum findById(int id) {
-		return findById(id, null);
-	}
-	
 	// --------------------------------------------------------------------------------------------
 	// SPECIAL OPERATIONS
 	
+	private void propagate(Forum o, String column, String when, Object val) {
+		
+		try (Connection conn = Connector.get();) {
+				
+			PreparedStatement stmt;
+			
+			// Select all children
+			stmt = conn.prepareStatement(
+					FETCH_QUERY_START + JOIN_STRING + " WHERE " + when + " AND obj.parent = ?;");
+			stmt.setObject(1, val);
+			stmt.setObject(2, o.getId());
+			stmt.execute();
+			ResultSet rs = stmt.getResultSet();
+			if (rs != null) {
+				ArrayList<Object> list = processMany(rs);
+				for (Object ob : list) {
+					new ForumDAO().propagate((Forum) ob, column, when, val);
+				}
+			}
+			
+			// Update all children
+			stmt = conn.prepareStatement(
+					"UPDATE FORUM obj SET " + column + "=? WHERE " + when + " AND obj.parent = ?;");
+			stmt.setObject(1, val);
+			stmt.setObject(2, val);
+			stmt.setObject(3, o.getId());
+			stmt.execute();
+			
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public int lock(Forum o, Boolean doLock) {
 		o.setLocked(doLock);
-		propagate(o, "locked", "locked < ?", o.getLocked());
+		propagate(o, "obj.locked", "obj.locked < ?", o.getLocked());
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET locked=? WHERE id=?;");
 			stmt.setObject(1, doLock);
@@ -175,41 +219,6 @@ public class ForumDAO {
 	
 	// --------------------------------------------------------------------------------------------
 	// Standard Operations
-	
-	private void propagate(Forum o, String column, String when, Object val) {
-		
-		try (Connection conn = Connector.get();) {
-				
-			PreparedStatement stmt;
-			
-			// Select all children
-			stmt = conn.prepareStatement(
-					"SELECT * FROM " + TABLE_NAME + " WHERE " + when + " AND parent = ?;");
-			stmt.setObject(1, val);
-			stmt.setObject(2, o.getId());
-			stmt.execute();
-			ResultSet rs = stmt.getResultSet();
-			if (rs != null) {
-				ArrayList<Object> list = processMany(rs);
-				for (Object ob : list) {
-
-					new ForumDAO().propagate((Forum) ob, column, when, val);
-				}
-			}
-			
-			// Update all children
-			stmt = conn.prepareStatement(
-					"UPDATE " + TABLE_NAME + " SET " + column + "=? WHERE " + when + " AND parent = ?;");
-			stmt.setObject(1, val);
-			stmt.setObject(2, val);
-			stmt.setObject(3, o.getId());
-			stmt.execute();
-			
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
 	
 	public boolean insert(Forum o)
 	{
@@ -234,7 +243,7 @@ public class ForumDAO {
 
 	public int update(Forum o)
 	{
-		propagate(o, "vistype", "vistype < ?", o.getVistype());
+		propagate(o, "obj.vistype", "obj.vistype < ?", o.getVistype());
 		try (Connection conn = Connector.get();)
 		{
 			PreparedStatement stmt = conn.prepareStatement("UPDATE FORUM SET title=?, descript=?, parent=?, owner=?, vistype=?, locked=?, deleted=? WHERE id=?;");
@@ -256,7 +265,31 @@ public class ForumDAO {
 	}
 	
 	// --------------------------------------------------------------------------------------------
-	// DELETION
+	// GENERIC STUFF
+	
+	@SuppressWarnings("unchecked")
+	public Forum findById(int id, User user) {
+		ParamProcessor pp = new ParamProcessor();
+		pp.add("id", id);
+		ArrayList<Object> all = filter(pp, user);
+		if ((Integer) all.get(0) == 1) {
+			return ((ArrayList<Forum>) all.get(1)).get(0);
+		}
+		return null;
+	}
+	
+	public Forum findById(int id) {
+		try (Connection conn = Connector.get();
+				PreparedStatement stmt = conn.prepareStatement(
+				FETCH_QUERY_START + JOIN_STRING + " WHERE obj.id = ?;");) {
+			
+			stmt.setObject(1, id);
+			return processOne(stmt);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 	
 	public boolean delete(Forum o, User user, boolean doDelete, Boolean preferHard) {
 		if (preferHard != null && preferHard) {
@@ -268,7 +301,7 @@ public class ForumDAO {
 	
 	private boolean softDelete(Forum o, boolean doDelete) {
 		o.setDeleted(doDelete);
-		propagate(o, "deleted", "deleted < ?", o.getDeleted());
+		//propagate(o, "obj.deleted", "obj.deleted < ?", o.getDeleted());
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET deleted=? WHERE id=?;");
 			stmt.setObject(1, doDelete);

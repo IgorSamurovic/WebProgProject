@@ -6,6 +6,10 @@ const  User = Object.assign(Object.create(DataObj), {
 		return this.renderUsername();
 	},
 	
+	owns : function(obj) {
+		return this.data.id == obj.data.owner
+	},
+	
 	// Bans a user, then calls the callback function
 	ban: function(doBan, callback) {
 		$.ajax({
@@ -27,10 +31,10 @@ const  User = Object.assign(Object.create(DataObj), {
 		admin: 3
 	},
 	
-	isAdmin : function() {return this.data.role === this.roles.admin},
-	isMod   : function() {return this.data.role === this.roles.mod},
-	isUser  : function() {return this.data.role === this.roles.user},
-	isGuest : function() {return this.data.role === this.roles.guest},
+	isAdmin : function() {return this.data.role >= this.roles.admin},
+	isMod   : function() {return this.data.role >= this.roles.mod},
+	isUser  : function() {return this.data.role >= this.roles.user},
+	isGuest : function() {return this.data.role >= this.roles.guest},
 	
 	getCurrent : function()  {
 		// Create guest data if not available

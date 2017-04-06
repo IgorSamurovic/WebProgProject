@@ -1,8 +1,33 @@
 const Forum = Object.assign(Object.create(DataObj), {
 
-	
-	
 	_table : 'forum',
+	
+	// ----------------------------------------------------------------------------------------------------
+	// Permissions
+	
+	// Editing
+	
+	canBeEditedBy(user) {
+		return !this.isDeleted() && (
+			user.isAdmin()
+		);
+	},
+	
+	// Deleting	
+	
+	canBeDeletedBy(user) {
+		return (
+			user.isAdmin() && !this.isGod()
+		);
+	},
+	
+	// Locking
+	
+	canBeLockedBy(user) {
+		return !this.isDeleted() && (
+			user.isAdmin() && !this.isGod()
+		);
+	},
 	
 	getTitle : function() {
 		return this.renderTitle();
@@ -31,6 +56,18 @@ const Forum = Object.assign(Object.create(DataObj), {
 	isPublic : function() {return this.data.vistype === this.types.publ},
 	isOpen   : function() {return this.data.vistype === this.types.open},
 	isClosed : function() {return this.data.vistype === this.types.closed},
+	
+	isLocked : function() {
+		return this.data.locked;
+	},
+	
+	isDeleted : function() {
+		return this.data.deleted;
+	},
+
+	isSticky : function() {
+		return this.data.sticky;
+	},
 	
 });
 

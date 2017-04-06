@@ -42,40 +42,30 @@ $.extend(Thread, {
 		
 		const html = `
 			<div class="columnFlex wide">
-				<div class="rowFlex">
-					<div class="columnFlex">
-						${Thread.inputTitle()}
-						${Thread.inputDescript()}
-						${Thread.inputText()}
-						${!isMainForum ? Forum.selectType() : ""}
-					</div>
-					<div class="columnFlex">
-						${!isMainForum ? Forum.inputOwner({disabled:true}) : ""}
-						${!isMainForum ? Forum.inputParent({disabled:true}) : ""}
-					</div>
-				</div>
-
-				${Forum.inputDescript()}
-
+				${Thread.inputTitle()}
+				${Thread.inputDescript()}
+				${Thread.inputText()}
 			</div>
 		`;
 		
 		$(target).append(html);
-		$(target).setFields(obj.data);	
-		$(target).find('[name="!ownerUsername"]').val(obj.xtra.ownerUsername);
-		$(target).find('[name="!forumTitle"]').val(obj.xtra.forumTitle);
+		$(target).setFields(obj.data);
+	},
+	
+	renderHeader : function(cls) {
+		return `<a class="link2 ${cls}" href="thread.jsp?thread=${this.data.id}">${this.data.title}</a>`;
 	},
 	
 	renderTitle : function(cls) {
-		return `<a class="link2 ${cls}" href="thread.jsp?id=${this.data.id}">${this.data.title}</a>`;
+		return `<a class="link2 ${cls}" href="thread.jsp?thread=${this.data.id}">${this.data.title}</a>`;
 	},
 	
-	renderDescript : function() {
-		return (this.data.descript !== undefined && this.data.descript !== null) ? this.data.descript.shorten(80) : "No description";
+	renderDescript : function(shorten) {
+		return (this.data.descript !== undefined && this.data.descript !== null) ? this.data.descript.shorten(shorten) : "No description";
 	},
 	
-	renderText : function() {
-		return (this.data.text !== undefined && this.data.text !== null) ? this.data.text.shorten(100) : "No text";
+	renderText : function(shorten) {
+		return (this.data.text !== undefined && this.data.text !== null) ? this.data.text.shorten(shorten) : "No text";
 	},
 	
 	renderForum : function() {
@@ -89,14 +79,9 @@ $.extend(Thread, {
 	renderAdd : function () {
 		return `
 			<div class="columnFlex wide">
-				<div class="rowFlex">
-					${Forum.inputTitle()}
-					${Forum.selectType()}
-					${Forum.inputOwner({disabled:true})}
-				</div>
-				<div>
-				${Forum.inputDescript()}
-				</div>
+				${Thread.inputTitle()}
+				${Thread.inputText()}
+				${Thread.inputDescript()}
 			</div>
 		`;
 	},
@@ -118,41 +103,28 @@ $.extend(Thread, {
 		`;
 	},
 	
-	renderFilterSimple : function() {
-		return `
-			<div class="columnFlex flex4">
-				<div class="rowFlex">
-					${Forum.inputTitle()}
-					${Forum.selectDescendants()}
-				</div>
-				${Forum.inputOwner({name:"ownerUsername"})}
-			</div>
-			
-			<div class="columnFlex flex3">
-				${Forum.inputDate({name:'dateA'})}
-				${Forum.inputDate({name:'dateB'})}
-			</div>
-		`;
-	},
-	
 	render : function(thread=this) {
-		
 		var currentUser = User.getCurrent();
-		var isAdmin = currentUser.isAdmin();
-		var isDeleted = thread.data.deleted;
-		var isOwner = currentUser.data.id == thread.data.owner; 
 		
 		// Let's make buttons first!
 		var buttons = [`<div class="buttons">`];
 		
-		if (isAdmin) {
-			if (!isDeleted) buttons.push(H.btn('Edit', 'editBtn', 'small special'));
-			if (thread.xtra.deletable)
-				buttons.push(H.toggleBtn(['Delete', 'Undelete'], 'deleteBtn', 'small', !thread.data.deleted));
-			if (!isDeleted && thread.xtra.lockable)
-				buttons.push(H.toggleBtn(['Lock', 'Unlock'], 'threadLockBtn', 'small', !thread.data.locked));
-			if (!isDeleted) 
-				buttons.push(H.toggleBtn(['Stick', 'Unstick'], 'threadStickBtn', 'small', !thread.data.sticky));
+		// Editing <Only admin or owner>
+		if (thread.canBeEditedBy(currentUser)) {
+			buttons.push(H.btn('Edit', 'editBtn', 'small special'));
+		}
+		
+		// Locking <Only admins and mods>
+		if (thread.canBeLockedBy(currentUser)) {
+			buttons.push(H.toggleBtn(['Lock', 'Unlock'], 'threadLockBtn', 'small', !thread.data.locked));
+		}
+
+		if (thread.canBeDeletedBy(currentUser)) {
+			buttons.push(H.toggleBtn(['Delete', 'Undelete'], 'deleteBtn', 'small', !thread.data.deleted));
+		}
+		
+		if (thread.canBeStickiedBy(currentUser)) {
+			buttons.push(H.toggleBtn(['Stick', 'Unstick'], 'threadStickBtn', 'small', !thread.data.sticky));
 		}
 		
 		// Close buttons!
@@ -160,10 +132,13 @@ $.extend(Thread, {
 		
 		// Now render the rest of it!
 		var s = [`<div class="rowFlex">`];
+		
 		s.push('{Avatar}');
-		var dlFields = ['Title', 'Descript', 'Text', 'Forum', 'Owner'];
+		
+		var dlFields = ['Title', 'Description', 'Text', 'Forum', 'Owner'];
 		var dlFields2 = ['Date', 'Sticky', 'Locked'];
-		if (isAdmin) dlFields2.push('Deleted');
+		
+		if (currentUser.isAdmin()) dlFields2.push('Deleted');
 		
 		s.push(H.dl(dlFields, 'flex2'), H.dl(dlFields2, 'flex1'));
 
@@ -172,8 +147,8 @@ $.extend(Thread, {
 		s = s.supplant({
 			Avatar     : User.renderAvatarLink(thread.data.owner, 80, 80),
 			Title      : thread.renderTitle(),
-			Descript   : thread.renderDescript(),
-			Text       : thread.renderText(),
+			Description: thread.renderDescript(120),
+			Text       : thread.renderText(120),
 			Forum      : thread.renderForum(),
 			Owner      : thread.renderOwner(),
 			Date       : thread.renderDate(),
@@ -185,20 +160,64 @@ $.extend(Thread, {
 		return s;
 	},
 	
-	renderSelect : function(forum) {
+	renderMain : function(thread=this) {
 		var currentUser = User.getCurrent();
-		var isAdmin = currentUser.isAdmin();
+		
+		// Let's make buttons first!
+		var buttons = [`<div class="rowFlexAlways alignRight">`];
+		
+		// Editing <Only admin or owner>
+		if (thread.canBeEditedBy(currentUser)) {
+			buttons.push(H.btn('Edit', 'editBtn', 'small special'));
+		}
+		
+		// Locking <Only admins and mods>
+		if (thread.canBeLockedBy(currentUser)) {
+			buttons.push(H.toggleBtn(['Lock', 'Unlock'], 'threadLockBtn', 'small', !thread.data.locked));
+		}
+
+		if (thread.canBeDeletedBy(currentUser)) {
+			buttons.push(H.toggleBtn(['Delete', 'Undelete'], 'deleteBtn', 'small', !thread.data.deleted));
+		}
+		
+		if (thread.canBeStickiedBy(currentUser)) {
+			buttons.push(H.toggleBtn(['Stick', 'Unstick'], 'threadStickBtn', 'small', !thread.data.sticky));
+		}
+		
+		// Close buttons!
+		buttons.push(`</div>`);
 		
 		return `
 			<div class="columnFlex">
-				${User.renderAvatarLink(forum.data.owner, height=60, width=60, 'flex1')}
-				<div class="flex1">
-					${forum.renderTitle('flex1')}
+				<div class="rowFlex">
+					<div class="columnFlex flex05 alignLeft">
+						${thread.renderDate()}
+					</div>
+					<div class="wide flex3">
+						${thread.data.sticky ? "Sticky" : ""}
+						${thread.data.locked ? "Locked" : ""}
+						${thread.data.deleted && currentUser.isAdmin() ? "Deleted" : ""}
+						${thread.renderTitle()}					
+					</div>
 				</div>
-
-				${H.btn('Select', 'select', 'flex1')}
-
-			 </div>
+				<hr/>
+				<div class="rowFlex">
+					<div class="columnFlex flex05">
+						${thread.renderOwner()}
+						${User.renderAvatarLink(thread.data.owner, 80, 80)}
+					</div>
+					<div class="columnFlex flex4">
+						
+						<div class="postContent">
+							${thread.renderDescript()}
+							<hr/>
+							${thread.renderText()}
+						</div>
+						${buttons.join("")}
+					</div>
+				</div>
+			</div>		
 		`;
-	}	
+	},
+
 });

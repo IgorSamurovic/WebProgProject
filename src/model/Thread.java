@@ -43,8 +43,9 @@ public class Thread implements DataObject
 	
 	private String ownerUsername;
 	private String forumTitle;
-	
-public String valid() {
+	private Integer ownerRole;
+
+	public String valid() {
 		
 		Forum forumObj = null;
 		User ownerObj = null;
@@ -57,8 +58,8 @@ public String valid() {
 			return "descript";
 		}
 		
-		if (text != null && text.length() > 1000) {
-			return "descript";
+		if (text == null || (text != null && text.length() > 1000)) {
+			return "text";
 		}
 
 		if (forum != null) {
@@ -91,7 +92,7 @@ public String valid() {
 	}
 	
 	public Thread(Integer id, String title, String descript, String text, Integer forum, Integer owner,
-	Timestamp date, Boolean sticky, Boolean locked, Boolean deleted, String ownerUsername, String forumTitle)
+	Timestamp date, Boolean sticky, Boolean locked, Boolean deleted, String ownerUsername, String forumTitle, Integer ownerRole)
 	{
 		super();
 		this.id = id;
@@ -106,8 +107,17 @@ public String valid() {
 		this.deleted = deleted;
 		this.ownerUsername = ownerUsername;
 		this.forumTitle = forumTitle;
+		this.ownerRole = ownerRole;
 	}
 	
+	// Special getters
+	
+	@JsonProperty("_ownerRole")
+	public Integer getOwnerRole() {
+		return ownerRole;
+	}
+	
+
 	public Thread()
 	{
 		super();
@@ -115,25 +125,8 @@ public String valid() {
 		this.locked = false;
 		this.deleted = false;
 	}
-	
-	@JsonProperty("_deletable")
-	public Boolean getDeletable() {
-		if (this.forum != null) {
-			return !(new ForumDAO().findById(this.forum, null).getDeleted());
-		} else {
-			return false; 
-		}
-	}
-	
-	@JsonProperty("_lockable")
-	public Boolean getLockable() {
-		if (this.forum != null) {
-			return !(new ForumDAO().findById(this.forum, null).getLocked());
-		} else {
-			return false; 
-		}
-	}
-	
+
+
 	public Integer getId()
 	{
 		return id;

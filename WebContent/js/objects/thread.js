@@ -6,8 +6,57 @@ const Thread = Object.assign(Object.create(DataObj), {
 		return this.renderTitle();
 	},
 	
+	// ----------------------------------------------------------------------------------------------------
+	// Permissions
+	
+	// Replying
+	canBeRepliedBy(user) {
+		return !this.isDeleted() && (
+			user.isAdmin() ||
+			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user) ||
+			user.isUser() && user.owns(this) && !this.data.locked && !this.xtra.forumLocked
+		);
+	},
+	
+	// Editing
+	
+	canBeEditedBy(user) {
+		return !this.isDeleted() && (
+			user.isAdmin() ||
+			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user) ||
+			user.isUser() && user.owns(this) && !this.data.locked && !this.xtra.forumLocked
+		);
+	},
+	
+	// Deleting	
+	
+	canBeDeletedBy(user) {
+		return (
+			user.isAdmin() ||
+			user.isMod() && (this.owner == user.data.id || this.xtra.ownerRole <= User.roles.user)
+		);
+	},
+	
+	// Locking
+	
+	canBeLockedBy(user) {
+		return !this.isDeleted() && (
+			user.isAdmin() ||
+			user.isMod() && this.xtra.ownerRole <= User.roles.mod
+		);
+	},
+	
+	// Stickying
+	
+	canBeStickiedBy(user) {
+		return !this.isDeleted() && (
+			user.isAdmin() ||
+			user.isMod() && (this.owner == user.data.id || this.xtra.ownerRole <= User.roles.user)
+		);
+	},
+	
 	// Locks a forum, then calls the callback function
-	stick: function(doStick, callback) {
+	stick : function(doStick, callback) {
 		$.ajax({
 			method :   "POST",
 			url    :   "thread",
@@ -21,7 +70,7 @@ const Thread = Object.assign(Object.create(DataObj), {
 	},
 	
 	// Locks a forum, then calls the callback function
-	lock: function(doLock, callback) {
+	lock : function(doLock, callback) {
 		$.ajax({
 			method :   "POST",
 			url    :   "thread",
@@ -33,7 +82,8 @@ const Thread = Object.assign(Object.create(DataObj), {
 			success: callback
 		});
 	},
-			
+
+	
 });
 
 $(document).ready(function() {

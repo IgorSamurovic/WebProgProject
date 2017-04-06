@@ -210,6 +210,7 @@ button.big, a.big {
 button.small, a.small {
 	font-size: medium;
 	max-height: 25px;
+	max-width: 100px;
 }
 
 .special {
@@ -273,7 +274,7 @@ footer:a {
 
 input, select, textarea {
 	height: 40px;
-	min-width: 100px;
+	width: 100%;
 	padding: 8px 8px;
     margin: 2px;
     border: 2px solid var(--darker);
@@ -291,9 +292,8 @@ input, select {
 
 textarea {
 	font-size: large;
-	display: inline;
     resize: vertical;
-    width: 100%;
+    margin-right: 4px;
 }
 
 input[type=datetime-local] {
@@ -345,10 +345,11 @@ input:disabled {
     width: 100%;
 }
 
-div, button, input, select, textarea, a, img, ul
+div, button, input, select, textarea, a, img, ul, hr
 {
 	border-radius: 10px;
 	color: white;
+	
 }
 
 .boldText
@@ -541,7 +542,7 @@ div.pagecontent:empty
 }
 
 div.pageheader {
-	height: 30px;
+	min-height: 30px;
 	margin: 10 auto;
 	max-width: 1024px;
     background-color: var(--darkestest);
@@ -550,12 +551,12 @@ div.pageheader {
 
 div.pagetitle {
 	float:left;
-	max-width: 500px;
-	font-size: x-large;
+	font-size: large;
 	font-weight: bold;
 	text-align:left;
 	margin: 0 auto;
     color: white;
+    min-height: 30px;
 }
 
 div.subpagetitle {
@@ -605,6 +606,45 @@ div.itemContainer {
 	padding: 5px;
 }
 
+hr {
+    width: 100%;
+    border: 0;
+    height: 2px;
+    background: var(--darker);
+    background-color: var(--darker);
+}
+
+div.vr {
+    width: 2px;
+    border: 0;
+    min-height: 80px;
+    background: var(--darker);
+    background-color: var(--darker);
+}
+
+div.alignRight {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-end;
+	margin-left: auto !important;
+	text-align: right !important;
+}
+
+div.alignLeft {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	margin-right: auto !important;
+	text-align: left !important;
+}
+
+div.postContent {
+	text-align: justify;
+    text-justify: inter-word;
+	flex: 1;
+	padding: 10px;
+}
+
 div.useravatarsetup {
 	display: -webkit-flex;
 	display: flex;
@@ -620,7 +660,8 @@ div.useravatarsetup {
 }
 
 img.useravatar {
-	border: 2px solid var(--darker)
+	border: 2px solid var(--darker);
+	margin: 4px;
 }
 
 img.useravatar:hover {
@@ -649,19 +690,18 @@ dl.userinfo {
 }
 
 dl.userinfo dt {
-	
 	float:left;
 	clear:left;
 	color: var(--neutraltext);
 	width: 100px;
 	padding: 0;
 	margin: 0;
+	min-height: 20px;
 }
 
-dl.userinfo dd
-{
+dl.userinfo dd {
 	overflow: hidden;
-	width-min: 200px;
+	min-height: 20px;
 }
 
 dl.userinfo dd, a{

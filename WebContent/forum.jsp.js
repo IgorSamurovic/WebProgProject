@@ -13,19 +13,21 @@ $(document).ready(function() {
 		canFilter : true
 	}));
 	
-	G.addPage(H.page({
-		name: 'threads',
-		title: 'Threads',
-		canHide : true,
-		canFilter : true
-	}));
-	
 	(function () {
 		const params = G.getParams();
 		
 		if (!G.isProperId(params.id)) {
 			params.id = 1;
 			G.replaceState();
+		}
+		
+		if (params.id != 1) {
+			G.addPage(H.page({
+				name: 'threads',
+				title: 'Threads',
+				canHide : true,
+				canFilter : true
+			}));
 		}
 		
 		// Determine owner first
@@ -37,10 +39,11 @@ $(document).ready(function() {
 			data: {id:params.id},
 			error: Page.redirect,
 			}, function(data) {
-			
+				console.log(data);
 				if (data.totalRecords === 1) {
 					Search.create({
 						useParams  : true,
+						isSingle   : true,
 						prefix     : "forum",
 						parent     : "#forumPageContent",
 						objType    : Forum,
@@ -54,15 +57,13 @@ $(document).ready(function() {
 								};
 							},
 						},
-						renderFunc : Forum.render 
+						renderFunc : Forum.render ,
+						updateFunc : function() {
+							$(this.selTitle()).html(`${this.getOnlyObject().renderHeader()}`);
+						}
 					}).loadResults();
 					
-					var forumData = data;
-					var forum = Forum.create(data[0]);
-					
-					// Init successful							
 					// Render forum page
-					$("#forumPageTitle").html(forum.data.title);
 					
 					Search.create({
 						useParams  : false,
@@ -77,7 +78,6 @@ $(document).ready(function() {
 									orderBy : "obj.DATE",
 									asc     : "FALSE",
 									parent  : params.id,
-									owner   : params.owner
 								};
 							},
 						},
@@ -91,40 +91,75 @@ $(document).ready(function() {
 								return {
 									parent  : params.id,
 								}
+							}, redirectTo : function(id) {
+								return `forum.jsp?id=${id}`;
+							} , condition : function() {
+								return User.getCurrent().isAdmin();
 							}
+						},
+						updateFunc : function() {
+							$(this.selTitle()).html(`Subforums (${this.data.totalRecords})`);
 						}
+						
 					}).loadResults();
 					
 					// Threads
-					Search.create({
-						useParams  : false,
-						prefix     : "threads",
-						parent     : "#threadsPageContent",
-						objType    : Thread,
-						dataFunc   : G.dbGet,
-						dataArgs   : {
-							url    : "thread",
-							data   : function() {
-								return {
-									orderBy : "obj.DATE",
-									asc     : "FALSE",
-									forum   : params.id,
-								};
+					
+					if (params.id != 1) {
+						Search.create({
+							useParams  : false,
+							prefix     : "threads",
+							parent     : "#threadsPageContent",
+							objType    : Thread,
+							dataFunc   : G.dbGet,
+							dataArgs   : {
+								url    : "thread",
+								data   : function() {
+									return {
+										orderBy : "obj.DATE",
+										asc     : "FALSE",
+										forum   : params.id,
+									};
+								},
 							},
-						},
-						renderFunc : Thread.render,
-						filter     : Thread.renderFilter,
-						add : {
-							html  : Thread.renderAdd,
-							label : 'New thread',
-							title : 'New thread',
-							data  : function() {
-								return {
-									forum  : params.id,
+							renderFunc : Thread.render,
+							filter     : Thread.renderFilter,
+							add : {
+								html  : Thread.renderAdd,
+								label : 'New thread',
+								title : 'New thread',
+								data  : function() {
+									return {
+										forum  : params.id,
+										owner  : User.getCurrent().data.id
+									}
+								},
+								
+								redirectTo : function(id) {
+									return `thread.jsp?id=${id}`;
+								},
+								
+								condition : function() {
+									var currentUser = User.getCurrent();
+									console.log(Search.byPrefix("forum"));
+									var currentForum = Search.byPrefix("forum").getOnlyObject();
+									
+									if (currentUser.isAdmin()) {
+										return true;
+									} else if (currentUser.isMod()) {
+										return true;
+									} else if (currentUser.isUser()) {
+										return (currentForum.isPublic() || currentForum.isOpen()) && !currentForum.data.locked;
+									} else if (currentUser.isGuest()) {
+										return false;
+									}
 								}
+							},
+							updateFunc : function() {
+								$(this.selTitle()).html(`Threads (${this.data.totalRecords})`);
 							}
-						}
-					}).loadResults();
+						}).loadResults();
+					}
 					
 					G.protectParam('id');
 					G.popStateHandler();
@@ -140,6 +175,7 @@ $(document).ready(function() {
 const Page = {
 	
 	redirect : function() {
+		console.log("hax");
 		G.goHome();
 	},
 };

@@ -1,7 +1,6 @@
 package controller;
 
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 
 import javax.servlet.ServletException;
@@ -9,14 +8,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.fasterxml.jackson.annotation.JsonView;
 
 import controller.util.ParamProcessor;
 import controller.util.Responder;
-import model.Forum;
 import model.Thread;
 import model.User;
-import model.dao.ForumDAO;
 import model.dao.ThreadDAO;
 import util.Cookies;
 import views.Views;
@@ -27,24 +23,10 @@ public class ThreadController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		User current = Cookies.getUser(request);
 		ParamProcessor pp = new ParamProcessor(request);
-		
-		Integer id = pp.integer("id");
-		if (id != null) {
-			Thread result = new ThreadDAO().findById(id, current);
-			if (result != null)
-				if (current.getId() == id) {
-					Responder.out(response, result, Views.getPersonal(current));
-				} else {
-					Responder.out(response, result, Views.forUser(current));
-				} else {
-					Responder.out(response, "notFound");
-				}
-		} else {
-			ArrayList<Object> results = new ThreadDAO().filter(pp, current);
-			Responder.out(response, results, Views.forUser(current));
-		}
+		Responder.out(response, new ThreadDAO().filter(pp, current), Views.forUser(current));
     }
     
+	@SuppressWarnings("unchecked")
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		// First initialize variables
@@ -76,7 +58,6 @@ public class ThreadController extends HttpServlet {
 			obj.setText(text);
 			obj.setForum(forum);
 			obj.setOwner(owner);
-			obj.setSticky(sticky);
 			
 			valid = obj.valid();
 			pp.printDebug();
@@ -87,15 +68,16 @@ public class ThreadController extends HttpServlet {
 			}
 			
 			new ThreadDAO().insert(obj);
+			pp.setForLast();
+			obj = ((ArrayList<Thread>) new ThreadDAO().filter(pp, current).get(1)).get(0);
+			Responder.out(response, Integer.toString(obj.getId()));
 		} 
 
 		if (reqType.equals("edit")) {
 			obj = new ThreadDAO().findById(id);
-			if (title != null) obj.setTitle(title);
-			if (descript != null) obj.setDescript(descript);
-			if (text != null) obj.setText(text);
-			if (forum != null) obj.setForum(forum);
-			if (owner != null) obj.setOwner(owner);
+			obj.setTitle(title);
+			obj.setDescript(descript);
+			obj.setText(text);
 			
 			valid = obj.valid();
 			
@@ -109,7 +91,7 @@ public class ThreadController extends HttpServlet {
 		
 		if (reqType.equals("stick")) {
 			if (id != null && sticky != null) {
-				obj = new ThreadDAO().findById(id, current);
+				obj = new ThreadDAO().findById(id);
 				obj.setSticky(sticky);
 				
 				valid = obj.valid();
@@ -125,7 +107,7 @@ public class ThreadController extends HttpServlet {
 		
 		if (reqType.equals("lock")) {
 			if (id != null && locked != null) {
-				obj = new ThreadDAO().findById(id, current);
+				obj = new ThreadDAO().findById(id);
 				obj.setLocked(locked);
 				
 				valid = obj.valid();
