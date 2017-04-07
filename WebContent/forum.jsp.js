@@ -39,7 +39,7 @@ $(document).ready(function() {
 			data: {id:params.id},
 			error: Page.redirect,
 			}, function(data) {
-				console.log(data);
+				G.log(data);
 				if (data.totalRecords === 1) {
 					Search.create({
 						useParams  : true,
@@ -136,23 +136,13 @@ $(document).ready(function() {
 								},
 								
 								redirectTo : function(id) {
-									return `thread.jsp?id=${id}`;
+									return `thread.jsp?thread=${id}`;
 								},
 								
 								condition : function() {
 									var currentUser = User.getCurrent();
-									console.log(Search.byPrefix("forum"));
 									var currentForum = Search.byPrefix("forum").getOnlyObject();
-									
-									if (currentUser.isAdmin()) {
-										return true;
-									} else if (currentUser.isMod()) {
-										return true;
-									} else if (currentUser.isUser()) {
-										return (currentForum.isPublic() || currentForum.isOpen()) && !currentForum.data.locked;
-									} else if (currentUser.isGuest()) {
-										return false;
-									}
+									return currentForum.canBePostedInBy(currentUser);
 								}
 							},
 							updateFunc : function() {
@@ -175,7 +165,6 @@ $(document).ready(function() {
 const Page = {
 	
 	redirect : function() {
-		console.log("hax");
 		G.goHome();
 	},
 };

@@ -38,7 +38,7 @@ public class Cookies
 			Cookie cookie = get(request, "userid");
 			if (cookie != null && !cookie.equals(""))
 			{
-				return new UserDAO().findById(Integer.valueOf(cookie.getValue()), null);
+				return new UserDAO().findById(Integer.valueOf(cookie.getValue()));
 			}
 			else
 			{

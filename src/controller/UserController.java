@@ -191,15 +191,8 @@ public class UserController extends HttpServlet {
 				toDelete = new UserDAO().findById(id, current);
 			
 			if (id != null && current.getId() != null && current.getRole() >= User.Role.ADMIN && deleted != null && toDelete != null)
-				if (current.getRole() >= User.Role.ADMIN)
-				{
-					//new UserDAO().hardDelete(toDelete);
-					new UserDAO().softDelete(toDelete, deleted);
-				}
-				else
-				{
-					new UserDAO().softDelete(toDelete, deleted);
-				}
+
+				new UserDAO().delete(toDelete, current, deleted, pp.bool("preferHard"));
 			else
 			{
 				response.sendError(400);

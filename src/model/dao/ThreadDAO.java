@@ -20,13 +20,22 @@ public class ThreadDAO
 			"SELECT COUNT(obj.ID) FROM "+ TABLE_NAME+ " obj";
 
 	static final String FETCH_QUERY_START = 
-			" SELECT obj.*, usr.username, usr.role, frm.title FROM THREAD obj";
+			" SELECT obj.*, " + 
+			" usr.username, usr.role, " + 
+			" frm.title, " +
+			" loc.locked " + 
+			" FROM THREAD obj";
 			
 	static final String JOIN_STRING = 
 		    " LEFT JOIN USER usr " +
 			" ON obj.owner = usr.id " +
 			" LEFT JOIN FORUM frm " +
-			" ON obj.forum = frm.id ";
+			" ON obj.forum = frm.id " + 
+			" LEFT JOIN (CLOSURE cls1, CLOSURE cls2, FORUM loc, FORUM del) " + 
+			" ON (cls1.child = frm.id AND cls1.parent = loc.id AND " +
+			    " cls2.child = frm.id AND cls2.parent = del.id AND " + 
+			    " loc.locked  = TRUE AND " +
+			    " del.deleted = TRUE) ";
 
 	// --------------------------------------------------------------------------------------------
 	// Processing
@@ -47,29 +56,42 @@ public class ThreadDAO
 			rs.getBoolean("deleted"),	
 			rs.getString("usr.username"),
 			rs.getString("frm.title"),
-			rs.getInt("usr.role")
+			rs.getInt("usr.role"),
+			rs.getString("loc.locked") == null
 		);
 		return t;
 	}
 	
 	private void processFilter(QueryBuilder qb, ParamProcessor pp, User user) {
 		qb
+		// Used for singular ID search, always returns 0 or 1 records
 		.and("obj.id = $id")
-		.and("obj.title LIKE $title")
-		.and("frm.title LIKE $forumTitle")
+		
+		// Search queries
+		// (ID)
 		.and("obj.forum = $forum")
 		.and("obj.owner = $owner")
+		// (Partial)
+		.and("obj.title LIKE $title")
+		.and("frm.title LIKE $forumTitle")
 		.and("usr.username LIKE $ownerUsername")
 		.and("obj.date <= $dataA")
 		.and("obj.date >= $dataB")
+		
+		// Checks visibility type of belonging forum (public/open/closed) against permission level
 		.and("frm.vistype <= " + user.getPermissionLevel())
-		.and("frm.deleted = FALSE")
-		.and("obj.deleted <= " + user.canSeeDeleted())
-		.and("obj.deleted <= $deleted")
-		.orderBy("obj.deleted", "asc")
-		.orderBy("obj.sticky", "desc")
-		.orderBy("$orderBy", "$asc", tables)
-		.orderBy("obj.id", "asc");
+		
+		// Check if it, or its ancestors are deleted
+		.and("del.deleted IS NULL") // No ancestral forums are deleted
+		.and("frm.deleted = FALSE") // The forum this thread directly belongs to is not deleted
+		.and("obj.deleted <= " + user.canSeeDeleted()) // Allows the user to see deleted items with proper permissions
+		.and("obj.deleted <= $deleted") // Specific request to see or not see deleted entries
+		
+		// Orders things properly
+		.orderBy("obj.deleted", "asc") // Make the deleted entries go to the bottom
+		.orderBy("obj.sticky", "desc") // Show stickied threads first
+		.orderBy("$orderBy", "$asc", tables) // Usually ordering by date in descending order, but can be changed for searches
+		.orderBy("obj.id", "asc"); // Just to make the search stable
 	}
 	
 	// --------------------------------------------------------------------------------------------

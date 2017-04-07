@@ -9,43 +9,31 @@ import model.dao.ForumDAO;
 import model.dao.UserDAO;
 import views.Views;
 
-public class Thread implements DataObject
-{
-	@JsonView(Views.Public.class)
+public class Thread implements DataObject {
+
+	// Attributes
+	
+	// Standard
 	private Integer id;
-	
-	@JsonView(Views.Public.class)
 	private String title;
-	
-	@JsonView(Views.Public.class)
 	private String descript;
-	
-	@JsonView(Views.Public.class)
 	private String text;
-	
-	@JsonView(Views.Public.class)
 	private Integer forum;
-	
-	@JsonView(Views.Public.class)
 	private Integer owner;
-	
-	@JsonView(Views.Public.class)
 	private Timestamp date;
-	
-	@JsonView(Views.Public.class)
 	private Boolean sticky;
-	
-	@JsonView(Views.Public.class)
 	private Boolean locked;
-	
 	@JsonView(Views.Admin.class)
 	private Boolean deleted;
 	
-	private String ownerUsername;
-	private String forumTitle;
-	private Integer ownerRole;
-
-	public String valid() {
+	// Special
+	private String _ownerUsername;
+	private String _forumTitle;
+	private Integer _ownerRole;
+	private Boolean _allowPosting;
+	
+	// Validation
+	public String checkForErrors() {
 		
 		Forum forumObj = null;
 		User ownerObj = null;
@@ -70,7 +58,7 @@ public class Thread implements DataObject
 		}
 		
 		if (owner != null) {
-			ownerObj = new UserDAO().findById(owner, null);
+			ownerObj = new UserDAO().findById(owner);
 			if (ownerObj == null) {
 				return "owner";
 			}
@@ -82,18 +70,23 @@ public class Thread implements DataObject
 		
 		if (deleted == null) {
 			return "deleted";
-		} else if (id != null && forumObj != null) {
-			if (!deleted && forumObj.getDeleted()) {
-				return "deleted";
-			}
 		}
 		
-		return "";
+		return null;
+	}
+	
+	// Constructors
+	
+	public Thread() {
+		super();
+		this.sticky = false;
+		this.locked = false;
+		this.deleted = false;
 	}
 	
 	public Thread(Integer id, String title, String descript, String text, Integer forum, Integer owner,
-	Timestamp date, Boolean sticky, Boolean locked, Boolean deleted, String ownerUsername, String forumTitle, Integer ownerRole)
-	{
+		Timestamp date, Boolean sticky, Boolean locked, Boolean deleted,
+		String _ownerUsername, String _forumTitle, Integer _ownerRole, Boolean _allowPosting) {
 		super();
 		this.id = id;
 		this.title = title;
@@ -105,28 +98,54 @@ public class Thread implements DataObject
 		this.sticky = sticky;
 		this.locked = locked;
 		this.deleted = deleted;
-		this.ownerUsername = ownerUsername;
-		this.forumTitle = forumTitle;
-		this.ownerRole = ownerRole;
+		this._ownerUsername = _ownerUsername;
+		this._forumTitle = _forumTitle;
+		this._ownerRole = _ownerRole;
+		this._allowPosting = _allowPosting;
 	}
 	
-	// Special getters
+	// Attributes
 	
+	// Special
+	
+	@JsonProperty("_ownerUsername")
+	public String getOwnerUsername() {
+		return _ownerUsername;
+	}
+
+	public void setOwnerUsername(String _ownerUsername) {
+		this._ownerUsername = _ownerUsername;
+	}
+
+	@JsonProperty("_forumTitle")
+	public String getForumTitle() {
+		return _forumTitle;
+	}
+
+	public void setForumTitle(String _forumTitle) {
+		this._forumTitle = _forumTitle;
+	}
+
 	@JsonProperty("_ownerRole")
 	public Integer getOwnerRole() {
-		return ownerRole;
+		return _ownerRole;
 	}
+
+	public void setOwnerRole(Integer _ownerRole) {
+		this._ownerRole = _ownerRole;
+	}
+
+	@JsonProperty("_allowPosting")
+	public Boolean getAllowPosting() {
+		return _allowPosting;
+	}
+
+	public void setAllowPosting(Boolean _allowPosting) {
+		this._allowPosting = _allowPosting;
+	}
+
+	// Standard
 	
-
-	public Thread()
-	{
-		super();
-		this.sticky = false;
-		this.locked = false;
-		this.deleted = false;
-	}
-
-
 	public Integer getId()
 	{
 		return id;
@@ -167,17 +186,6 @@ public class Thread implements DataObject
 		this.text = text;
 	}
 	
-	@JsonProperty("_forumTitle")
-	public String getForumTitle() {
-		if (this.forum == null || this.forum == 0) {
-			return "Forum";
-		} else if (this.forumTitle == null) {
-			return new ForumDAO().findById(this.forum, null).getTitle();
-		} else {
-			return this.forumTitle;
-		}
-	}
-	
 	public Integer getForum()
 	{
 		return forum;
@@ -186,15 +194,6 @@ public class Thread implements DataObject
 	public void setForum(Integer forum)
 	{
 		this.forum = forum;
-	}
-	
-	@JsonProperty("_ownerUsername")
-	public String getOwnerName() {
-		if (this.ownerUsername == null) {
-			return new UserDAO().findById(this.owner, null).getUsername();
-		} else {
-			return this.ownerUsername;
-		}
 	}
 	
 	public Integer getOwner()

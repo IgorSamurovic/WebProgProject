@@ -271,7 +271,8 @@ Search = {
 					
 					// Convert every raw JSON object to a proper G object with methods
 					data[i] = this.settings.objType.create(data[i]);
-
+					data[i]["xtra"].resultIndex = i;
+					
 					// Add the generated HTML to the results
 					$(this.selResults()).append(`
 						<div class="itemContainer" id="${this.settings.prefix}SearchResult${i}" name="result">
@@ -282,7 +283,6 @@ Search = {
 					// Attach the last processed object to the last added HTML element
 					$(this.selResults()).children().last().data("obj", data[i]);
 				}
-				
 			}
 			
 			// In case this initialized with an object, lets destroy it
@@ -457,7 +457,7 @@ $(document).ready(function() {
 		const that = this;
 		const searchObject = Search.getSearch(this);
 		const args = {};
-		const objData = $.extend({}, G.interpret(searchObject.settings.add.data), $(this).loadFields());
+		const objData = $.extend({}, $(this).loadFields(),  G.interpret(searchObject.settings.add.data));
 		G.log("Adding object:");
 		G.log(objData);
 		searchObject.settings.objType.add(objData, function(data) {

@@ -5,6 +5,15 @@ const Forum = Object.assign(Object.create(DataObj), {
 	// ----------------------------------------------------------------------------------------------------
 	// Permissions
 	
+	// Posting
+	canBePostedInBy(user) {
+		return !this.isDeleted() && (
+			user.isAdmin() ||
+			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user) ||
+			user.isUser() && user.owns(this) && !this.data.locked && this.xtra.allowPosting
+		);
+	},
+	
 	// Editing
 	
 	canBeEditedBy(user) {

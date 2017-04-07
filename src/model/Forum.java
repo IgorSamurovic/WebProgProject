@@ -4,12 +4,17 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonView;
 
 import model.dao.ForumDAO;
 import model.dao.UserDAO;
+import views.Views;
 
-public class Forum implements DataObject
-{
+public class Forum implements DataObject {
+	
+	// Attributes
+	
+	// Standard
 	private Integer id;
 	private String title;
 	private String descript;
@@ -18,32 +23,17 @@ public class Forum implements DataObject
 	private Integer vistype;
 	private Timestamp date;
 	private Boolean locked;
+	@JsonView(Views.Admin.class)
 	private Boolean deleted;
 	
-	private String ownerUsername;
-	private String parentTitle;
+	// Special
+	private String _ownerUsername;
+	private String _parentTitle;
+	private Boolean _allowPosting;
+	private ArrayList<String[]> _parents;
 	
-	private ArrayList<String[]> parents;
-
-	public boolean isChildOf(Forum ancestor) {
-		// daddy forum
-		if (this.id == 1 || this.getId() == ancestor.getId()) return false;
-		int ancestorId = ancestor.getId();
-		
-		Forum child = this;
-		while(child.getId() != 1) {
-			if (child.getParent() == ancestorId) {
-				return true;
-			} else {
-				child = new ForumDAO().findById(child.getParent());
-
-			}
-		}
-		
-		return false;
-	}
-	
-	public String valid() {
+	// Validation
+	public String checkForErrors() {
 		
 		Forum parentObj = null;
 		
@@ -59,7 +49,8 @@ public class Forum implements DataObject
 		
 		if (id != null && parent != null && id != 1) {
 			parentObj = new ForumDAO().findById(parent);
-			if (parentObj == null || parentObj.getId() == this.getId() || (parentObj != null && parentObj.isChildOf(this))) {
+			if (parentObj == null || parentObj.getId() == this.getId() ||
+				(parentObj != null && new ForumDAO().isChildOf(this, parentObj))) {
 		        return "parent";
 			}
 		} 
@@ -68,7 +59,7 @@ public class Forum implements DataObject
 			return "parent";
 		}
 		
-		if (owner == null || new UserDAO().findById(owner, null) == null) {
+		if (owner == null || new UserDAO().findById(owner) == null) {
 			return "owner";
 		}
 		
@@ -96,26 +87,21 @@ public class Forum implements DataObject
 			}
 		}
 		
-		return "";
+		return null;
 	}
 
-	public Forum()
-	{
+	// Constructors
+	
+	public Forum() {
 		this.parent = 1;
 		this.owner = 1;
 		this.locked = false;
 		this.deleted = false;
 	}
 	
-	@Override
-	public String toString() {
-		return "Forum [id=" + id + ", title=" + title + ", descript=" + descript + ", parent=" + parent + ", owner="
-				+ owner + ", vistype=" + vistype + ", date=" + date + ", locked=" + locked + ", deleted=" + deleted
-				+ "]";
-	}
-
 	public Forum(Integer id, String title, String descript, Integer parent, Integer owner, Integer vistype,
-		Timestamp date, Boolean locked, Boolean deleted, String ownerUsername, String parentTitle) {
+		Timestamp date, Boolean locked, Boolean deleted,
+		String _ownerUsername, String _parentTitle, Boolean _allowPosting) {
 		super();
 		this.id = id;
 		this.title = title;
@@ -126,18 +112,52 @@ public class Forum implements DataObject
 		this.date = date;
 		this.locked = locked;
 		this.deleted = deleted;
-		this.ownerUsername = ownerUsername;
-		this.parentTitle = parentTitle;
+		this._ownerUsername = _ownerUsername;
+		this._parentTitle = _parentTitle;
+		this._allowPosting = _allowPosting;
 	}
 
+	// Attributes
+	
+	// Special
+	
 	@JsonProperty("_parents")
 	public ArrayList<String[]> getParents() {
-		return parents;
+		return _parents;
 	}
 
 	public void setParents(ArrayList<String[]> parents) {
-		this.parents = parents;
+		this._parents = parents;
 	}
+
+	@JsonProperty("_parentTitle")
+	public String getParentTitle() {
+		return _parentTitle;
+	}
+	
+	public void setParentTitle(String _parentTitle) {
+		this._parentTitle = _parentTitle;
+	}
+	
+	@JsonProperty("_ownerUsername")
+	public String getOwnerName() {
+		return _ownerUsername;
+	}
+	
+	public void setOwnerUsername(String _ownerUsername) {
+		this._ownerUsername = _ownerUsername;
+	}
+	
+	@JsonProperty("_allowPosting")
+	public Boolean getAllowPosting() {
+		return _allowPosting;
+	}
+	
+	public void setAllowPosting(Boolean _allowPosting) {
+		this._allowPosting = _allowPosting;
+	}
+	
+	// Standard
 	
 	public Integer getId()
 	{
@@ -174,38 +194,16 @@ public class Forum implements DataObject
 		return parent;
 	}
 
-	@JsonProperty("_parentTitle")
-	public String getParentTitle() {
-		if (this.parent == null || this.parent == 0) {
-			return "Forum";
-		} else if (this.parentTitle == null) {
-			return new ForumDAO().findById(this.parent, null).getTitle();
-		} else {
-			return this.parentTitle;
-		}
-	}
-	
-	
-	
 	public void setParent(Integer parent)
 	{
 		this.parent = parent;
 	}
-
+	
 	public Integer getOwner()
 	{
 		return owner;
 	}
 	
-	@JsonProperty("_ownerUsername")
-	public String getOwnerName() {
-		if (this.ownerUsername == null) {
-			return new UserDAO().findById(this.owner, null).getUsername();
-		} else {
-			return this.ownerUsername;
-		}
-	}
-
 	public void setOwner(Integer owner)
 	{
 		this.owner = owner;

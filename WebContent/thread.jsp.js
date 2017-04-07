@@ -16,7 +16,7 @@ $(document).ready(function() {
 	(function () {
 		const params = G.getParams();
 		
-		if (!G.isProperId(params.id)) {
+		if (!G.isProperId(params.thread)) {
 			params.thread = 1;
 			G.replaceState();
 		}
@@ -30,7 +30,7 @@ $(document).ready(function() {
 			data: {id:params.thread},
 			error: Page.redirect,
 			}, function(data) {
-				console.log(data);
+				
 				if (data.totalRecords === 1) {
 					
 					Search.create({
@@ -82,14 +82,15 @@ $(document).ready(function() {
 								title : 'Reply',
 								data  : function() {
 									return {
-										thread  : params.id,
+										thread  : params.thread,
+										owner  : User.getCurrent().data.id,
 									}
 								}, redirectTo : function(id) {
-									return `thread.jsp?id=${id}&page=1000000`;
+									return `thread.jsp?thread=${params.thread}&page=1000000`;
 								} , condition : function() {
 									var currentUser = User.getCurrent();
 									var currentThread = Search.byPrefix("thread").getOnlyObject();
-									return currentThread.canBeRepliedBy(currentUser);
+									return currentThread.canBePostedInBy(currentUser);
 								}
 							},
 							updateFunc : function() {

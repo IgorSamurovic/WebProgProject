@@ -40,7 +40,7 @@ public class ForumController extends HttpServlet {
 		
 		ParamProcessor pp = new ParamProcessor(request);
 		Forum obj = null;
-		String valid = "";
+		String error = "";
 		
 		Integer id = pp.integer("id");
 		String title = pp.string("title");
@@ -64,12 +64,12 @@ public class ForumController extends HttpServlet {
 			obj.setOwner(owner);
 			obj.setVistype(vistype);
 			
-			valid = obj.valid();
+			error = obj.checkForErrors();
 			pp.printDebug();
 
 
-			if (!valid.equals("")) {
-				Responder.out(response, valid);
+			if (error != null) {
+				Responder.out(response, error);
 				return;
 			}
 			
@@ -87,10 +87,10 @@ public class ForumController extends HttpServlet {
 			if (owner != null) obj.setOwner(owner);
 			if (vistype != null) obj.setVistype(vistype);
 			
-			valid = obj.valid();
+			error = obj.checkForErrors();
 			
-			if (!valid.equals("")) {
-				Responder.out(response, valid);
+			if (error != null) {
+				Responder.out(response, error);
 				return;
 			}
 			//currenSystem.err.println(obj);
@@ -102,10 +102,10 @@ public class ForumController extends HttpServlet {
 				obj = new ForumDAO().findById(id, current);
 				obj.setLocked(locked);
 				
-				valid = obj.valid();
+				error = obj.checkForErrors();
 				
-				if (!valid.equals("")) {
-					Responder.out(response, valid);
+				if (error != null) {
+					Responder.out(response, error);
 					return;
 				}
 				
@@ -119,10 +119,10 @@ public class ForumController extends HttpServlet {
 					obj = new ForumDAO().findById(id);
 					
 					obj.setDeleted(deleted);
-					valid = obj.valid();
+					error = obj.checkForErrors();
 					
-					if (!valid.equals("")) {
-						Responder.out(response, valid);
+					if (error != null) {
+						Responder.out(response, error);
 						return;
 					}
 					

@@ -9,12 +9,12 @@ const Thread = Object.assign(Object.create(DataObj), {
 	// ----------------------------------------------------------------------------------------------------
 	// Permissions
 	
-	// Replying
-	canBeRepliedBy(user) {
+	// Posting
+	canBePostedInBy(user) {
 		return !this.isDeleted() && (
 			user.isAdmin() ||
 			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user) ||
-			user.isUser() && user.owns(this) && !this.data.locked && !this.xtra.forumLocked
+			user.isUser() && user.owns(this) && !this.data.locked && this.xtra.allowPosting
 		);
 	},
 	
@@ -24,7 +24,7 @@ const Thread = Object.assign(Object.create(DataObj), {
 		return !this.isDeleted() && (
 			user.isAdmin() ||
 			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user) ||
-			user.isUser() && user.owns(this) && !this.data.locked && !this.xtra.forumLocked
+			user.isUser() && user.owns(this) && !this.data.locked && this.xtra.allowPosting 
 		);
 	},
 	
@@ -33,7 +33,7 @@ const Thread = Object.assign(Object.create(DataObj), {
 	canBeDeletedBy(user) {
 		return (
 			user.isAdmin() ||
-			user.isMod() && (this.owner == user.data.id || this.xtra.ownerRole <= User.roles.user)
+			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user)
 		);
 	},
 	
@@ -42,7 +42,7 @@ const Thread = Object.assign(Object.create(DataObj), {
 	canBeLockedBy(user) {
 		return !this.isDeleted() && (
 			user.isAdmin() ||
-			user.isMod() && this.xtra.ownerRole <= User.roles.mod
+			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.mod)
 		);
 	},
 	
@@ -51,7 +51,7 @@ const Thread = Object.assign(Object.create(DataObj), {
 	canBeStickiedBy(user) {
 		return !this.isDeleted() && (
 			user.isAdmin() ||
-			user.isMod() && (this.owner == user.data.id || this.xtra.ownerRole <= User.roles.user)
+			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user)
 		);
 	},
 	

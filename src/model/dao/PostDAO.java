@@ -22,13 +22,19 @@ public class PostDAO
 	static final String FETCH_QUERY_START = 
 			" SELECT obj.*, " + 
 			" usr.username, usr.role, " + 
-			" thr.title, thr.deleted, " +
-			" frm.title, frm.deleted, frm.vistype " + 
+			" thr.title, " +
+			" frm.title, " + 
+			" loc.locked " + 
 			" FROM POST obj ";
 			
 	static final String JOIN_STRING = 
 			" LEFT JOIN (USER usr, THREAD thr, FORUM frm) " + 
-		    " ON (obj.owner = usr.id AND obj.thread = thr.id AND thr.forum = frm.id) ";
+		    " ON (obj.owner = usr.id AND obj.thread = thr.id AND thr.forum = frm.id) " + 
+			" LEFT JOIN (CLOSURE cls1, CLOSURE cls2, FORUM loc, FORUM del) " + 
+			" ON (cls1.child = frm.id AND cls1.parent = loc.id AND " +
+			    " cls2.child = frm.id AND cls2.parent = del.id AND " + 
+			    " loc.locked  = TRUE AND " +
+			    " del.deleted = TRUE) ";
 
 	// --------------------------------------------------------------------------------------------
 	// Processing
@@ -47,37 +53,44 @@ public class PostDAO
 			rs.getString("usr.username"),
 			rs.getInt("usr.role"),
 			rs.getString("thr.title"),
-			rs.getString("frm.title")
+			rs.getString("frm.title"),
+			true
 		);
 	}
 
 	private void processFilter(QueryBuilder qb, ParamProcessor pp, User user) {
 		qb
+		// Used for singular ID search, always returns 0 or 1 records
 		.and("obj.id = $id")
-		.and("thr.title LIKE $threadTitle")
+		
+		// Search queries
+		// (ID)
 		.and("obj.thread = $thread")
 		.and("obj.owner = $owner")
+	   	// (Partial)
+		.and("thr.title LIKE $threadTitle")
 		.and("usr.username LIKE $ownerUsername")
 		.and("obj.text LIKE $text")
 		.and("obj.date <= $dataA")
 		.and("obj.date >= $dataB")
+		
+		// Checks visibility type of belonging forum (public/open/closed) against permission level
 		.and("frm.vistype <= " + user.getPermissionLevel())
-		.and("frm.deleted = FALSE")
-		.and("thr.deleted = FALSE")
-		.and("obj.deleted <= " + user.canSeeDeleted())
-		.and("obj.deleted <= $deleted")
-		.orderBy("$orderBy", "$asc", tables)
-		.orderBy("obj.id", "asc");
+		
+		// Check if it, or its ancestors are deleted
+		.and("del.deleted IS NULL") // No ancestral forums are deleted
+		.and("frm.deleted = FALSE") // The forum this post directly belongs to is not deleted
+		.and("thr.deleted = FALSE") // The thread this forum belongs to is not deleted
+		.and("obj.deleted <= " + user.canSeeDeleted()) // Allows the user to see deleted items with proper permissions
+		.and("obj.deleted <= $deleted") // Specific request to see or not see deleted entries
+		
+		// Orders things properly
+		.orderBy("$orderBy", "$asc", tables) // Usually ordering by date in descending order, but can be changed for searches
+		.orderBy("obj.id", "asc"); // Just to make the search stable
 	}
 	
 	// --------------------------------------------------------------------------------------------
 	// Getters
-	
-	public ArrayList<Object> filterByForumTitle(QueryBuilder qb, ParamProcessor pp, User user) {
-		
-		// IMPLEMENT
-		return null;
-	}
 	
 	public ArrayList<Object> filter(ParamProcessor pp, User user) {
 		ArrayList<Object> list = new ArrayList<Object>();
@@ -96,10 +109,6 @@ public class PostDAO
 		qb.limit("$page", "$perPage");
 		
 		list.add(processMany(qb));
-		
-		if (pp.string("forumTitle") != null) {
-			filterByForumTitle(qb, pp, user);
-		}
 		
 		return list;
 	}

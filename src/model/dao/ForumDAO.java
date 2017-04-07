@@ -19,16 +19,22 @@ public class ForumDAO {
 	static final String COUNT_QUERY_START = 
 			"SELECT COUNT(obj.ID) FROM FORUM obj";
 	static final String FETCH_QUERY_START = 
-			" SELECT obj.*, usr.username, frm.title, anc.deleted FROM FORUM obj";
+			" SELECT obj.*, " +
+	        " usr.username, " + 
+			" frm.title, " + 
+	        " loc.locked " +
+			" FROM FORUM obj";
 			
 	static final String JOIN_STRING = 
 		    " LEFT JOIN USER usr " +
 			" ON obj.owner = usr.id " +
 			" LEFT JOIN FORUM frm " +
 			" ON obj.parent = frm.id " +
-			" LEFT JOIN (CLOSURE cls, FORUM anc) " + 
-			" ON (CLS.CHILD = OBJ.ID AND ANC.ID = OBJ.PARENT AND ANC.deleted = TRUE) ";
-
+			" LEFT JOIN (CLOSURE cls1, CLOSURE cls2, FORUM loc, FORUM del) " + 
+			" ON (cls1.child = obj.id AND cls1.parent = loc.id AND " +
+			    " cls2.child = obj.id AND cls2.parent = del.id AND " + 
+			    " loc.locked  = TRUE AND " +
+			    " del.deleted = TRUE) ";
 	
 	// --------------------------------------------------------------------------------------------
 	// Processing
@@ -45,7 +51,8 @@ public class ForumDAO {
 			rs.getBoolean("locked"),
 			rs.getBoolean("deleted"),
 			rs.getString("usr.username"),
-			rs.getString("frm.title")
+			rs.getString("frm.title"),
+			rs.getString("loc.locked") == null
 		);
 
 		return f;
@@ -53,21 +60,33 @@ public class ForumDAO {
 
 	private void processFilter(QueryBuilder qb, ParamProcessor pp, User user) {
 		qb
+		// Used for singular ID search, always returns 0 or 1 records
 		.and("obj.id = $id")
-		.and("obj.title LIKE $title")
+		
+		// Search queries
+		// (ID)
 		.and("obj.parent = $parent")
-		.and("usr.username LIKE $ownerUsername")
 		.and("obj.owner = $owner")
+		// (Partial)
+		.and("obj.title LIKE $title")
+		.and("usr.username LIKE $ownerUsername")
 		.and("obj.date <= $dataA")
 		.and("obj.date >= $dataB")
-		.and("obj.vistype <= " + user.getPermissionLevel())
-		.and("(frm.deleted = FALSE OR obj.id = 1)")
-		.and("obj.deleted <= " + user.canSeeDeleted())
-		.and("obj.deleted <= $deleted")
-		.and("anc.deleted IS NULL")
-		.orderBy("obj.deleted", "asc")
+		
+		// Checks visibility type of belonging forum (public/open/closed) against permission level
+		.and("obj.vistype <= " + user.getPermissionLevel()) // Checks this forum
+		.and("(frm.vistype IS NULL OR frm.vistype <= " + user.getPermissionLevel() + ")") // Checks parent forum, just in case
+		
+		// Check if it, or its ancestors are deleted
+		.and("del.deleted IS NULL") // No ancestral forums are deleted
+		.and("(frm.deleted = FALSE OR obj.id = 1)") // Parent forum is not deleted, or there is no parent forum
+		.and("obj.deleted <= " + user.canSeeDeleted()) // Allows the user to see deleted items with proper permissions
+		.and("obj.deleted <= $deleted") // Specific request to see or not see deleted entries
+		
+		// Orders things properly
+		.orderBy("obj.deleted", "asc") // Make the deleted entries go to the bottom
 		.orderBy("$orderBy", "$asc", tables)
-		.orderBy("obj.id", "asc");
+		.orderBy("obj.id", "asc"); // Just to make the search stable
 	}
 
 	// --------------------------------------------------------------------------------------------
@@ -79,11 +98,10 @@ public class ForumDAO {
 		QueryBuilder qb = new QueryBuilder(pp);
 		
 		Boolean showDescendants = pp.bool("showDescendants");
-		Integer ancestorId = null;
 		
 		// Let's see if we're searching through ancestry and not parenthood
 		if (showDescendants != null && showDescendants) {
-			ancestorId = pp.integer("parent");
+			pp.add("ancestor", pp.integer("parent"));
 			pp.remove("parent");
 		}
 		
@@ -91,12 +109,8 @@ public class ForumDAO {
 		processFilter(qb, pp, user);
 		qb.setJoin(JOIN_STRING);
 		
-		if (ancestorId == null) {
-			qb.setStart(COUNT_QUERY_START);
-			list.add(qb.getNumRecords());
-		} else {
-			list.add(0);
-		}
+		qb.setStart(COUNT_QUERY_START);
+		list.add(qb.getNumRecords());
 
 		//pp.printDebug();
 		
@@ -104,20 +118,6 @@ public class ForumDAO {
 		qb.limit("$page", "$perPage");
 		
 		list.add(processMany(qb));
-		
-		// Let's see if parent is the descendant
-		if (ancestorId != null) {
-			ArrayList<Object> objs = (ArrayList<Object>) list.get(1);
-			Forum ancestor = new ForumDAO().findById(ancestorId, user);
-			
-			for (int i=0; i<objs.size(); i++) {
-				if (((Forum) objs.get(i)).isChildOf(ancestor)) {
-					System.err.println( ((Forum) (objs.get(i))).getTitle());
-					objs.remove(i);
-				}
-			}
-			list.set(0, objs.size());
-		}
 		
 		// Add parent list if it's singular result
 		if (pp.integer("id") != null && (Integer) list.get(0) > 0) {
@@ -166,6 +166,21 @@ public class ForumDAO {
 	
 	// --------------------------------------------------------------------------------------------
 	// SPECIAL OPERATIONS
+	
+	public boolean isChildOf(Forum child, Forum parent) {
+		try (Connection conn = Connector.get();) {
+			PreparedStatement stmt = conn.prepareStatement(
+				"SELECT DEPTH FROM CLOSURE WHERE CHILD = ? AND PARENT = ?;");
+			stmt.setObject(1, child.getId());
+			stmt.setObject(2, parent.getId());
+			stmt.execute();
+			ResultSet rs = stmt.getResultSet();
+			return (rs != null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
 	
 	private void propagate(Forum o, String column, String when, Object val) {
 		

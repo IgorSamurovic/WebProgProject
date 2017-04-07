@@ -9,78 +9,93 @@ import com.fasterxml.jackson.annotation.JsonView;
 import views.Views;
 
 
-public class User implements DataObject
-{
+public class User implements DataObject {
+	
+	// Dummy user for operations that normally require user permissions
 	public final static User POWER_USER = new User(0, "POWER USER", "", "", "", "", null, Role.ADMIN, false, false);
 	
-	public static class Role
-	{
-		public static int getPermissionLevel(int role)
-		{
-			switch(role)
-			{
-			case(GUEST) :return 0;
-			case(USER)  :return 1;
-			case(MOD)   :return 2;
-			case(ADMIN) :return 2;			
-			}
-			return 0;
-		}
+	// A class for dealing with roles and permissions
+	
+	public static class Role {
 		
 		public static final int GUEST = 0;
 		public static final int USER = 1;
 		public static final int MOD = 2;
 		public static final int ADMIN = 3;
+		
+		public static final int PERMISSION_LEVEL_PUBLIC = 0;
+		public static final int PERMISSION_LEVEL_OPEN   = 1;
+		public static final int PERMISSION_LEVEL_CLOSED = 2;
+		
+
+		public static int getPermissionLevel(Integer role) {
+			switch(role) {
+			case(GUEST) :return PERMISSION_LEVEL_PUBLIC;
+			case(USER)  :return PERMISSION_LEVEL_OPEN;
+			case(MOD)   :return PERMISSION_LEVEL_CLOSED;
+			case(ADMIN) :return PERMISSION_LEVEL_CLOSED;			
+			}
+			return 0;
+		}
+		
+		public static int canSeeDeleted(int role) {
+			switch(role) {
+			case(GUEST) :return 0;
+			case(USER)  :return 0;
+			case(MOD)   :return 0;
+			case(ADMIN) :return 1;
+			}
+			return 0;
+		}
+		
 	}
 
-	@JsonView(Views.Public.class)
+	// Attributes
+	
 	private Integer id;
-	
-	@JsonView(Views.Public.class)
 	private String username;
-	
 	@JsonIgnore
 	private String password;
-	
-	@JsonView(Views.Public.class)
 	private String name;
-	
-	@JsonView(Views.Public.class)
 	private String surname;
-	
 	@JsonView(Views.Personal.class)
 	private String email;
-	
-	@JsonView(Views.Public.class)
 	private Timestamp date;
-	
-	@JsonView(Views.Public.class)
 	private Integer role;
-	
-	@JsonView(Views.Personal.class)
 	private Boolean banned;
-	
 	@JsonView(Views.Admin.class)
 	private Boolean deleted;
 
+	// Permission level identification
+	
 	@JsonIgnore public boolean isGuest() {
 		return role == Role.GUEST;
 	}
 	
-	@JsonIgnore public boolean isUser() {
+	public boolean isUser() {
 		return role >= Role.USER;
 	}
 	
-	@JsonIgnore public boolean isMod() {
+	public boolean isMod() {
 		return role >= Role.MOD;
 	}
 	
-	@JsonIgnore public boolean isAdmin() {
+	public boolean isAdmin() {
 		return role >= Role.ADMIN;
 	}
 
-	public User(Integer id, String username, String password, String name, String surname, String email, Timestamp date, Integer role, Boolean banned, Boolean deleted)
-	{
+	public int getPermissionLevel() {
+		return Role.getPermissionLevel(this.role);
+	}
+	
+	public int canSeeDeleted() {
+		return Role.canSeeDeleted(role);
+	}
+	
+	// Constructors
+	
+	public User(Integer id, String username, String password, String name, String surname, String email, Timestamp date,
+			Integer role, Boolean banned, Boolean deleted) {
 		super();
 		this.id = id;
 		this.username = username;
@@ -102,9 +117,16 @@ public class User implements DataObject
 		this.deleted = false;
 	}
 
-	public int getPermissionLevel() {
-		return Role.getPermissionLevel(this.role);
+	// Attributes
+	
+	// Special
+	
+	@JsonProperty("date")
+	public String getDateString() {
+		return date.toString();
 	}
+	
+	// Standard
 	
 	public Integer getId() {
 		return id;
@@ -153,11 +175,6 @@ public class User implements DataObject
 	public void setEmail(String email) {
 		this.email = email;
 	}
-
-	@JsonProperty("date")
-	public String getDateString() {
-		return date.toString();
-	}
 	
 	public Timestamp getDate() {
 		return date;
@@ -191,11 +208,4 @@ public class User implements DataObject
 		this.deleted = deleted;
 	}
 	
-	public int canSeeDeleted() {
-		if (this.role >= Role.ADMIN) {
-			return 1;
-		} else {
-			return 0;
-		}
-	}
 }

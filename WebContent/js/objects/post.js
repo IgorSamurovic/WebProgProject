@@ -15,7 +15,7 @@ const Post = Object.assign(Object.create(DataObj), {
 		return !this.isDeleted() && (
 			user.isAdmin() ||
 			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user) ||
-			user.isUser() && user.owns(this) && !this.data.locked && !this.xtra.forumLocked
+			user.isUser() && user.owns(this) && this.xtra.allowPosting
 		);
 	},
 	
@@ -24,7 +24,8 @@ const Post = Object.assign(Object.create(DataObj), {
 	canBeDeletedBy(user) {
 		return (
 			user.isAdmin() ||
-			user.isMod() && (this.owner == user.data.id || this.xtra.ownerRole <= User.roles.user)
+			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user) || 
+			user.isUser() && user.owns(this) && this.xtra.allowPosting
 		);
 	},
 	

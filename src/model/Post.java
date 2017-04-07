@@ -4,8 +4,14 @@ import java.sql.Timestamp;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Post implements DataObject
-{
+import model.dao.ThreadDAO;
+import model.dao.UserDAO;
+
+public class Post implements DataObject {
+	
+	// Attributes
+	
+	// Standard
 	private Integer id;
 	private String text;
 	private Integer thread;
@@ -13,13 +19,53 @@ public class Post implements DataObject
 	private Timestamp date;
 	private Boolean deleted;
 
-	private String ownerUsername;
-	private Integer ownerRole;
-	private String threadTitle;
-	private String forumTitle;
+	// Special
+	private String _ownerUsername;
+	private Integer _ownerRole;
+	private String _threadTitle;
+	private String _forumTitle;
+	private Boolean _allowPosting;
+	
+	// Validation
+	public String checkForErrors() {
+		
+		Thread threadObj = null;
+		User ownerObj = null;
+		
+		if (text == null || (text != null && text.length() > 1000)) {
+			return "text";
+		}
+
+		if (thread != null) {
+			threadObj = new ThreadDAO().findById(thread);
+			if (threadObj == null) {
+				return "thread";
+			}
+		}
+		
+		if (owner != null) {
+			ownerObj = new UserDAO().findById(owner);
+			if (ownerObj == null) {
+				return "owner";
+			}
+		}
+		
+		if (deleted == null) {
+			return "deleted";
+		}
+		
+		return null;
+	}
+	
+	// Constructors
+	
+	public Post() {
+		super();
+		this.deleted = false;
+	}
 	
 	public Post(Integer id, String text, Integer thread, Integer owner, Timestamp date, Boolean deleted,
-			String ownerUsername, Integer ownerRole, String threadTitle, String forumTitle) {
+		String _ownerUsername, Integer _ownerRole, String _threadTitle, String _forumTitle, Boolean _allowPosting) {
 		super();
 		this.id = id;
 		this.text = text;
@@ -27,57 +73,63 @@ public class Post implements DataObject
 		this.owner = owner;
 		this.date = date;
 		this.deleted = deleted;
-		this.ownerUsername = ownerUsername;
-		this.ownerRole = ownerRole;
-		this.threadTitle = threadTitle;
-		this.forumTitle = forumTitle;
-	}
-	
-	public Post()
-	{
-		super();
-		this.deleted = false;
+		this._ownerUsername = _ownerUsername;
+		this._ownerRole = _ownerRole;
+		this._threadTitle = _threadTitle;
+		this._forumTitle = _forumTitle;
+		this._allowPosting = _allowPosting;
 	}
 
-	// Special attributes
+	// Attributes
+	
+	// Special
 	
 	@JsonProperty("_ownerUsername")
 	public String getOwnerUsername() {
-		return ownerUsername;
+		return _ownerUsername;
 	}
 
-	public void setOwnerUsername(String ownerUsername) {
-		this.ownerUsername = ownerUsername;
+	public void setOwnerUsername(String _ownerUsername) {
+		this._ownerUsername = _ownerUsername;
 	}
 
 	@JsonProperty("_ownerRole")
 	public Integer getOwnerRole() {
-		return ownerRole;
+		return _ownerRole;
 	}
 
-	public void setOwnerRole(Integer ownerRole) {
-		this.ownerRole = ownerRole;
+	public void setOwnerRole(Integer _ownerRole) {
+		this._ownerRole = _ownerRole;
 	}
 
 	@JsonProperty("_threadTitle")
 	public String getThreadTitle() {
-		return threadTitle;
+		return _threadTitle;
 	}
 
-	public void setThreadTitle(String threadTitle) {
-		this.threadTitle = threadTitle;
+	public void setThreadTitle(String _threadTitle) {
+		this._threadTitle = _threadTitle;
 	}
 
 	@JsonProperty("_forumTitle")
 	public String getForumTitle() {
-		return forumTitle;
+		return _forumTitle;
 	}
 
-	public void setForumTitle(String forumTitle) {
-		this.forumTitle = forumTitle;
+	public void setForumTitle(String _forumTitle) {
+		this._forumTitle = _forumTitle;
 	}
 	
-	// Boring attributes
+	@JsonProperty("_allowPosting")
+	public Boolean getAllowPosting() {
+		return _allowPosting;
+	}
+
+	public void setAllowPosting(Boolean _allowPosting) {
+		this._allowPosting = _allowPosting;
+	}
+	
+	// Standard
 	
 	public Integer getId()
 	{

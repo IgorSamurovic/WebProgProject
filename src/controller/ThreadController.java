@@ -34,7 +34,7 @@ public class ThreadController extends HttpServlet {
 		
 		ParamProcessor pp = new ParamProcessor(request);
 		Thread obj = null;
-		String valid = "";
+		String error = "";
 		
 		Integer id = pp.integer("id");
 		String title = pp.string("title");
@@ -59,11 +59,11 @@ public class ThreadController extends HttpServlet {
 			obj.setForum(forum);
 			obj.setOwner(owner);
 			
-			valid = obj.valid();
+			error = obj.checkForErrors();
 			pp.printDebug();
 
-			if (!valid.equals("")) {
-				Responder.out(response, valid);
+			if (error != null) {
+				Responder.out(response, error);
 				return;
 			}
 			
@@ -79,10 +79,10 @@ public class ThreadController extends HttpServlet {
 			obj.setDescript(descript);
 			obj.setText(text);
 			
-			valid = obj.valid();
+			error = obj.checkForErrors();
 			
-			if (!valid.equals("")) {
-				Responder.out(response, valid);
+			if (error != null) {
+				Responder.out(response, error);
 				return;
 			}
 			//currenSystem.err.println(obj);
@@ -94,10 +94,10 @@ public class ThreadController extends HttpServlet {
 				obj = new ThreadDAO().findById(id);
 				obj.setSticky(sticky);
 				
-				valid = obj.valid();
+				error = obj.checkForErrors();
 				
-				if (!valid.equals("")) {
-					Responder.out(response, valid);
+				if (error != null) {
+					Responder.out(response, error);
 					return;
 				}
 				
@@ -110,10 +110,10 @@ public class ThreadController extends HttpServlet {
 				obj = new ThreadDAO().findById(id);
 				obj.setLocked(locked);
 				
-				valid = obj.valid();
+				error = obj.checkForErrors();
 				
-				if (!valid.equals("")) {
-					Responder.out(response, valid);
+				if (error != null) {
+					Responder.out(response, error);
 					return;
 				}
 				
@@ -127,10 +127,10 @@ public class ThreadController extends HttpServlet {
 					obj = new ThreadDAO().findById(id);
 					
 					obj.setDeleted(deleted);
-					valid = obj.valid();
+					error = obj.checkForErrors();
 					
-					if (!valid.equals("")) {
-						Responder.out(response, valid);
+					if (error != null) {
+						Responder.out(response, error);
 						return;
 					}
 					
