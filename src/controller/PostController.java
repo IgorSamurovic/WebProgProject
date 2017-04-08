@@ -57,8 +57,9 @@ public class PostController extends HttpServlet {
 		if (reqType.equals("add")) {
 			if (thread != null) {
 				Thread threadObj = new ThreadDAO().findById(thread, current);
-				if (threadObj != null && !threadObj.getDeleted() && threadObj.getAllowPosting()) {
-					
+				if (threadObj != null && !threadObj.getDeleted() && threadObj.getAllowPosting() && (
+						current.isAdmin() || !threadObj.getLocked()
+				)) {	
 					obj = new Post();
 					obj.setText(text);
 					obj.setThread(thread);

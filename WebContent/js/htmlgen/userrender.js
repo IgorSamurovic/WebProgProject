@@ -22,7 +22,7 @@ $.extend(User, {
 				},
 			},
 			renderFunc : User.renderSelect,
-			//filter     : User.renderFilter,
+			filter     : User.renderFilter,
 		}).loadResults();
 
 		// Select
@@ -44,16 +44,13 @@ $.extend(User, {
 		
 		const html = `
 			<form id='${name}Form'>
-				${H.input.email()}
-				${H.input.name()}
-				${H.input.surname()} 
+				${User.inputEmail()}
+				${User.inputPassword()}
+				${User.inputConfirmPassword()}
+				${User.inputName()}
+				${User.inputSurname()} 
 				${user.isGod() ? '' : H.input.role()}
 				${H.msg(name)}
-				<div class="rowFlex">
-					${H.btn('Reset', 'reset', 'big btn flex1')}
-					${H.btn('Edit', 'edit', 'big btn2 flex3', null, 'submit')}
-					${H.btn('Cancel', 'cancel', 'big btn flex1')}
-				</div>
 			</form>`;
 		
 		$(target).append(html);
@@ -79,8 +76,8 @@ $.extend(User, {
 		return '<a class="cls" href="profile.jsp?id=' + id + '">' + this.renderAvatar(id, height, width) + '</a>';
 	},
 	
-	renderUsername : function() {
-		return '<a class="link2" href="profile.jsp?id=' + this.data.id + '">' + this.data.username + '</a>';
+	renderUsername : function(id=this.data.id, username=this.data.username) {
+		return `<a class="link2" href="profile.jsp?id=${id}">${username}</a>`;
 	},
 	
 	renderEmail: function(maxLength = 60) {
@@ -117,23 +114,26 @@ $.extend(User, {
 		var isAdmin = currentUser.isAdmin();
 		var isGod = user.isGod();
 		var isOwner = currentUser.data.id == user.data.id; 
+		var isDeleted = user.isDeleted();
 		
 		var dlFields = ['Username', 'Role', 'Date', 'Name'];
 		if (isAdmin || (user.data.email && isOwner)) dlFields.push('Email');
 		if (isAdmin) dlFields.push('Banned', 'Deleted');
 		
 		var s = `
+			<div class="rowFlex">
 				{avatar}
 				${H.dl(dlFields)}
 	           
 				<div class="buttons">
 					${(isAdmin && !isGod && !isOwner) ?
-						H.toggleBtn(['Delete', 'Undelete'], 'userDeleteBtn', 'small btn', !user.data.deleted) : ""}
-					${(isAdmin || isOwner) ?
-						H.btn('Edit', 'userEditBtn', "small btn2") : ""}
-					${(isAdmin && !isGod && !isOwner) ?
+						H.toggleBtn(['Delete', 'Undelete'], 'deleteBtn', 'small btn', !user.data.deleted) : ""}
+					${(!isDeleted && (isAdmin || isOwner)) ?
+						H.btn('Edit', 'editBtn', "small btn2") : ""}
+					${(!isDeleted && (isAdmin && !isGod && !isOwner)) ?
 						H.toggleBtn(['Ban', 'Unban'], 'userBanBtn', 'small btn', !user.data.banned) : ""}
 			 	</div>
+			 </div>
 
 	         `.supplant({
 			avatar     :  user.renderAvatarLink(),
@@ -145,34 +145,27 @@ $.extend(User, {
 			Banned     :  user.renderBanned(),
 			Deleted    :  user.renderDeleted()
 		});
-		
-		
-		
-		// Add button events
-		
-		if (this._renderInit === undefined) {
-			$(document).on('click', '[name="userDeleteBtn"]', function(button) {
-				var that = this;
-				Search.getObject(this).del($(that).data("val"), function() {
-					Search.reloadAll();
-				});
-			});
-			
-			$(document).on('click', '[name="userBanBtn"]', function(button) {
-				var that = this;
-				Search.getObject(this).ban($(that).data("val"), function() {
-					Search.getSearch(that).reloadAll();
-				});
-			});
-			
-			$(document).on('click', '[name="userEditBtn"]', function(button) {
-				Search.getObject(this).openEditWindow();
-			});
-			
-			this._renderInit = true;
-		}
 
 		return s;
+	},
+	
+	renderFilter : function() {
+		return `
+			<div class="columnFlex flex2">
+				${User.inputUsername()}
+				${User.inputEmail()}
+			</div>
+			
+			<div class="columnFlex flex2">
+				${User.inputName()}
+				${User.inputSurname()}
+			</div>
+			
+			<div class="columnFlex flex2">
+				${User.inputDate({name:'dateA'})}
+				${User.inputDate({name:'dateB'})}
+			</div>
+		`;
 	},
 	
 	renderSelect : function(user) {
@@ -193,6 +186,6 @@ $.extend(User, {
 
 			 </div>
 		`;
-	}
+	},
 		
 });

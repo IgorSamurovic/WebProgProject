@@ -49,5 +49,13 @@
             }
         );
     }
-
+    
+    String.prototype.isError = function() {
+    	return this.startsWith("error: ");
+    }
+    
+    String.prototype.getError = function() {
+    	return this.substring(7, this.length);
+    }
+    
 }) ();

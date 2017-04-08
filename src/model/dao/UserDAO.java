@@ -60,8 +60,8 @@ public class UserDAO {
 		.and("date <= $dateB")
 		.and("role = $role")
 		.and("deleted <= " + user.canSeeDeleted())
-		.orderBy("deleted", "DESC")
-		.orderBy("banned", "DESC")
+		.orderBy("deleted", "ASC")
+		.orderBy("banned", "ASC")
 		.orderBy("$orderBy", "$asc")
 		.orderBy("obj.id", "ASC");
 	}
@@ -182,7 +182,8 @@ public class UserDAO {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE USER SET banned=? WHERE id=?;");
 			stmt.setObject(1, doBan);
 			stmt.setObject(2, o.getId());
-			return stmt.execute();
+			stmt.execute();
+			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -202,7 +203,8 @@ public class UserDAO {
 			stmt.setObject(4, o.getSurname());
 			stmt.setObject(5, o.getEmail());
 			stmt.setObject(6, o.getRole());
-			return stmt.execute();
+			stmt.execute();
+			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -212,17 +214,15 @@ public class UserDAO {
 	public boolean update(User o) {
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement(
-				"UPDATE USER SET username=?, password=?, name=?, surname=?, email=? role=?, banned=?, deleted=? WHERE id=?;");
+				"UPDATE USER SET username=?, password=?, name=?, surname=?, email=?, role=? WHERE id=?;");
 			stmt.setObject(1, o.getUsername());
 			stmt.setObject(2, o.getPassword());
 			stmt.setObject(3, o.getName());
 			stmt.setObject(4, o.getSurname());
 			stmt.setObject(5, o.getEmail());
 			stmt.setObject(6, o.getRole());
-			stmt.setObject(7, o.getBanned());
-			stmt.setObject(7, o.getDeleted());
-			stmt.setObject(9, o.getId());
-			return stmt.execute();
+			stmt.setObject(7, o.getId());
+			return stmt.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

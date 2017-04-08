@@ -284,7 +284,7 @@ public class QueryBuilder
 	}
 	
 	static final int MAX_PER_PAGE = 50;
-	static final int DEFAULT_PER_PAGE = 10;
+	static final int DEFAULT_PER_PAGE = 5;
 	
 	public Integer getNumRecords()
 	{
@@ -317,7 +317,7 @@ public class QueryBuilder
 		try {
 			limit(Integer.valueOf(prep(page)), Integer.valueOf(prep(perPage)));
 		} catch (Exception e) {
-			limit(1, 10);
+			limit(1, DEFAULT_PER_PAGE);
 		}
 		return this;
 	}

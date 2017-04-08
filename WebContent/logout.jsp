@@ -13,7 +13,7 @@
 	    url: "session",
 	    type: 'DELETE',
 	    success: function(data) {
-	    	window.location.replace("forum.jsp");
+	    	window.location.replace("forum.jsp?id=1");
 	    }
 	});
 </script>

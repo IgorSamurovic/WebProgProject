@@ -75,8 +75,8 @@ public class ForumDAO {
 		// (Partial)
 		.and("obj.title LIKE $title")
 		.and("usr.username LIKE $ownerUsername")
-		.and("obj.date <= $dataA")
-		.and("obj.date >= $dataB")
+		.and("obj.date >= $dateA")
+		.and("obj.date <= $dateB")
 		
 		// Checks visibility type of belonging forum (public/open/closed) against permission level
 		.and("obj.vistype <= " + user.getPermissionLevel()) // Checks this forum

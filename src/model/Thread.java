@@ -106,6 +106,14 @@ public class Thread implements DataObject {
 		this._allowPosting = _allowPosting;
 	}
 	
+	@Override
+	public String toString() {
+		return "Thread [id=" + id + ", title=" + title + ", descript=" + descript + ", text=" + text + ", forum="
+				+ forum + ", owner=" + owner + ", date=" + date + ", sticky=" + sticky + ", locked=" + locked
+				+ ", deleted=" + deleted + ", _ownerUsername=" + _ownerUsername + ", _forumTitle=" + _forumTitle
+				+ ", _ownerRole=" + _ownerRole + ", _allowPosting=" + _allowPosting + ", _parents=" + _parents + "]";
+	}
+	
 	// Attributes
 	
 	// Special

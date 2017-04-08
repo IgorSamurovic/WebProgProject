@@ -50,7 +50,7 @@
 		this.find('input[type="datetime-local"]').each(function () {
 			name = $(this).attr(`name`);
 			val = $(this).val() + "";
-			if (!name.startsWith('!')) {
+			if (val && !name.startsWith('!')) {
 				data[name] = `${val.substring(0,9)} ${val.substring(11, 16)}:00`;
 			}
 		});

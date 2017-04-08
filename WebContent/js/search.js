@@ -136,6 +136,7 @@ Search = {
 					</div>
 					<form id="${this.settings.prefix}AddObjectForm">
 						${G.interpret(this.settings.add.html)}
+						${H.msg("addError")}
 						${H.btn(this.settings.add.title, "addObject", cls="big special", null, type='submit')}
 					</form>
 				</div>
@@ -187,7 +188,7 @@ Search = {
 		return $(sel).closest('[id$="SearchContainer"]').data('searchObject');
 	},
 	
-	DEFAULT_PERPAGE : 10,
+	DEFAULT_PERPAGE : 5,
 	MAX_PERPAGE : 50,
 	
 	renderResults : function(data) {
@@ -475,12 +476,18 @@ $(document).ready(function() {
 		G.log("Adding object:");
 		G.log(objData);
 		searchObject.settings.objType.add(objData, function(data) {
-			G.log("Created object ID:");
-			G.log(data);
-			$(that).setFields();
-			searchObject.loadResults();
-			if (searchObject.settings.add.redirectTo) {
-				window.location.href = searchObject.settings.add.redirectTo(data);
+
+			if (data.isError()) {
+				G.msg("addError", data.getError(), "error");
+			} else {
+					
+				G.log("Created object ID:");
+				G.log(data);
+				$(that).setFields();
+				searchObject.loadResults();
+				if (searchObject.settings.add.redirectTo) {
+					window.location.href = searchObject.settings.add.redirectTo(data);
+				}
 			}
 		});
 	});

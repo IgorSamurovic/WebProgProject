@@ -79,8 +79,8 @@ public class ThreadDAO
 		.and("obj.title LIKE $title")
 		.and("frm.title LIKE $forumTitle")
 		.and("usr.username LIKE $ownerUsername")
-		.and("obj.date <= $dataA")
-		.and("obj.date >= $dataB")
+		.and("obj.date >= $dateA")
+		.and("obj.date <= $dateB")
 		
 		// Checks visibility type of belonging forum (public/open/closed) against permission level
 		.and("frm.vistype <= " + user.getPermissionLevel())

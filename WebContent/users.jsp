@@ -2,8 +2,6 @@
 String title="Users";
 %>
 <%@include file="jspf/everypage.jspf" %>
-
-<script>
-</script>
+<script src='users.jsp.js'></script>
 </body>
 </html>

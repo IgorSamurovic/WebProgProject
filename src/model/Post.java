@@ -87,10 +87,20 @@ public class Post implements DataObject {
 		this._resultForumTitle = _resultForumTitle;
 	}
 
+	@Override
+	public String toString() {
+		return "Post [id=" + id + ", text=" + text + ", thread=" + thread + ", owner=" + owner + ", date=" + date
+				+ ", deleted=" + deleted + ", _ownerUsername=" + _ownerUsername + ", _ownerRole=" + _ownerRole
+				+ ", _threadTitle=" + _threadTitle + ", _forumId=" + _forumId + ", _forumTitle=" + _forumTitle
+				+ ", _allowPosting=" + _allowPosting + ", _resultForumId=" + _resultForumId + ", _resultForumTitle="
+				+ _resultForumTitle + "]";
+	}
+	
 	// Attributes
 	
 	// Special
 	
+
 	@JsonProperty("_forumId")
 	public String getForumId() {
 		return _forumId;

@@ -94,8 +94,8 @@ public class PostDAO
 		.and("thr.title LIKE $threadTitle")
 		.and("usr.username LIKE $ownerUsername")
 		.and("obj.text LIKE $text")
-		.and("obj.date <= $dataA")
-		.and("obj.date >= $dataB")
+		.and("obj.date >= $dateA")
+		.and("obj.date <= $dateB")
 		
 		// Checks visibility type of belonging forum (public/open/closed) against permission level
 		.and("frm.vistype <= " + user.getPermissionLevel())
@@ -165,7 +165,8 @@ public class PostDAO
 			stmt.setObject(1, o.getText());
 			stmt.setObject(2, o.getThread());
 			stmt.setObject(3, o.getOwner());
-			return stmt.execute();
+			stmt.execute();
+			return true;
 		}
 		catch (Exception e)
 		{

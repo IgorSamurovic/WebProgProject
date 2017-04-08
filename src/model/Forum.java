@@ -15,7 +15,7 @@ public class Forum implements DataObject {
 	// Attributes
 	
 	// Standard
-	private Integer id;
+
 	private String title;
 	private String descript;
 	private Integer parent;
@@ -36,6 +36,33 @@ public class Forum implements DataObject {
 	public String checkForErrors() {
 		
 		Forum parentObj = null;
+		User ownerObj = null;
+		
+		if (id != null && (id!= 1 && parent == null)) {
+			return "parent";
+		}
+		
+		if (id != null && id == 1) {
+			parent = null;
+		}
+		
+		if (owner != null) {
+			ownerObj = new UserDAO().findById(owner);
+			if (ownerObj == null || ownerObj.getDeleted()) {
+				return "owner";
+			}
+		} else {
+			return "owner";
+		}
+		
+		if (parent != null) {
+			parentObj = new ForumDAO().findById(parent);
+			if (parentObj == null || parentObj.getId() == this.getId() ||
+				(parentObj != null && new ForumDAO().isChildOf(parentObj, this))) {
+				System.err.println(parentObj.getTitle() + " " + this.getTitle());
+		        return "parent";
+			}
+		}
 		
 		if (title == null || !title.matches(".{3,40}")) {
 			return "title";
@@ -44,29 +71,10 @@ public class Forum implements DataObject {
 		if (descript != null && descript.length() > 250) {
 			return "descript";
 		}
-
-		if (id != null && id == 1) parent = null;
-		
-		if (id != null && parent != null && id != 1) {
-			parentObj = new ForumDAO().findById(parent);
-			if (parentObj == null || parentObj.getId() == this.getId() ||
-				(parentObj != null && new ForumDAO().isChildOf(parentObj, this))) {
-				System.err.println(parentObj.getTitle() + " " + this.getTitle());
-		        return "parent";
-			}
-		} 
-		
-		if (id != null && (id!= 1 && parent == null)) {
-			return "parent";
-		}
-		
-		if (owner == null || new UserDAO().findById(owner) == null) {
-			return "owner";
-		}
 		
 		if (vistype == null || vistype < 0 || vistype > 2) {
 			return "vistype";
-		} else if (id != null && parentObj != null) {
+		} else if (parentObj != null) {
 			if (vistype < parentObj.getVistype()) {
 				return "vistype";
 			}
@@ -74,18 +82,10 @@ public class Forum implements DataObject {
 		
 		if (locked == null) {
 			return "locked";
-		} else if (id != null && parentObj != null) {
-			if (!locked && parentObj.getLocked()) {
-				return "locked";
-			}
 		}
 		
 		if (deleted == null) {
 			return "deleted";
-		} else if (id != null && parentObj != null) {
-			if (!deleted && parentObj.getDeleted()) {
-				return "deleted";
-			}
 		}
 		
 		return null;
@@ -118,6 +118,15 @@ public class Forum implements DataObject {
 		this._allowPosting = _allowPosting;
 	}
 
+	private Integer id;
+	@Override
+	public String toString() {
+		return "Forum [id=" + id + ", title=" + title + ", descript=" + descript + ", parent=" + parent + ", owner="
+				+ owner + ", vistype=" + vistype + ", date=" + date + ", locked=" + locked + ", deleted=" + deleted
+				+ ", _ownerUsername=" + _ownerUsername + ", _parentTitle=" + _parentTitle + ", _allowPosting="
+				+ _allowPosting + ", _parents=" + _parents + "]";
+	}
+	
 	// Attributes
 	
 	// Special

@@ -99,13 +99,13 @@ const DataObj = {
 			var data = $(form).loadFields();
 			
 			obj.edit(data,  function(error) {
-				if (!error) {
+				if (!error.isError()) {
 					if (modal) {
 						modal.destroy();
 					}
 					callback(error);
 				} else {
-					G.msg('editModal', error, false);
+					G.msg('editModal', error.getError(), false);
 				}
 			});
 				

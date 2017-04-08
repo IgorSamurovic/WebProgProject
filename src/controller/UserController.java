@@ -33,8 +33,14 @@ public class UserController extends HttpServlet {
 		String error;
 		
 		Integer id = pp.integer("id");
+		String reqType = pp.string("reqType");
 		
-		if (current == null || !current.isAdmin() || (current.getId() == id)) {
+		if (current == null || !(
+				current.isAdmin() || 
+				(current.isMod() && current.getId() == id) ||
+				(current.isUser() && current.getId() == id) ||
+				(current.isGuest() && reqType.equals("register"))
+		)) {
 			Responder.error(response, "access");
 			return;
 		}
@@ -48,7 +54,7 @@ public class UserController extends HttpServlet {
 		Boolean banned = pp.bool("banned");
 		Boolean deleted = pp.bool("deleted");
 		
-		String reqType = pp.string("reqType");
+		
 		
 		if (reqType == null) return;
 		
@@ -78,7 +84,10 @@ public class UserController extends HttpServlet {
 			}
 		}
 		
-		else if (reqType.equals("add")) {
+		// ----------------------------------------------------------------------------------------------------
+		// Add
+		
+		if (reqType.equals("add")) {
 			if (id != null) {
 				if (current.isAdmin()) {
 					obj = new User();
@@ -117,16 +126,15 @@ public class UserController extends HttpServlet {
 		// Edit
 		
 		if (reqType.equals("edit")) {
-			if (id != null) {
+			if (id != null && (current.isAdmin() || current.getId() == id)) {
 				obj = dao.findById(id, current);
-				
+
 				if (obj != null && !obj.getDeleted()) {
-					obj = dao.findById(id);
-					obj.setEmail(email);
+					if (email != null) obj.setEmail(email);
 					obj.setName(name);
 					obj.setSurname(surname);
-					obj.setPassword(password);
-					obj.setRole(role);
+					if (password != null) obj.setPassword(password);
+					if (role != null) obj.setRole(role);
 					
 					error = obj.checkForErrors();
 					
@@ -134,7 +142,7 @@ public class UserController extends HttpServlet {
 						error = null;
 						
 						User emailUser = dao.findByEmail(email);
-						if (emailUser != null && emailUser.getId() != obj.getId()) {
+						if (emailUser != null && emailUser.getId() != id) {
 							error = "email";
 						}
 						
@@ -142,7 +150,7 @@ public class UserController extends HttpServlet {
 							if (dao.update(obj)) {
 								
 							} else {
-								Responder.error(response, "email");
+								Responder.error(response, "db");
 							}
 						} else {
 							Responder.error(response, error);
@@ -160,7 +168,7 @@ public class UserController extends HttpServlet {
 		}
 		
 		// ----------------------------------------------------------------------------------------------------
-		// Lock
+		// Ban
 		
 		if (reqType.equals("ban")) {
 			if (id != null && banned != null) {

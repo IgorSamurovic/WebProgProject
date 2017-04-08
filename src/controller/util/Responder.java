@@ -45,7 +45,7 @@ public class Responder
 	
 	public static boolean error(HttpServletResponse response, Object txt) {
 		try {
-			response.getWriter().print("Error: " + String.valueOf(txt));
+			response.getWriter().print("error: " + String.valueOf(txt));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

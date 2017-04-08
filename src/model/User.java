@@ -96,25 +96,32 @@ public class User implements DataObject {
 	public String checkForErrors() {
     	// Just for the record, a return value of null means everything is fine
 
-    	if (username == null || username.matches("[a-zA-Z0-9_]{3,20}"))
+    	if (username == null || !username.matches("[a-zA-Z0-9_]{3,20}"))
     		return "username";//"Username can only contain between 3 and 20 alphanumeric characters.";
     	
-    	if (password == null || password.matches(".{6,20}"))
+    	if (password == null || !password.matches(".{6,20}"))
     		return "password";//"Password must be between 6 and 20 characters long.";
     	
-    	if (email == null || email.matches(".*@.*"))
+    	if (email == null || !email.matches(".*@.*"))
     		return "email";//"Email address needs to be written in the proper \"something@somewhere\" format and have a maximum of 60 characters.";
     	
-    	if (name != null && name.matches(".{0,40}"))
+    	if (name != null && !name.matches(".{0,40}"))
     		return "name";//"Maximum name length is 40 characters.";
 		
-    	if (surname != null && surname.matches(".{0,40}"))
+    	if (surname != null && !surname.matches(".{0,40}"))
     		return "surname";//"Maximum surname length is 40 characters.";
 
     	return null;
     }
 	
 	// Constructors
+
+	public User() {
+		super();
+		this.role = Role.GUEST;
+		this.banned = false;
+		this.deleted = false;
+	}
 	
 	public User(Integer id, String username, String password, String name, String surname, String email, Timestamp date,
 			Integer role, Boolean banned, Boolean deleted) {
@@ -131,14 +138,13 @@ public class User implements DataObject {
 		this.deleted = deleted;
 	}
 
-	public User()
-	{
-		super();
-		this.role = Role.GUEST;
-		this.banned = false;
-		this.deleted = false;
+	@Override
+	public String toString() {
+		return "User [id=" + id + ", username=" + username + ", password=" + password + ", name=" + name + ", surname="
+				+ surname + ", email=" + email + ", date=" + date + ", role=" + role + ", banned=" + banned
+				+ ", deleted=" + deleted + "]";
 	}
-
+	
 	// Attributes
 	
 	// Special

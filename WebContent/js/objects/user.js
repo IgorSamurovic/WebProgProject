@@ -75,5 +75,11 @@ $(document).ready(function() {
 	$(document).on('click', '[name="selectUser"]', function(btn) {
 		User.openSelectModal(this);
 	});
-
+	
+	$(document).on('click', '[name="userBanBtn"]', function(button) {
+		var that = this;
+		Search.getObject(this).ban($(that).data("val"), function() {
+			Search.getSearch(that).loadResults();
+		});
+	});
 });

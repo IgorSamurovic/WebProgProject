@@ -273,7 +273,7 @@ var H = {
 		
 		_perPageValues : ['1', '5', '10', '20', '50'],
 		
-		perPage : function(cls=this.defaultClass, name="perPage", perPage=10, vals=this._perPageValues) {
+		perPage : function(cls=this.defaultClass, name="perPage", perPage=5, vals=this._perPageValues) {
 			var options = [];
 			
 			for (var i=0; i < vals.length; i++) {
