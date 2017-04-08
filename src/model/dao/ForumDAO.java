@@ -17,9 +17,10 @@ public class ForumDAO {
 	static String[] tables = {"obj.date", "obj.title", "usr.username"};
 	
 	static final String COUNT_QUERY_START = 
-			"SELECT COUNT(obj.ID) FROM FORUM obj";
+			"SELECT DISTINCT obj.id FROM " +TABLE_NAME+ " obj";
+	
 	static final String FETCH_QUERY_START = 
-			" SELECT obj.*, " +
+			" SELECT DISTINCT obj.*, " +
 	        " usr.username, " + 
 			" frm.title, " + 
 	        " loc.locked " +
@@ -30,11 +31,14 @@ public class ForumDAO {
 			" ON obj.owner = usr.id " +
 			" LEFT JOIN FORUM frm " +
 			" ON obj.parent = frm.id " +
-			" LEFT JOIN (CLOSURE cls1, CLOSURE cls2, FORUM loc, FORUM del) " + 
-			" ON (cls1.child = obj.id AND cls1.parent = loc.id AND " +
-			    " cls2.child = obj.id AND cls2.parent = del.id AND " + 
-			    " loc.locked  = TRUE AND " +
-			    " del.deleted = TRUE) ";
+			" LEFT JOIN (CLOSURE delc, FORUM loc) " +   
+			" ON (delc.child = frm.id AND delc.parent = loc.id and loc.locked = TRUE) " +
+			" LEFT JOIN (CLOSURE locc, FORUM del) " +
+			" ON (locc.child = frm.id AND locc.parent = del.id and del.deleted = TRUE) ";
+
+	static final String JOIN_STRING_DEEP =
+			" LEFT JOIN (CLOSURE anc) " +
+			" ON (anc.child = obj.id AND anc.depth > 0) ";
 	
 	// --------------------------------------------------------------------------------------------
 	// Processing
@@ -57,7 +61,7 @@ public class ForumDAO {
 
 		return f;
 	}
-
+	
 	private void processFilter(QueryBuilder qb, ParamProcessor pp, User user) {
 		qb
 		// Used for singular ID search, always returns 0 or 1 records
@@ -65,6 +69,7 @@ public class ForumDAO {
 		
 		// Search queries
 		// (ID)
+		.and("anc.parent = $ancestor")
 		.and("obj.parent = $parent")
 		.and("obj.owner = $owner")
 		// (Partial)
@@ -93,152 +98,127 @@ public class ForumDAO {
 	// Getters
 	
 	@SuppressWarnings("unchecked")
+	public Forum getFirstForum(ArrayList<Object> list) {
+		return ((ArrayList<Forum>) list.get(1)).get(0);
+	}
+	
 	public ArrayList<Object> filter(ParamProcessor pp, User user) {
 		ArrayList<Object> list = new ArrayList<Object>();
 		QueryBuilder qb = new QueryBuilder(pp);
 		
 		Boolean showDescendants = pp.bool("showDescendants");
 		
-		// Let's see if we're searching through ancestry and not parenthood
+		String join = JOIN_STRING;
+		
+		// Ancestry vs parenthood
 		if (showDescendants != null && showDescendants) {
 			pp.add("ancestor", pp.integer("parent"));
 			pp.remove("parent");
+			join += JOIN_STRING_DEEP;
 		}
 		
 		// Create part of the query that deals with filters
 		processFilter(qb, pp, user);
-		qb.setJoin(JOIN_STRING);
+		qb.setJoin(join);
 		
+		// Counting
 		qb.setStart(COUNT_QUERY_START);
+		qb.setCounting(true);
 		list.add(qb.getNumRecords());
-
-		//pp.printDebug();
 		
+		// Getting the actual records
 		qb.setStart(FETCH_QUERY_START);
 		qb.limit("$page", "$perPage");
-		
+		qb.setCounting(false);
 		list.add(processMany(qb));
 		
 		// Add parent list if it's singular result
 		if (pp.integer("id") != null && (Integer) list.get(0) > 0) {
-			getParentList(((ArrayList<Forum>) list.get(1)).get(0));
+			Forum obj = getFirstForum(list);
+			obj.setParents(getParentList(obj.getId()));
 		}
 		
 		return list;
 	}
 
-	public ArrayList<String[]> getParentList(Forum obj) {
-		
+	public ArrayList<String[]> getParentList(Integer forumId) {
 		try (Connection conn = Connector.get()) {
 			PreparedStatement stmt;
 			
 			ArrayList<String[]> parents = new ArrayList<String[]>();
+			stmt = conn.prepareStatement(
+				"SELECT parent.id, parent.title FROM FORUM child " +
+				"INNER JOIN (CLOSURE cls, FORUM parent) " +
+				"ON (child.id = ? AND cls.parent = parent.id AND cls.child = child.id AND cls.depth > 0) " +
+				"ORDER BY cls.depth ASC;");
 			
-			Integer parentId = null;
-			
-			ResultSet rs;
-			
-			parentId = obj.getParent();
-			
-			if (parentId != null && parentId != 0) {
-				while (true) {
-					stmt = conn.prepareStatement("SELECT id, title, parent FROM FORUM WHERE id=?");
-					stmt.setObject(1, parentId);
-					stmt.execute();
-					rs = stmt.getResultSet();
-					if (rs.next()) {
-						parents.add(new String[] {rs.getString("id"), rs.getString("title")});
-						parentId = rs.getInt("parent");
-					} else {
-						break;
-					}
-					stmt.close();
-					
-				}
+			stmt.setObject(1, forumId);
+			stmt.execute();
+			ResultSet rs = stmt.getResultSet();
+			while (rs.next()) {
+				parents.add(new String[] {rs.getString(1), rs.getString(2)});
 			}
-			obj.setParents(parents);
 			return parents;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
 		return null;
 	}
-	
+		
 	// --------------------------------------------------------------------------------------------
 	// SPECIAL OPERATIONS
 	
 	public boolean isChildOf(Forum child, Forum parent) {
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement(
-				"SELECT DEPTH FROM CLOSURE WHERE CHILD = ? AND PARENT = ?;");
+				"SELECT DEPTH FROM CLOSURE WHERE CHILD = ? AND PARENT = ? AND DEPTH > 0;");
 			stmt.setObject(1, child.getId());
 			stmt.setObject(2, parent.getId());
 			stmt.execute();
 			ResultSet rs = stmt.getResultSet();
-			return (rs != null);
+			return (rs.next());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return false;
 	}
 	
-	private void propagate(Forum o, String column, String when, Object val) {
-		
+	private void propagate(String query, Integer parentId, Object data) {
 		try (Connection conn = Connector.get();) {
-				
-			PreparedStatement stmt;
 			
-			// Select all children
-			stmt = conn.prepareStatement(
-					FETCH_QUERY_START + JOIN_STRING + " WHERE " + when + " AND obj.parent = ?;");
-			stmt.setObject(1, val);
-			stmt.setObject(2, o.getId());
+			PreparedStatement stmt = conn.prepareStatement(
+				"UPDATE FORUM child " +
+				"JOIN (CLOSURE cls, FORUM parent) " + 
+				"ON (cls.child = child.id AND cls.parent = parent.id AND cls.depth > 0) " + query);
+			stmt.setObject(1, data);
+			stmt.setObject(2, data);
+			stmt.setObject(3, parentId);
 			stmt.execute();
-			ResultSet rs = stmt.getResultSet();
-			if (rs != null) {
-				ArrayList<Object> list = processMany(rs);
-				for (Object ob : list) {
-					new ForumDAO().propagate((Forum) ob, column, when, val);
-				}
-			}
-			
-			// Update all children
-			stmt = conn.prepareStatement(
-					"UPDATE FORUM obj SET " + column + "=? WHERE " + when + " AND obj.parent = ?;");
-			stmt.setObject(1, val);
-			stmt.setObject(2, val);
-			stmt.setObject(3, o.getId());
-			stmt.execute();
-			
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public int lock(Forum o, Boolean doLock) {
-		o.setLocked(doLock);
-		propagate(o, "obj.locked", "obj.locked < ?", o.getLocked());
+	public boolean lock(Forum o, Boolean doLock) {
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET locked=? WHERE id=?;");
 			stmt.setObject(1, doLock);
 			stmt.setObject(2, o.getId());
-			return stmt.executeUpdate();
+			return stmt.executeUpdate() > 0;
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
-		return 0;
+		return false;
 	}
 	
 	// --------------------------------------------------------------------------------------------
 	// Standard Operations
 	
-	public boolean insert(Forum o)
-	{
-		try (Connection conn = Connector.get();)
-		{
+	public boolean insert(Forum o) {
+		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("INSERT INTO FORUM "
 			+ "(title, descript, parent, owner, vistype, locked) VALUES (?,?,?,?,?,?);");
 			stmt.setObject(1, o.getTitle());
@@ -247,36 +227,35 @@ public class ForumDAO {
 			stmt.setObject(4, o.getOwner());
 			stmt.setObject(5, o.getVistype());
 			stmt.setObject(6, o.getLocked());
-			return stmt.execute();
-		}
-		catch (Exception e)
-		{
+			stmt.execute();
+			return true;
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return false;
 	}
 
-	public int update(Forum o)
-	{
-		propagate(o, "obj.vistype", "obj.vistype < ?", o.getVistype());
-		try (Connection conn = Connector.get();)
-		{
-			PreparedStatement stmt = conn.prepareStatement("UPDATE FORUM SET title=?, descript=?, parent=?, owner=?, vistype=?, locked=?, deleted=? WHERE id=?;");
+	public boolean update(Forum o) {
+		
+		propagate("SET child.vistype = ? " + 
+				  "WHERE child.vistype < ? " + 
+				  "AND parent.id = ?;",
+				  o.getId(),
+				  o.getVistype());
+				  
+		try (Connection conn = Connector.get();) {
+			PreparedStatement stmt = conn.prepareStatement("UPDATE FORUM SET title=?, descript=?, parent=?, owner=?, vistype=? WHERE id=?;");
 			stmt.setObject(1, o.getTitle());
 			stmt.setObject(2, o.getDescript());
 			stmt.setObject(3, o.getParent());
 			stmt.setObject(4, o.getOwner());
 			stmt.setObject(5, o.getVistype());
-			stmt.setObject(6, o.getLocked());
-			stmt.setObject(7, o.getDeleted());
-			stmt.setObject(8, o.getId());
-			return stmt.executeUpdate();
-		}
-		catch (Exception e)
-		{
+			stmt.setObject(6, o.getId());
+			return stmt.executeUpdate() > 0;
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return 0;
+		return false;
 	}
 	
 	// --------------------------------------------------------------------------------------------
@@ -316,26 +295,26 @@ public class ForumDAO {
 	
 	private boolean softDelete(Forum o, boolean doDelete) {
 		o.setDeleted(doDelete);
-		//propagate(o, "obj.deleted", "obj.deleted < ?", o.getDeleted());
+
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET deleted=? WHERE id=?;");
 			stmt.setObject(1, doDelete);
 			stmt.setObject(2, o.getId());
-			return stmt.execute();
+			return stmt.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return true;
+		return false;
 	}
 
 	private boolean hardDelete(Forum o) {
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("DELETE FROM " + TABLE_NAME + " WHERE id=?;");
 			stmt.setObject(1, o.getId());
-			return stmt.execute();
+			stmt.execute();
+			return true;
 		} catch (Exception e) {
 			softDelete(o, true);
-			e.printStackTrace();
 		}
 		return false;
 	}
@@ -366,18 +345,6 @@ public class ForumDAO {
 		} finally {
 			q.close();
 		}
-		return list;
-	}
-	
-	private ArrayList<Object> processMany(ResultSet rs) {
-		ArrayList<Object> list = new ArrayList<Object>();
-		try {
-			while (rs.next())
-				list.add(process(rs));
-			return list;
-		} catch (Exception e) {
-			e.printStackTrace();
-		} 
 		return list;
 	}
 	

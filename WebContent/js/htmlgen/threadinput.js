@@ -16,6 +16,7 @@ $.extend(Thread, {
 			pattern   : '.{3,40}',
 			error     : 'Must be at least 3 characters long.',
 			val       : 'selectObject',
+			placeholder : "Thread Title"
 		});
 	},
 	

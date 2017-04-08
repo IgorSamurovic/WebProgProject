@@ -115,10 +115,13 @@ Modals = {
 		if (doDelete) {
 			buttons.push(H.btn('Yes (Soft delete)', 'YesBtn1', cls='special big', null));
 			if (user.isAdmin()) {
-				buttons.push(H.btn('Attempt hard delete', 'YesBtn2', cls='small', null));
+				buttons.push(H.btn('Attempt hard delete', 'YesBtn2', cls=' big', null));
 			}
 		} else {
 			buttons.push(H.btn('Yes (Undelete)', 'YesBtn1', cls='big', null));
+			if (user.isAdmin()) {
+				buttons.push(H.btn('Attempt hard delete', 'YesBtn2', cls=' big', null));
+			}
 		}
 		buttons.push(H.btn('No ', 'NoBtn',  cls='big', null));
 		

@@ -92,6 +92,28 @@ public class User implements DataObject {
 		return Role.canSeeDeleted(role);
 	}
 	
+	// Validation
+	public String checkForErrors() {
+    	// Just for the record, a return value of null means everything is fine
+
+    	if (username == null || username.matches("[a-zA-Z0-9_]{3,20}"))
+    		return "username";//"Username can only contain between 3 and 20 alphanumeric characters.";
+    	
+    	if (password == null || password.matches(".{6,20}"))
+    		return "password";//"Password must be between 6 and 20 characters long.";
+    	
+    	if (email == null || email.matches(".*@.*"))
+    		return "email";//"Email address needs to be written in the proper \"something@somewhere\" format and have a maximum of 60 characters.";
+    	
+    	if (name != null && name.matches(".{0,40}"))
+    		return "name";//"Maximum name length is 40 characters.";
+		
+    	if (surname != null && surname.matches(".{0,40}"))
+    		return "surname";//"Maximum surname length is 40 characters.";
+
+    	return null;
+    }
+	
 	// Constructors
 	
 	public User(Integer id, String username, String password, String name, String surname, String email, Timestamp date,

@@ -12,6 +12,7 @@ import controller.util.ParamProcessor;
 import controller.util.Responder;
 import model.Forum;
 import model.User;
+import model.User.Role;
 import model.dao.ForumDAO;
 import util.Cookies;
 import views.Views;
@@ -33,10 +34,13 @@ public class ForumController extends HttpServlet {
 		
 		// First initialize variables
 		User current = Cookies.getUser(request);
-		if (!current.isAdmin()) {
-			Responder.out(response, "ACCESS DENIED");
+		
+		if (current == null || !current.isAdmin()) {
+			Responder.error(response, "access");
 			return;
 		}
+		
+		ForumDAO dao = new ForumDAO();
 		
 		ParamProcessor pp = new ParamProcessor(request);
 		Forum obj = null;
@@ -54,80 +58,127 @@ public class ForumController extends HttpServlet {
 		
 		if (reqType == null) return;
 		
-		// Done
+		// ----------------------------------------------------------------------------------------------------
+		// Add
 
 		if (reqType.equals("add")) {
-			obj = new Forum();
-			obj.setTitle(title);
-			obj.setDescript(descript);
-			obj.setParent(parent);
-			obj.setOwner(owner);
-			obj.setVistype(vistype);
+			if (parent != null) {
+				Forum forumObj = new ForumDAO().findById(parent, current);
+				if (forumObj != null && !forumObj.getDeleted() && forumObj.getAllowPosting()) {
+					obj = new Forum();
+					obj.setTitle(title);
+					obj.setDescript(descript);
+					obj.setParent(parent);
+					obj.setOwner(owner);
+					obj.setVistype(vistype);
 			
-			error = obj.checkForErrors();
-			pp.printDebug();
-
-
-			if (error != null) {
-				Responder.out(response, error);
-				return;
+					error = obj.checkForErrors();
+					
+					if (error == null) {
+						if (dao.insert(obj)) {
+							pp.setForLast();
+							obj = dao.getFirstForum(dao.filter(pp, current));
+							Responder.out(response, obj.getId());
+						} else {
+							Responder.error(response, "db");
+						}
+					} else {
+						Responder.error(response, error);
+					}
+				} else {
+					Responder.error(response, "access");
+				}
 			}
-			
-			new ForumDAO().insert(obj);
-			pp.setForLast();
-			obj = ((ArrayList<Forum>) new ForumDAO().filter(pp, current).get(1)).get(0);
-			Responder.out(response, Integer.toString(obj.getId()));
+			return;
 		} 
 
+		// ----------------------------------------------------------------------------------------------------
+		// Edit
+		
 		if (reqType.equals("edit")) {
-			obj = new ForumDAO().findById(id);
-			if (title != null) obj.setTitle(title);
-			obj.setDescript(descript);
-			if (parent != null) obj.setParent(parent);
-			if (owner != null) obj.setOwner(owner);
-			if (vistype != null) obj.setVistype(vistype);
-			
-			error = obj.checkForErrors();
-			
-			if (error != null) {
-				Responder.out(response, error);
-				return;
+			if (id != null) {
+				obj = dao.findById(id, current);
+				
+				if (obj != null && !obj.getDeleted()) {
+					obj = dao.findById(id, current);
+					if (title != null) obj.setTitle(title);
+					obj.setDescript(descript);
+					if (parent != null) obj.setParent(parent);
+					if (owner != null) obj.setOwner(owner);
+					if (vistype != null) obj.setVistype(vistype);
+					
+					error = obj.checkForErrors();
+					
+					if (error == null) {
+						if (dao.update(obj)) {
+							
+						} else {
+							Responder.error(response, "db");
+						}
+					} else {
+						Responder.error(response, error);	
+					}
+				} else {
+					Responder.error(response, "access");
+				}
+			} else {
+				Responder.error(response, "forumid");
 			}
-			//currenSystem.err.println(obj);
-			new ForumDAO().update(obj);
+			return;
 		}
+		
+		// ----------------------------------------------------------------------------------------------------
+		// Lock
 		
 		if (reqType.equals("lock")) {
 			if (id != null && locked != null) {
-				obj = new ForumDAO().findById(id, current);
-				obj.setLocked(locked);
+				obj = dao.findById(id, current);
+				if (obj != null && !obj.getDeleted() ) {
+					
+					obj.setLocked(locked);
+					error = obj.checkForErrors();
 				
-				error = obj.checkForErrors();
-				
-				if (error != null) {
-					Responder.out(response, error);
-					return;
+					if (error == null) {
+						if (dao.lock(obj, locked)) {
+							
+						} else {
+							Responder.error(response, "db");
+						}
+					} else {
+						Responder.error(response, error);
+					}
+				} else {
+					Responder.error(response, "access");
 				}
-				
-				new ForumDAO().lock(obj, locked);
+			} else {
+				Responder.error(response, "forumid");
 			}
 		}
 		
+		// ----------------------------------------------------------------------------------------------------
+		// Del
+		
 		if (reqType.equals("del")) {
-			if (id != null) {
-				if (deleted != null) {
-					obj = new ForumDAO().findById(id);
+			if (id != null && deleted != null) {
+				obj = dao.findById(id, current);
+				if (obj != null) {
 					
 					obj.setDeleted(deleted);
 					error = obj.checkForErrors();
-					
-					if (error != null) {
-						Responder.out(response, error);
-						return;
-					}
-					
-					new ForumDAO().delete(obj, current, deleted, pp.bool("preferHard"));
+				
+					if (error == null) {
+						if (dao.delete(obj, current, deleted, pp.bool("preferHard"))) {
+							
+						} else {
+							Responder.error(response, "db");
+						}
+					} else
+						Responder.error(response, error);
+				} else {
+					Responder.error(response, "access");
 				}
+			} else {
+				Responder.error(response, "forumid");
 			}
 		}
 	}

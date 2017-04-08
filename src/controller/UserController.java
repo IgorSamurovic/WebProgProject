@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import controller.util.ParamProcessor;
 import controller.util.Responder;
 import model.User;
+import model.dao.ThreadDAO;
 import model.dao.UserDAO;
 import util.Cookies;
 import views.Views;
@@ -19,57 +20,25 @@ public class UserController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-    	User current = Cookies.getUser(request);
+		User current = Cookies.getUser(request);
 		ParamProcessor pp = new ParamProcessor(request);
-		
-		Integer id = pp.integer("id");
-		if (id != null) {
-			User result = new UserDAO().findById(id, current);
-			if (result != null)
-				if (current.getId() == id) {
-					Responder.out(response, result, Views.getPersonal(current));
-				} else {
-					Responder.out(response, result, Views.forUser(current));
-				} else {
-					Responder.out(response, "notFound");
-				}
-		} else {
-			ArrayList<Object> results = new UserDAO().filter(pp, current);
-			Responder.out(response, results, Views.forUser(current));
-		}
-	}
-
-    
-    private String getProblems(User entry)
-    {
-    	// Just for the record, a return value of null means everything is fine
-    	try {
-        	if (!entry.getUsername().matches("[a-zA-Z0-9_]{3,20}"))
-        		return "username";//"Username can only contain between 3 and 20 alphanumeric characters.";
-        	
-        	if (!entry.getPassword().matches(".{6,20}"))
-        		return "password";//"Password must be between 6 and 20 characters long.";
-        	
-        	if (!entry.getEmail().matches(".*@.*"))
-        		return "email";//"Email address needs to be written in the proper \"something@somewhere\" format and have a maximum of 60 characters.";
-        	
-        	if (entry.getName() != null && !entry.getName().matches(".{0,40}"))
-        		return "name";//"Maximum name length is 40 characters.";
-    		
-        	if (entry.getSurname() != null && !entry.getSurname().matches(".{0,40}"))
-        		return "surname";//"Maximum surname length is 40 characters.";
-    	} catch (Exception e) {
-    		return "*";//"Please fill out all required (*) fields.";
-    	}
-
-    	return null;
+		Responder.out(response, new UserDAO().filter(pp, current), Views.forUser(current));
     }
     
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		ParamProcessor pp = new ParamProcessor(request);
 		User current = Cookies.getUser(request);
+		UserDAO dao = new UserDAO();
+		User obj;
+		String error;
 		
 		Integer id = pp.integer("id");
+		
+		if (current == null || !current.isAdmin() || (current.getId() == id)) {
+			Responder.error(response, "access");
+			return;
+		}
+		
 		String username = pp.string("username");
 		String email = pp.string("email");
 		String name = pp.string("name");
@@ -85,21 +54,21 @@ public class UserController extends HttpServlet {
 		
 		if (reqType.equals("register")) {
 			if (current.isGuest()) {
-				User entry = new User();
-				entry.setUsername(username);
-				entry.setEmail(email);
-				entry.setName(name);	
-				entry.setSurname(surname);
-				entry.setPassword(password);
-				entry.setRole(1);
+				obj = new User();
+				obj.setUsername(username);
+				obj.setEmail(email);
+				obj.setName(name);	
+				obj.setSurname(surname);
+				obj.setPassword(password);
+				obj.setRole(1);
 				
-				String unique = new UserDAO().checkUnique(entry);
+				String unique = dao.checkUnique(obj);
 				
 				if (unique == null) {
-					String problems = getProblems(entry);
+					String problems = obj.checkForErrors();
 					if (problems == null) {
-						new UserDAO().insert(entry);
-						response.getWriter().print(new UserDAO().findByUsername(username, current).getId());
+						dao.insert(obj);
+						response.getWriter().print(dao.findByUsername(username, current).getId());
 					} else {
 						response.getWriter().print("error");
 					}
@@ -110,93 +79,138 @@ public class UserController extends HttpServlet {
 		}
 		
 		else if (reqType.equals("add")) {
-			if (current.getRole() >= 2) {
-				User entry = new User();
-				entry.setUsername(username);
-				entry.setEmail(email);
-				entry.setName(name);	
-				entry.setSurname(surname);
-				entry.setPassword("password");
-				String problems = getProblems(entry);
-				
-				if (problems == null) {
-					new UserDAO().insert(entry);
-					response.getWriter().print("User " + username + "successfully created!");
+			if (id != null) {
+				if (current.isAdmin()) {
+					obj = new User();
+					obj.setUsername(username);
+					obj.setEmail(email);
+					obj.setName(name);	
+					obj.setSurname(surname);
+					obj.setPassword("password");
+					
+					error = obj.checkForErrors();
+					
+					if (error == null) {
+						error = dao.checkUnique(obj);
+						if (error == null) {
+							if (dao.insert(obj)) {
+								pp.setForLast();
+								obj = dao.getFirstUser(dao.filter(pp, current));
+								Responder.out(response, obj.getId());
+							} else {
+								Responder.error(response, "db");
+							}
+						} else {
+							Responder.error(response, error);
+						}
+					} else {
+						Responder.error(response, error);
+					}
 				} else {
-					response.getWriter().print(problems);
+					Responder.error(response, "access");
 				}
-			} else {
-				response.sendError(401);
 			}
-		}
-		
-		else if (reqType.equals("edit")) {
-			if (id != null && current.getId() != null && (id.equals(current.getId()) || current.getRole() >= User.Role.ADMIN)) {
-				User entry = new UserDAO().findById(id, current);
-				User emailCheck = null;
-				
-				if (email != null) {
-					entry.setEmail(email);
-					emailCheck = new UserDAO().findByEmail(email, current);
-				}
-				
-				entry.setName(name);	
-				entry.setSurname(surname);
-				
-				if (id == current.getId()) {
-					if (password != null) entry.setPassword(password);
-				}
-				
-				if (current.getRole() >= User.Role.ADMIN) {
-					if (role != null) entry.setRole(role);
-				}
-				
-				if (emailCheck == null || emailCheck.getId().equals(entry.getId())) {
-					new UserDAO().update(entry);
-				} else {
-					response.getWriter().print("email");
-				}
-			} else {
-				response.sendError(401);
-			}
+			return;
 		} 
 		
-		else if (reqType.equals("ban"))
-		{
-			if (id != null && current.getId() != null && current.getRole() >= User.Role.ADMIN && banned != null)
-			{
-				User entry = new UserDAO().findById(id, current);
-				entry.setBanned(banned);
+		// ----------------------------------------------------------------------------------------------------
+		// Edit
+		
+		if (reqType.equals("edit")) {
+			if (id != null) {
+				obj = dao.findById(id, current);
 				
-				new UserDAO().update(entry);
-				response.getWriter().print("You have successfully (un)banned, " + username + "!");
+				if (obj != null && !obj.getDeleted()) {
+					obj = dao.findById(id);
+					obj.setEmail(email);
+					obj.setName(name);
+					obj.setSurname(surname);
+					obj.setPassword(password);
+					obj.setRole(role);
+					
+					error = obj.checkForErrors();
+					
+					if (error == null) {
+						error = null;
+						
+						User emailUser = dao.findByEmail(email);
+						if (emailUser != null && emailUser.getId() != obj.getId()) {
+							error = "email";
+						}
+						
+						if (error == null) {	
+							if (dao.update(obj)) {
+								
+							} else {
+								Responder.error(response, "email");
+							}
+						} else {
+							Responder.error(response, error);
+						}
+					} else {
+						Responder.error(response, error);	
+					}
+				} else {
+					Responder.error(response, "access");
+				}
+			} else {
+				Responder.error(response, "forumid");
 			}
-			else
-			{
-				response.sendError(401);
+			return;
+		}
+		
+		// ----------------------------------------------------------------------------------------------------
+		// Lock
+		
+		if (reqType.equals("ban")) {
+			if (id != null && banned != null) {
+				obj = dao.findById(id, current);
+				if (obj != null && !obj.getDeleted() ) {
+					
+					obj.setBanned(banned);
+					error = obj.checkForErrors();
+				
+					if (error == null) {
+						if (dao.ban(obj, banned)) {
+							
+						} else {
+							Responder.error(response, "db");
+						}
+					} else {
+						Responder.error(response, error);
+					}
+				} else {
+					Responder.error(response, "access");
+				}
+			} else {
+				Responder.error(response, "forumid");
 			}
 		}
 		
-		else if (reqType.equals("delete"))
-		{
-			if (current.getRole() < User.Role.ADMIN)
-			{
-				response.sendError(401);
-				return;
-			};
-			
-			User toDelete = null;
-			
-			if (id != null)
-				toDelete = new UserDAO().findById(id, current);
-			
-			if (id != null && current.getId() != null && current.getRole() >= User.Role.ADMIN && deleted != null && toDelete != null)
-
-				new UserDAO().delete(toDelete, current, deleted, pp.bool("preferHard"));
-			else
-			{
-				response.sendError(400);
-				return;
+		// ----------------------------------------------------------------------------------------------------
+		// Del
+		
+		if (reqType.equals("del")) {
+			if (id != null && deleted != null) {
+				obj = dao.findById(id, current);
+				if (obj != null) {
+					
+					obj.setDeleted(deleted);
+					error = obj.checkForErrors();
+				
+					if (error == null) {
+						if (dao.delete(obj, current, deleted, pp.bool("preferHard"))) {
+							
+						} else {
+							Responder.error(response, "db");
+						}
+					} else
+						Responder.error(response, error);
+				} else {
+					Responder.error(response, "access");
+				}
+			} else {
+				Responder.error(response, "forumid");
 			}
 		}
 		

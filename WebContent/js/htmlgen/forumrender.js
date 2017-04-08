@@ -18,8 +18,8 @@ $.extend(Forum, {
 		return txt.reverse().join(" > ");
 	},
 	
-	renderTitle : function(cls) {
-		return `<a class="link2 ${cls}" href="forum.jsp?id=${this.data.id}">${this.data.title}</a>`;
+	renderTitle : function(cls, id=this.data.id, title=this.data.title) {
+		return `<a class="link2 ${cls}" href="forum.jsp?id=${id}">${title}</a>`;
 	},
 	
 	renderDescript : function() {
@@ -67,6 +67,7 @@ $.extend(Forum, {
 					return {
 						orderBy : "obj.date",
 						asc     : "DESC",
+						deleted : false,
 					};
 				},
 			},
@@ -128,6 +129,23 @@ $.extend(Forum, {
 	},
 	
 	renderFilter : function() {
+		return `
+			<div class="columnFlex flex4">
+				<div class="rowFlex">
+					${Forum.inputTitle()}
+					${Forum.selectDescendants()}
+				</div>
+				${Forum.inputOwner({name:"ownerUsername"})}
+			</div>
+			
+			<div class="columnFlex flex3">
+				${Forum.inputDate({name:'dateA'})}
+				${Forum.inputDate({name:'dateB'})}
+			</div>
+		`;
+	},
+	
+	renderFilterSimple : function() {
 		return `
 			<div class="columnFlex flex4">
 				<div class="rowFlex">

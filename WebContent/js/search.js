@@ -41,9 +41,13 @@ Search = {
 	
 	register : function(obj, prefix) {
 		if (this._searchObjects === undefined) {
-			this._searchObjects = {};
+			this._searchObjects = {
+				ary: []
+			};
 		}
 		this._searchObjects[prefix] = obj;
+		this._searchObjects.ary.push(obj);
+		G.log(obj.settings.prefix + " search registered!");
 	},
 		
 	byPrefix : function(prefix) {
@@ -51,12 +55,6 @@ Search = {
 			this._searchObjects = {};
 		}
 		return this._searchObjects[prefix];
-	},
-		
-	reloadAll : function() {
-		$(document).find('[id$="SearchContainer"]').each(function() {
-			$(this).data('searchObject').loadResults();
-		});
 	},
 		
 	getParams() {
@@ -89,7 +87,7 @@ Search = {
 	},
 	
 	getAddButton : function() {
-		return this.settings.add ? H.btn(this.settings.add.label, 'addObjectToggle', 'special flex1') : "";
+		return this.settings.add ? H.btn(this.settings.add.label, 'addObjectToggle', '') : "";
 	},
 	
 	getButtons : function(totalRecords) {
@@ -271,7 +269,7 @@ Search = {
 					
 					// Convert every raw JSON object to a proper G object with methods
 					data[i] = this.settings.objType.create(data[i]);
-					data[i]["xtra"].resultIndex = i;
+					data[i]["xtra"].resultIndex = i + 1;
 					
 					// Add the generated HTML to the results
 					$(this.selResults()).append(`
@@ -289,6 +287,22 @@ Search = {
 			if (this.settings.updateFunc) {
 				this.settings.updateFunc();
 			}
+			
+			var tmpSearch;
+			// Cascade changes to other stuff
+			if (this.settings.cascade) {
+				for (i=0; i<this.settings.cascade.length; i++) {
+					if (this.settings.cascade[i]) {
+						tmpSearch = Search.byPrefix(this.settings.cascade[i]);
+						if (!tmpSearch.settings.filterOnly && $(tmpSearch.selParent()).isShown()) {
+							tmpSearch.loadResults();
+						}
+					}	
+				}
+			}
+			
+			G.log(`loaded search: ${this.settings.prefix}`);
+			
 			this.settings.data = null;
 		}
 	},
@@ -464,7 +478,7 @@ $(document).ready(function() {
 			G.log("Created object ID:");
 			G.log(data);
 			$(that).setFields();
-			searchObject.reloadAll();
+			searchObject.loadResults();
 			if (searchObject.settings.add.redirectTo) {
 				window.location.href = searchObject.settings.add.redirectTo(data);
 			}

@@ -17,6 +17,7 @@ $.extend(User, {
 					return {
 						orderBy : "role",
 						asc     : "DESC",
+						deleted : false,
 					};
 				},
 			},

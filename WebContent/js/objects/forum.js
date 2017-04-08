@@ -9,8 +9,8 @@ const Forum = Object.assign(Object.create(DataObj), {
 	canBePostedInBy(user) {
 		return !this.isDeleted() && (
 			user.isAdmin() ||
-			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user) ||
-			user.isUser() && user.owns(this) && !this.data.locked && this.xtra.allowPosting
+			user.isMod() ||
+			user.isUser() && !this.data.locked && this.xtra.allowPosting
 		);
 	},
 	
@@ -91,7 +91,7 @@ $(document).ready(function() {
 		Modals.confirmation({
 			yesFunc : function() {  
 				Search.getObject(that).lock($(that).data("val"), function() {
-					Search.reloadAll();
+					Search.getSearch(that).loadResults();
 				});
 			}
 		});

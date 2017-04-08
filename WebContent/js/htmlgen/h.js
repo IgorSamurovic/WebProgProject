@@ -172,7 +172,7 @@ var H = {
 	    			type="${type}"
 	    			${val!==null ? 'data-val="'+val+'"' : ''}
 	    			class="${cls}">
-	    			<div>
+	    			<div class="btnText">
 	    				${label}
 	    			</div>
 	    		</button>`;
@@ -330,6 +330,7 @@ const HFUNC = (function() {
 		$(document).on('click', "[name=pageFilterBtn]", function(event) {
 			event.preventDefault();
 			$(this).closest(".page").find('[id$="SearchFilterContainer"]').showToggle();
+			$(this).closest(".page").children(".pagecontent").show();
 		});	
 		
 		$(document).on('input', "textarea", function(event) {

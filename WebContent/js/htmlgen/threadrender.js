@@ -52,12 +52,25 @@ $.extend(Thread, {
 		$(target).setFields(obj.data);
 	},
 	
-	renderHeader : function(cls) {
-		return `<a class="link2 ${cls}" href="thread.jsp?thread=${this.data.id}">${this.data.title}</a>`;
+	renderHeader : function (cls) {
+		const txt = [];
+		txt.push(this.renderTitle());
+		const parents = this.xtra.parents;
+		var i = 0;
+		
+		parents.splice(0, 0, [this.data.forum, this.xtra.forumTitle]);
+		
+		if (parents) {
+			for (i = 0; i<parents.length; i++) {	
+				txt.push(`<a class="link2 ${cls}" href="forum.jsp?id=${parents[i][0]}">${parents[i][1]}</a>`);
+			}
+		}
+		
+		return txt.reverse().join(" > ");
 	},
 	
-	renderTitle : function(cls) {
-		return `<a class="link2 ${cls}" href="thread.jsp?thread=${this.data.id}">${this.data.title}</a>`;
+	renderTitle : function(cls, id=this.data.id, title=this.data.title) {
+		return `<a class="link2 ${cls}" href="thread.jsp?thread=${id}">${title}</a>`;
 	},
 	
 	renderDescript : function(shorten) {
@@ -90,15 +103,15 @@ $.extend(Thread, {
 		return `
 			<div class="columnFlex flex4">
 				<div class="rowFlex">
-					${Forum.inputTitle()}
-					${Forum.selectDescendants()}
+					${Thread.inputTitle()}
+					${Thread.selectDescendants()}
 				</div>
-				${Forum.inputOwner({name:"ownerUsername"})}
+				${Thread.inputOwner({name:"ownerUsername"})}
 			</div>
 			
 			<div class="columnFlex flex3">
-				${Forum.inputDate({name:'dateA'})}
-				${Forum.inputDate({name:'dateB'})}
+				${Thread.inputDate({name:'dateA'})}
+				${Thread.inputDate({name:'dateB'})}
 			</div>
 		`;
 	},
@@ -164,7 +177,7 @@ $.extend(Thread, {
 		var currentUser = User.getCurrent();
 		
 		// Let's make buttons first!
-		var buttons = [`<div class="rowFlexAlways alignRight">`];
+		var buttons = [`<div class="right">`];
 		
 		// Editing <Only admin or owner>
 		if (thread.canBeEditedBy(currentUser)) {

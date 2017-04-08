@@ -11,8 +11,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import controller.util.ParamProcessor;
 import controller.util.Responder;
+import model.Forum;
 import model.Thread;
 import model.User;
+import model.User.Role;
+import model.dao.ForumDAO;
 import model.dao.ThreadDAO;
 import util.Cookies;
 import views.Views;
@@ -31,6 +34,12 @@ public class ThreadController extends HttpServlet {
 		
 		// First initialize variables
 		User current = Cookies.getUser(request);
+		ThreadDAO dao = new ThreadDAO();
+		
+		if (current == null || current.isGuest()) {
+			Responder.error(response, "access");
+			return;
+		}
 		
 		ParamProcessor pp = new ParamProcessor(request);
 		Thread obj = null;
@@ -50,95 +59,168 @@ public class ThreadController extends HttpServlet {
 		//pp.printDebug();
 		if (reqType == null) return;
 		
-		// Done
+		// ----------------------------------------------------------------------------------------------------
+		// Add
+		
 		if (reqType.equals("add")) {
-			obj = new Thread();
-			obj.setTitle(title);
-			obj.setDescript(descript);
-			obj.setText(text);
-			obj.setForum(forum);
-			obj.setOwner(owner);
-			
-			error = obj.checkForErrors();
-			pp.printDebug();
-
-			if (error != null) {
-				Responder.out(response, error);
-				return;
+			if (forum != null) {
+				Forum forumObj = new ForumDAO().findById(forum, current);
+				if (forumObj != null && !forumObj.getDeleted() && forumObj.getAllowPosting()) {
+					obj = new Thread();
+					obj.setTitle(title);
+					obj.setDescript(descript);
+					obj.setText(text);
+					obj.setForum(forum);
+					obj.setOwner(owner);
+		
+					error = obj.checkForErrors();
+					
+					if (error == null) {
+						if (dao.insert(obj)) {
+							pp.setForLast();
+							obj = dao.getFirstThread(dao.filter(pp, current)); 
+							Responder.out(response, obj.getId());
+						} else {
+							Responder.error(response, "db");
+						}
+					} else {
+						Responder.error(response, error);
+					}
+				} else {
+					Responder.error(response, "access");
+				}
+			} else {
+				Responder.error(response, "access");
 			}
-			
-			new ThreadDAO().insert(obj);
-			pp.setForLast();
-			obj = ((ArrayList<Thread>) new ThreadDAO().filter(pp, current).get(1)).get(0);
-			Responder.out(response, Integer.toString(obj.getId()));
 		} 
 
+		// ----------------------------------------------------------------------------------------------------
+		// Edit
+		
 		if (reqType.equals("edit")) {
-			obj = new ThreadDAO().findById(id);
-			obj.setTitle(title);
-			obj.setDescript(descript);
-			obj.setText(text);
-			
-			error = obj.checkForErrors();
-			
-			if (error != null) {
-				Responder.out(response, error);
-				return;
+			if (id != null) {
+				obj = dao.findById(id, current);
+				
+				if (obj != null && !obj.getDeleted() && (
+					current.isAdmin() ||
+					current.isMod() && (obj.getOwner() == current.getId() || obj.getOwnerRole() <= Role.USER) ||
+					current.isUser() && obj.getOwner() == current.getId() && obj.getAllowPosting()
+				)) {
+					obj.setTitle(title);
+					obj.setDescript(descript);
+					obj.setText(text);
+					
+					error = obj.checkForErrors();
+					
+					if (error == null) {
+						if (dao.update(obj)) {
+							
+						} else {
+							Responder.error(response, "db");
+						}
+					} else {
+						Responder.error(response, error);	
+					}
+				} else {
+					Responder.error(response, "access");
+				}
+			} else {
+				Responder.error(response, "threadid");
 			}
-			//currenSystem.err.println(obj);
-			new ThreadDAO().update(obj);
+			return;
 		}
+			
+		// ----------------------------------------------------------------------------------------------------
+		// Stick
 		
 		if (reqType.equals("stick")) {
 			if (id != null && sticky != null) {
-				obj = new ThreadDAO().findById(id);
-				obj.setSticky(sticky);
-				
-				error = obj.checkForErrors();
-				
-				if (error != null) {
-					Responder.out(response, error);
-					return;
+				obj = dao.findById(id, current);
+				if (obj != null && !obj.getDeleted() && (
+					current.isAdmin() ||
+					current.isMod() && (obj.getOwner() == current.getId() || obj.getOwnerRole() <= Role.USER)
+				)) {
+					
+					obj.setSticky(sticky);
+					error = obj.checkForErrors();
+					
+					if (error == null) {
+						if (dao.stick(obj, sticky)) {
+							
+						} else {
+							Responder.error(response, "db");
+						}
+					} else {
+						Responder.error(response, error);
+					}
+				} else {
+					Responder.error(response, "access");
 				}
-				
-				new ThreadDAO().stick(obj, sticky);
+			} else {
+				Responder.error(response, "threadid");
 			}
 		}
+		
+		// ----------------------------------------------------------------------------------------------------
+		// Lock
 		
 		if (reqType.equals("lock")) {
 			if (id != null && locked != null) {
-				obj = new ThreadDAO().findById(id);
-				obj.setLocked(locked);
+				obj = dao.findById(id, current);
+				if (obj != null && !obj.getDeleted() && (
+					current.isAdmin() ||
+					current.isMod() && (obj.getOwner() == current.getId() || obj.getOwnerRole() <= Role.USER)
+				)) {
+					
+					obj.setLocked(locked);
+					error = obj.checkForErrors();
 				
-				error = obj.checkForErrors();
-				
-				if (error != null) {
-					Responder.out(response, error);
-					return;
+					if (error == null) {
+						if (dao.lock(obj, locked)) {
+							
+						} else {
+							Responder.error(response, "db");
+						}
+					} else {
+						Responder.error(response, error);
+					}
+				} else {
+					Responder.error(response, "access");
 				}
-				
-				new ThreadDAO().lock(obj, locked);
+			} else {
+				Responder.error(response, "threadid");
 			}
 		}
 		
+		// ----------------------------------------------------------------------------------------------------
+		// Del
+		
 		if (reqType.equals("del")) {
-			if (id != null) {
-				if (deleted != null) {
-					obj = new ThreadDAO().findById(id);
+			if (id != null && deleted != null) {
+				obj = dao.findById(id, current);
+				if (obj != null && (
+					current.isAdmin() ||
+					current.isMod() && (obj.getOwner() == current.getId() || obj.getOwnerRole() <= Role.USER)
+				)) {
 					
 					obj.setDeleted(deleted);
 					error = obj.checkForErrors();
-					
-					if (error != null) {
-						Responder.out(response, error);
-						return;
-					}
-					
-					new ThreadDAO().delete(obj, current, deleted, pp.bool("preferHard"));
+				
+					if (error == null) {
+						if (dao.delete(obj, current, deleted, pp.bool("preferHard"))) {
+							
+						} else {
+							Responder.error(response, "db");
+						}
+					} else
+						Responder.error(response, error);
+				} else {
+					Responder.error(response, "access");
 				}
+			} else {
+				Responder.error(response, "threadid");
 			}
 		}
-		
 	}
 	
 }

@@ -7,6 +7,8 @@ import java.util.ArrayList;
 
 import controller.util.ParamProcessor;
 import model.User;
+import model.Post;
+import model.User;
 import model.dao.util.Connector;
 import model.dao.util.QueryBuilder;
 
@@ -22,7 +24,7 @@ public class UserDAO {
 							 };
 	
 	static final String COUNT_QUERY_START = 
-			"SELECT COUNT(obj.ID) FROM " +TABLE_NAME+ " obj";
+			"SELECT DISTINCT obj.id FROM " +TABLE_NAME+ " obj";
 
 	static final String FETCH_QUERY_START = 
 			" SELECT obj.* " + 
@@ -30,6 +32,9 @@ public class UserDAO {
 			
 	static final String JOIN_STRING = "";
 
+	// --------------------------------------------------------------------------------------------
+	// Processing
+	
 	private User process(ResultSet rs) throws Exception {
 		return new User(
 			rs.getInt("id"),
@@ -43,8 +48,57 @@ public class UserDAO {
 			rs.getBoolean("banned"),
 			rs.getBoolean("deleted"));
 	}
+	
+	private void processFilter(QueryBuilder qb, ParamProcessor pp, User user) {
+		qb
+		.and("id = $id")
+		.and("username LIKE $username")
+		.and("name LIKE $name")
+		.and("surname LIKE $surname")
+		.and("email LIKE $email")
+		.and("date >= $dateA")
+		.and("date <= $dateB")
+		.and("role = $role")
+		.and("deleted <= " + user.canSeeDeleted())
+		.orderBy("deleted", "DESC")
+		.orderBy("banned", "DESC")
+		.orderBy("$orderBy", "$asc")
+		.orderBy("obj.id", "ASC");
+	}
 
-	// Used for validating logins
+	// --------------------------------------------------------------------------------------------
+	// Getters
+	
+	@SuppressWarnings("unchecked")
+	public User getFirstUser(ArrayList<Object> list) {
+		return ((ArrayList<User>) list.get(1)).get(0);
+	}
+	
+	public ArrayList<Object> filter(ParamProcessor pp, User user) {
+		ArrayList<Object> list = new ArrayList<Object>();
+		QueryBuilder qb = new QueryBuilder(pp);
+		
+		// Create part of the query that deals with filters
+		processFilter(qb, pp, user);
+		qb.setJoin(JOIN_STRING);
+		
+		// Counting
+		qb.setStart(COUNT_QUERY_START);
+		qb.setCounting(true);
+		list.add(qb.getNumRecords());
+		
+		// Getting the actual records
+		qb.setStart(FETCH_QUERY_START);
+		qb.limit("$page", "$perPage");
+		qb.setCounting(false);
+		list.add(processMany(qb));
+		
+		return list;
+	}
+
+	// --------------------------------------------------------------------------------------------
+	// Validation
+	
 	public User validate(String entry, String pass) {
 		try (Connection conn = Connector.get();
 				PreparedStatement stmt = conn.prepareStatement(
@@ -59,6 +113,32 @@ public class UserDAO {
 		return null;
 	}
 
+	public User findByUsername(String username, User user) {
+		boolean adminAccess = (user == null) ? true : user.getRole() == User.Role.ADMIN; 
+		try (Connection conn = Connector.get();
+				PreparedStatement stmt = conn.prepareStatement(
+					"SELECT * FROM USER WHERE username = ? AND deleted <= ?;");) {
+			stmt.setObject(1, username);
+			stmt.setObject(2, adminAccess);
+			return processOne(stmt);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public User findByEmail(String id) {
+		try (Connection conn = Connector.get();
+				PreparedStatement stmt = conn.prepareStatement(
+					"SELECT * FROM USER WHERE email=?;");) {
+			stmt.setObject(1, id);
+			return processOne(stmt);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
 	public String checkUnique(User o) {
 		// null means it is
 		try (Connection conn = Connector.get();) {
@@ -94,70 +174,24 @@ public class UserDAO {
 		return null;
 	}
 	
-	private void processFilter(QueryBuilder qb, ParamProcessor pp, User user) {
-		qb
-		.and("id = $id")
-		.and("username LIKE $username")
-		.and("name LIKE $name")
-		.and("surname LIKE $surname")
-		.and("email LIKE $email")
-		.and("date >= $dateA")
-		.and("date <= $dateB")
-		.and("role = $role")
-		.and("deleted <= " + user.canSeeDeleted())
-		.orderBy("deleted", "DESC")
-		.orderBy("banned", "DESC")
-		.orderBy("$orderBy", "$asc")
-		.orderBy("obj.id", "ASC");
-	}
-
-	public ArrayList<Object> filter(ParamProcessor pp, User user) {
-		ArrayList<Object> list = new ArrayList<Object>();
-		QueryBuilder qb = new QueryBuilder(pp);
-		
-		// Create part of the query that deals with filters
-		processFilter(qb, pp, user);
-		qb.setJoin(JOIN_STRING);
-		
-		qb.setStart(COUNT_QUERY_START);
-		list.add(qb.getNumRecords());
-		
-		qb.setStart(FETCH_QUERY_START);
-		qb.limit("$page", "$perPage");
-		
-		list.add(processMany(qb));
-		
-		return list;
-	}
-
-	public User findByUsername(String username, User user) {
-		boolean adminAccess = (user == null) ? true : user.getRole() == User.Role.ADMIN; 
-		try (Connection conn = Connector.get();
-				PreparedStatement stmt = conn.prepareStatement(
-					"SELECT * FROM USER WHERE username = ? AND deleted <= ?;");) {
-			stmt.setObject(1, username);
-			stmt.setObject(2, adminAccess);
-			return processOne(stmt);
+	// --------------------------------------------------------------------------------------------
+	// SPECIAL Operations
+	
+	public boolean ban(User o, boolean doBan) {
+		try (Connection conn = Connector.get();) {
+			PreparedStatement stmt = conn.prepareStatement("UPDATE USER SET banned=? WHERE id=?;");
+			stmt.setObject(1, doBan);
+			stmt.setObject(2, o.getId());
+			return stmt.execute();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
+		return false;
 	}
-
-	public User findByEmail(String id, User user) {
-		boolean adminAccess = (user == null) ? true : user.getRole() == User.Role.ADMIN; 
-		try (Connection conn = Connector.get();
-				PreparedStatement stmt = conn.prepareStatement(
-					"SELECT * FROM USER WHERE email=? AND deleted <= ?;");) {
-			stmt.setObject(1, id);
-			stmt.setObject(2, adminAccess);
-			return processOne(stmt);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
+	
+	// --------------------------------------------------------------------------------------------
+	// Standard Operations
+	
 	public boolean insert(User o) {
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement(
@@ -175,7 +209,7 @@ public class UserDAO {
 		return false;
 	}
 
-	public int update(User o) {
+	public boolean update(User o) {
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement(
 				"UPDATE USER SET username=?, password=?, name=?, surname=?, email=? role=?, banned=?, deleted=? WHERE id=?;");
@@ -188,25 +222,13 @@ public class UserDAO {
 			stmt.setObject(7, o.getBanned());
 			stmt.setObject(7, o.getDeleted());
 			stmt.setObject(9, o.getId());
-			return stmt.executeUpdate();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return 0;
-	}
-
-	public boolean ban(User o, boolean doBan) {
-		try (Connection conn = Connector.get();) {
-			PreparedStatement stmt = conn.prepareStatement("UPDATE USER SET banned=? WHERE id=?;");
-			stmt.setObject(1, doBan);
-			stmt.setObject(2, o.getId());
 			return stmt.execute();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return true;
+		return false;
 	}
-	
+
 	// --------------------------------------------------------------------------------------------
 	// GENERIC STUFF
 	
@@ -243,28 +265,31 @@ public class UserDAO {
 	}
 	
 	private boolean softDelete(User o, boolean doDelete) {
+		o.setDeleted(doDelete);
+
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET deleted=? WHERE id=?;");
 			stmt.setObject(1, doDelete);
 			stmt.setObject(2, o.getId());
-			return stmt.execute();
+			return stmt.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return true;
+		return false;
 	}
-	
+
 	private boolean hardDelete(User o) {
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("DELETE FROM " + TABLE_NAME + " WHERE id=?;");
 			stmt.setObject(1, o.getId());
-			return stmt.execute();
+			stmt.execute();
+			return true;
 		} catch (Exception e) {
 			softDelete(o, true);
 		}
 		return false;
 	}
-
+	
 	private User processOne(PreparedStatement stmt) {
 		try {
 			stmt.execute();
@@ -278,7 +303,7 @@ public class UserDAO {
 		}
 		return null;
 	}
-	
+
 	private ArrayList<Object> processMany(QueryBuilder q) {
 		ArrayList<Object> list = new ArrayList<Object>();
 		try {

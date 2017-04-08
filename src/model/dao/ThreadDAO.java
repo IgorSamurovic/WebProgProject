@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 
 import controller.util.ParamProcessor;
+import model.Forum;
+import model.Post;
 import model.Thread;
 import model.User;
 import model.dao.util.Connector;
@@ -17,26 +19,27 @@ public class ThreadDAO
 	static String[] tables = {"obj.date", "obj.title", "usr.username"};
 	
 	static final String COUNT_QUERY_START = 
-			"SELECT COUNT(obj.ID) FROM "+ TABLE_NAME+ " obj";
+			"SELECT DISTINCT obj.id FROM " +TABLE_NAME+ " obj";
 
 	static final String FETCH_QUERY_START = 
-			" SELECT obj.*, " + 
+			" SELECT DISTINCT obj.*, " + 
 			" usr.username, usr.role, " + 
 			" frm.title, " +
 			" loc.locked " + 
 			" FROM THREAD obj";
 			
 	static final String JOIN_STRING = 
-		    " LEFT JOIN USER usr " +
-			" ON obj.owner = usr.id " +
-			" LEFT JOIN FORUM frm " +
-			" ON obj.forum = frm.id " + 
-			" LEFT JOIN (CLOSURE cls1, CLOSURE cls2, FORUM loc, FORUM del) " + 
-			" ON (cls1.child = frm.id AND cls1.parent = loc.id AND " +
-			    " cls2.child = frm.id AND cls2.parent = del.id AND " + 
-			    " loc.locked  = TRUE AND " +
-			    " del.deleted = TRUE) ";
+		    " LEFT JOIN (USER usr, FORUM frm) " +
+			" ON (obj.owner = usr.id AND obj.forum = frm.id) " +
+			" LEFT JOIN (CLOSURE delc, FORUM loc) " +   
+			" ON (delc.child = frm.id AND delc.parent = loc.id and loc.locked = TRUE) " +
+			" LEFT JOIN (CLOSURE locc, FORUM del) " +
+			" ON (locc.child = frm.id AND locc.parent = del.id and del.deleted = TRUE) ";
 
+	static final String JOIN_STRING_DEEP =
+			" LEFT JOIN (CLOSURE anc) " +
+			" ON (obj.forum = anc.child) ";
+	
 	// --------------------------------------------------------------------------------------------
 	// Processing
 
@@ -69,6 +72,7 @@ public class ThreadDAO
 		
 		// Search queries
 		// (ID)
+		.and("anc.parent = $ancestor")
 		.and("obj.forum = $forum")
 		.and("obj.owner = $owner")
 		// (Partial)
@@ -96,31 +100,50 @@ public class ThreadDAO
 	
 	// --------------------------------------------------------------------------------------------
 	// Getters
-
+	
+	@SuppressWarnings("unchecked")
+	public Thread getFirstThread(ArrayList<Object> list) {
+		return ((ArrayList<Thread>) list.get(1)).get(0);
+	}
+	
 	public ArrayList<Object> filter(ParamProcessor pp, User user) {
 		ArrayList<Object> list = new ArrayList<Object>();
 		QueryBuilder qb = new QueryBuilder(pp);
 		
 		Boolean showDescendants = pp.bool("showDescendants");
 		
-		// Let's see if we're searching through ancestry and not parenthood
+		String join = JOIN_STRING;
+		
+		// Ancestry vs parenthood
 		if (showDescendants != null && showDescendants) {
+			pp.add("ancestor", pp.integer("forum"));
 			pp.remove("forum");
+			join += JOIN_STRING_DEEP;
 		}
 		
 		// Create part of the query that deals with filters
 		processFilter(qb, pp, user);
-		qb.setJoin(JOIN_STRING);
+		qb.setJoin(join);
 		
+		// Counting
 		qb.setStart(COUNT_QUERY_START);
+		qb.setCounting(true);
 		list.add(qb.getNumRecords());
-
-		//pp.printDebug();
 		
+		// Getting the actual records
 		qb.setStart(FETCH_QUERY_START);
 		qb.limit("$page", "$perPage");
-		
+		qb.setCounting(false);
 		list.add(processMany(qb));
+		
+		// Add parent list if it's singular result
+		if (pp.integer("id") != null && (Integer) list.get(0) > 0) {
+			Thread obj = getFirstThread(list);
+			obj.setParents(new ForumDAO().getParentList(obj.getId()));
+		}
+		
+		//pp.printDebug();
+		//qb.printDebug();
 		
 		return list;
 	}
@@ -128,35 +151,35 @@ public class ThreadDAO
 	// --------------------------------------------------------------------------------------------
 	// SPECIAL OPERATIONS
 	
-	public int stick(Thread o, Boolean doStick) {
+	public boolean stick(Thread o, Boolean doStick) {
 		o.setLocked(doStick);
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET sticky=? WHERE id=?;");
 			stmt.setObject(1, doStick);
 			stmt.setObject(2, o.getId());
-			return stmt.executeUpdate();
+			return stmt.execute();
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
-		return 0;
+		return false;
 	}
 	
-	public int lock(Thread o, Boolean doLock) {
+	public boolean lock(Thread o, Boolean doLock) {
 		o.setLocked(doLock);
 		//propagate(o, "locked", "locked < ?", o.getLocked());
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET locked=? WHERE id=?;");
 			stmt.setObject(1, doLock);
 			stmt.setObject(2, o.getId());
-			return stmt.executeUpdate();
+			return stmt.execute();
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
-		return 0;
+		return false;
 	}
 	
 	// --------------------------------------------------------------------------------------------
@@ -173,14 +196,15 @@ public class ThreadDAO
 			stmt.setObject(5, o.getOwner());
 			stmt.setObject(6, o.getSticky());
 			stmt.setObject(7, o.getLocked());
-			return stmt.execute();
+			stmt.execute();
+			return true;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return false;
 	}
 
-	public int update(Thread o)
+	public boolean update(Thread o)
 	{
 		//propagate(o, "vistype", "vistype < ?", o.getVistype());
 		try (Connection conn = Connector.get();)
@@ -195,13 +219,13 @@ public class ThreadDAO
 			stmt.setObject(6, o.getSticky());
 			stmt.setObject(7, o.getLocked());
 			stmt.setObject(8, o.getId());
-			return stmt.executeUpdate();
+			return stmt.executeUpdate() > 0;
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
-		return 0;
+		return false;
 	}
 	
 	// --------------------------------------------------------------------------------------------
@@ -240,28 +264,31 @@ public class ThreadDAO
 	}
 	
 	private boolean softDelete(Thread o, boolean doDelete) {
+		o.setDeleted(doDelete);
+
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET deleted=? WHERE id=?;");
 			stmt.setObject(1, doDelete);
 			stmt.setObject(2, o.getId());
-			return stmt.execute();
+			return stmt.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return true;
+		return false;
 	}
-	
+
 	private boolean hardDelete(Thread o) {
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("DELETE FROM " + TABLE_NAME + " WHERE id=?;");
 			stmt.setObject(1, o.getId());
-			return stmt.execute();
+			stmt.execute();
+			return true;
 		} catch (Exception e) {
 			softDelete(o, true);
 		}
 		return false;
 	}
-
+	
 	private Thread processOne(PreparedStatement stmt) {
 		try {
 			stmt.execute();
@@ -275,7 +302,7 @@ public class ThreadDAO
 		}
 		return null;
 	}
-	
+
 	private ArrayList<Object> processMany(QueryBuilder q) {
 		ArrayList<Object> list = new ArrayList<Object>();
 		try {

@@ -50,7 +50,8 @@ public class Forum implements DataObject {
 		if (id != null && parent != null && id != 1) {
 			parentObj = new ForumDAO().findById(parent);
 			if (parentObj == null || parentObj.getId() == this.getId() ||
-				(parentObj != null && new ForumDAO().isChildOf(this, parentObj))) {
+				(parentObj != null && new ForumDAO().isChildOf(parentObj, this))) {
+				System.err.println(parentObj.getTitle() + " " + this.getTitle());
 		        return "parent";
 			}
 		} 

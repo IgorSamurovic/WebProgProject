@@ -23,8 +23,11 @@ public class Post implements DataObject {
 	private String _ownerUsername;
 	private Integer _ownerRole;
 	private String _threadTitle;
+	private String _forumId;
 	private String _forumTitle;
 	private Boolean _allowPosting;
+	private Integer _resultForumId;
+	private String _resultForumTitle;
 	
 	// Validation
 	public String checkForErrors() {
@@ -65,7 +68,8 @@ public class Post implements DataObject {
 	}
 	
 	public Post(Integer id, String text, Integer thread, Integer owner, Timestamp date, Boolean deleted,
-		String _ownerUsername, Integer _ownerRole, String _threadTitle, String _forumTitle, Boolean _allowPosting) {
+		String _ownerUsername, Integer _ownerRole, String _threadTitle, String _forumId, String _forumTitle, Boolean _allowPosting,
+		Integer _resultForumId, String _resultForumTitle) {
 		super();
 		this.id = id;
 		this.text = text;
@@ -76,13 +80,43 @@ public class Post implements DataObject {
 		this._ownerUsername = _ownerUsername;
 		this._ownerRole = _ownerRole;
 		this._threadTitle = _threadTitle;
+		this._forumId = _forumId;
 		this._forumTitle = _forumTitle;
 		this._allowPosting = _allowPosting;
+		this._resultForumId = _resultForumId;
+		this._resultForumTitle = _resultForumTitle;
 	}
 
 	// Attributes
 	
 	// Special
+	
+	@JsonProperty("_forumId")
+	public String getForumId() {
+		return _forumId;
+	}
+
+	public void setForumId(String _forumId) {
+		this._forumId = _forumId;
+	}
+	
+	@JsonProperty("_resultForumId")
+	public Integer getResultForumId() {
+		return _resultForumId;
+	}
+	
+	public void setResultForumId(Integer _resultForumId) {
+		this._resultForumId = _resultForumId;
+	}
+	
+	@JsonProperty("_resultForumTitle")
+	public String getResultForumTitle() {
+		return _resultForumTitle;
+	}
+
+	public void setResultForumTitle(String _resultForumTitle) {
+		this._resultForumTitle = _resultForumTitle;
+	}
 	
 	@JsonProperty("_ownerUsername")
 	public String getOwnerUsername() {

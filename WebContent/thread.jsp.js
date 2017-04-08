@@ -33,7 +33,8 @@ $(document).ready(function() {
 				
 				if (data.totalRecords === 1) {
 					
-					Search.create({
+					var threadSearch = Search.create({
+						cascade    : ['posts'],
 						useParams  : true,
 						isSingle   : true,
 						prefix     : "thread",
@@ -51,53 +52,60 @@ $(document).ready(function() {
 						},
 						renderFunc : Thread.renderMain,
 						updateFunc : function() {
+							console.log("thread upd8");
 							$(this.selTitle()).html(`${this.getOnlyObject().renderHeader()}`);
 						}
-					}).loadResults();
+					});
 											
 					// Render replies
 
-					if (!data[0].isDeleted()) {
-						Search.create({
-							useParams  : false,
-							prefix     : "posts",
-							parent     : "#postsPageContent",
-							objType    : Post,
-							dataFunc   : G.dbGet,
-							dataArgs   : {
-								url    : "post",
-								data   : function() {
-									return {
-										orderBy : "obj.DATE",
-										asc     : "FALSE",
-										thread  : params.thread,
-									};
-								},
+
+					var replySearch = Search.create({
+						useParams  : false,
+						prefix     : "posts",
+						parent     : "#postsPageContent",
+						objType    : Post,
+						dataFunc   : G.dbGet,
+						dataArgs   : {
+							url    : "post",
+							data   : function() {
+								return {
+									orderBy : "obj.DATE",
+									asc     : "TRUE",
+									thread  : params.thread,
+								};
 							},
-							renderFunc : Post.renderMain,
-							filter     : Post.renderFilterThread,
-							add : {
-								html  : Post.renderAdd,
-								label : 'Reply',
-								title : 'Reply',
-								data  : function() {
-									return {
-										thread  : params.thread,
-										owner  : User.getCurrent().data.id,
-									}
-								}, redirectTo : function(id) {
-									return `thread.jsp?thread=${params.thread}&page=1000000`;
-								} , condition : function() {
-									var currentUser = User.getCurrent();
-									var currentThread = Search.byPrefix("thread").getOnlyObject();
-									return currentThread.canBePostedInBy(currentUser);
+						},
+						renderFunc : Post.renderMain,
+						filter     : Post.renderFilterThread,
+						add : {
+							html  : Post.renderAdd,
+							label : 'Reply',
+							title : 'Reply',
+							data  : function() {
+								return {
+									thread  : params.thread,
+									owner  : User.getCurrent().data.id,
 								}
-							},
-							updateFunc : function() {
-								$(this.selTitle()).html(`Replies (${this.data.totalRecords})`);
+							/*}, redirectTo : function(id) {
+								return `thread.jsp?thread=${params.thread}&page=1000000`;*/
+							} , condition : function() {
+								var currentUser = User.getCurrent();
+								var currentThread = Search.byPrefix("thread").getOnlyObject();
+								return currentThread.canBePostedInBy(currentUser);
 							}
-							
-						}).loadResults();
+						},
+						updateFunc : function() {
+							console.log("reply upd8");
+							$(this.selTitle()).html(`Replies (${this.data.totalRecords})`);
+						}
+						
+					});
+					
+					threadSearch.loadResults();
+					
+					if (!data[0].isDeleted()) {
+						replySearch.loadResults();
 					}
 					
 					G.protectParam('id');

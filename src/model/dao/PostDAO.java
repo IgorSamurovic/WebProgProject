@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import controller.util.ParamProcessor;
 import model.Post;
+import model.Post;
 import model.User;
 import model.dao.util.Connector;
 import model.dao.util.QueryBuilder;
@@ -17,30 +18,49 @@ public class PostDAO
 	static String[] tables = {"obj.date", "obj.text", "thr.title", "frm.title", "usr.username"};
 	
 	static final String COUNT_QUERY_START = 
-			"SELECT COUNT(obj.ID) FROM " +TABLE_NAME+ " obj";
+			"SELECT DISTINCT obj.id FROM " +TABLE_NAME+ " obj";
 
 	static final String FETCH_QUERY_START = 
-			" SELECT obj.*, " + 
+			" SELECT DISTINCT obj.*, " + 
 			" usr.username, usr.role, " + 
 			" thr.title, " +
-			" frm.title, " + 
+			" frm.id, frm.title, " + 
 			" loc.locked " + 
 			" FROM POST obj ";
-			
+		
+	static final String FETCH_QUERY_START_DEEP = 
+			" SELECT DISTINCT obj.*, " + 
+			" usr.username, usr.role, " + 
+			" thr.title, " +
+			" frm.id, frm.title, " + 
+			" loc.locked, " + 
+			" txt.id, txt.title " +
+			" FROM POST obj ";
+	
 	static final String JOIN_STRING = 
 			" LEFT JOIN (USER usr, THREAD thr, FORUM frm) " + 
 		    " ON (obj.owner = usr.id AND obj.thread = thr.id AND thr.forum = frm.id) " + 
-			" LEFT JOIN (CLOSURE cls1, CLOSURE cls2, FORUM loc, FORUM del) " + 
-			" ON (cls1.child = frm.id AND cls1.parent = loc.id AND " +
-			    " cls2.child = frm.id AND cls2.parent = del.id AND " + 
-			    " loc.locked  = TRUE AND " +
-			    " del.deleted = TRUE) ";
+			" LEFT JOIN (CLOSURE delc, FORUM loc) " +   
+			" ON (delc.child = frm.id AND delc.parent = loc.id and loc.locked = TRUE) " +
+			" LEFT JOIN (CLOSURE locc, FORUM del) " +
+			" ON (locc.child = frm.id AND locc.parent = del.id and del.deleted = TRUE) ";
 
+	static final String JOIN_STRING_DEEP = 
+			" LEFT JOIN (CLOSURE cls3, FORUM txt) " +
+			" ON (cls3.child = frm.id AND cls3.parent = txt.id) ";
+	
 	// --------------------------------------------------------------------------------------------
 	// Processing
 	
 	private Post process(ResultSet rs) throws Exception
 	{
+		Integer txtId = null;
+		String txtTitle = null;
+		
+		try {
+			txtId = rs.getInt("txt.id");
+			txtTitle = rs.getString("txt.title");
+		} catch (Exception e) {}
 		return new Post
 		(
 			rs.getInt("id"),
@@ -49,12 +69,14 @@ public class PostDAO
 			rs.getInt("owner"),
 			rs.getTimestamp("date"),
 			rs.getBoolean("deleted"),
-			
 			rs.getString("usr.username"),
 			rs.getInt("usr.role"),
 			rs.getString("thr.title"),
+			rs.getString("frm.id"),
 			rs.getString("frm.title"),
-			true
+			rs.getString("loc.locked") == null,
+			txtId,
+			txtTitle
 		);
 	}
 
@@ -68,6 +90,7 @@ public class PostDAO
 		.and("obj.thread = $thread")
 		.and("obj.owner = $owner")
 	   	// (Partial)
+		.and("txt.title LIKE $forumTitle")
 		.and("thr.title LIKE $threadTitle")
 		.and("usr.username LIKE $ownerUsername")
 		.and("obj.text LIKE $text")
@@ -92,22 +115,39 @@ public class PostDAO
 	// --------------------------------------------------------------------------------------------
 	// Getters
 	
+	@SuppressWarnings("unchecked")
+	public Post getFirstPost(ArrayList<Object> list) {
+		return ((ArrayList<Post>) list.get(1)).get(0);
+	}
+	
 	public ArrayList<Object> filter(ParamProcessor pp, User user) {
 		ArrayList<Object> list = new ArrayList<Object>();
 		QueryBuilder qb = new QueryBuilder(pp);
 		
+		String query;
+		
+		// If forum title is passed in a query, that means we need to search deeper
+		String forumTitle = pp.string("forumTitle");
+		if (forumTitle != null) {
+			qb.setJoin(JOIN_STRING + JOIN_STRING_DEEP);
+			query = FETCH_QUERY_START_DEEP;
+		} else {
+			qb.setJoin(JOIN_STRING);
+			query = FETCH_QUERY_START;
+		}
+
 		// Create part of the query that deals with filters
 		processFilter(qb, pp, user);
-		qb.setJoin(JOIN_STRING);
 		
+		// Counting
 		qb.setStart(COUNT_QUERY_START);
+		qb.setCounting(true);
 		list.add(qb.getNumRecords());
 
-		//pp.printDebug();
-		
-		qb.setStart(FETCH_QUERY_START);
-		qb.limit("$page", "$perPage");
-		
+		// Getting the actual records
+		qb.setStart(query);
+		qb.setCounting(false);
+		qb.limit("$page", "$perPage");		
 		list.add(processMany(qb));
 		
 		return list;
@@ -134,7 +174,7 @@ public class PostDAO
 		return false;
 	}
 	
-	public int update(Post o)
+	public boolean update(Post o)
 	{
 		try (Connection conn = Connector.get();)
 		{
@@ -144,13 +184,13 @@ public class PostDAO
 			stmt.setObject(2, o.getThread());
 			stmt.setObject(3, o.getOwner());
 			stmt.setObject(4, o.getId());
-			return stmt.executeUpdate();
+			return stmt.executeUpdate() > 0;
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
-		return 0;
+		return false;
 	}	
 
 	// --------------------------------------------------------------------------------------------
@@ -189,28 +229,31 @@ public class PostDAO
 	}
 	
 	private boolean softDelete(Post o, boolean doDelete) {
+		o.setDeleted(doDelete);
+
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("UPDATE " + TABLE_NAME + " SET deleted=? WHERE id=?;");
 			stmt.setObject(1, doDelete);
 			stmt.setObject(2, o.getId());
-			return stmt.execute();
+			return stmt.executeUpdate() > 0;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return true;
+		return false;
 	}
-	
+
 	private boolean hardDelete(Post o) {
 		try (Connection conn = Connector.get();) {
 			PreparedStatement stmt = conn.prepareStatement("DELETE FROM " + TABLE_NAME + " WHERE id=?;");
 			stmt.setObject(1, o.getId());
-			return stmt.execute();
+			stmt.execute();
+			return true;
 		} catch (Exception e) {
 			softDelete(o, true);
 		}
 		return false;
 	}
-
+	
 	private Post processOne(PreparedStatement stmt) {
 		try {
 			stmt.execute();
@@ -224,7 +267,7 @@ public class PostDAO
 		}
 		return null;
 	}
-	
+
 	private ArrayList<Object> processMany(QueryBuilder q) {
 		ArrayList<Object> list = new ArrayList<Object>();
 		try {
@@ -239,4 +282,5 @@ public class PostDAO
 		}
 		return list;
 	}
+	
 }

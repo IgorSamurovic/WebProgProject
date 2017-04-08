@@ -9,16 +9,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import controller.util.ParamProcessor;
-import model.User;
 
 public class QueryBuilder
 {
 	private static final String PARAM_PATTERN_STRING = "\\$[^\\s]+";
 	private static final Pattern PARAM_PATTERN = Pattern.compile(PARAM_PATTERN_STRING);
 	
-	private String query;
+	private boolean count;
 	private String start;
 	private String join;
+	private String query;
+	private String group;
+	private String order;
+	private String limit;
 	
 	private ArrayList<Object> params;
 	private ArrayList<Boolean> inexact;
@@ -27,6 +30,10 @@ public class QueryBuilder
 	private Connection conn;
 	private boolean hasArgs;
 	ParamProcessor pp;
+	
+	public void printDebug() {
+		System.err.println(this.getQuery());
+	}
 	
 	public String checkTable(String orderBy, String[] tables) {
 		String fix = tables[0];
@@ -50,17 +57,40 @@ public class QueryBuilder
 		return alreadySorting ? " , " : " ORDER BY ";
 	}
 	
+	public String getQuery()
+	{
+		String startCount = "";
+		String endCount = "";
+		if (count) {
+			startCount = "SELECT count(1) FROM (";
+			endCount = ") temp";
+		}
+		return startCount + 
+				start + " " + join + " " + query + " " 
+				+ group + " " + order + " " + limit + endCount ;
+	}
+	
 	public QueryBuilder()
 	{
 		this.params = new ArrayList<Object>();
 		this.inexact = new ArrayList<Boolean>();
-		this.query = "";
-		this.start = "";
 		this.hasArgs = false;
 		this.alreadySorting = false;
 		this.numRecords = 0;
 		this.pp = null;
+		
+		this.count = false;
+		this.start = "";
 		this.join = "";
+		this.query = "";
+		this.group = "";
+		this.order = "";
+		this.limit = "";
+	}
+	
+	public QueryBuilder setCounting(Boolean count) {
+		this.count = count;
+		return this;
 	}
 	
 	public QueryBuilder(ParamProcessor pp) {
@@ -68,34 +98,35 @@ public class QueryBuilder
 		this.pp = pp;
 	}
 	
-	public QueryBuilder setStart(String start)
-	{
+	// Simple setters
+	
+	public QueryBuilder setStart(String start) {
 		this.start = start;
 		return this;
 	}
 	
-	public QueryBuilder setJoin(String join)
-	{
+	public QueryBuilder setJoin(String join) {
 		this.join = join;
 		return this;
 	}
 	
-	private void addParam(Object obj, Boolean inexact)
+	public QueryBuilder setGroupBy(String group) {
+		this.group = " GROUP BY " + group;
+		return this;
+	}
+	
+	public void addParam(Object obj, Boolean inexact)
 	{
 		this.params.add(obj);
 		this.inexact.add(inexact);
 	}
 	
-	private void addParam(Object obj)
+	public void addParam(Object obj)
 	{
 		this.params.add(obj);
 		this.inexact.add(false);
 	}
-	
-	public String getQuery()
-	{
-		return this.start + " " + this.join + " " + this.query;
-	}
+
 	
 	// Checks if a string has $something at the start, then returns the something value
 	// From the parameter processor
@@ -235,15 +266,15 @@ public class QueryBuilder
 		if (asc == null) asc = "TRUE";
 		
 		if (orderBy != null) {
-			query += orderByString() + orderBy;
+			order += orderByString() + orderBy;
 			if (asc != null && !asc.equals("")) {
 				asc = asc.toUpperCase();
 				if (asc.equals("TRUE") || asc.equals("ASC")) {
 					asc = "ASC";
-					query += " " + asc;
+					order += " " + asc;
 				} else if (asc.equals("FALSE") || asc.equals("DESC")) {
 					asc = "DESC";
-					query += " " + asc;
+					order += " " + asc;
 				}
 			}
 			this.alreadySorting = true;
@@ -261,7 +292,7 @@ public class QueryBuilder
 		{
 			ResultSet rs = this.getResultSet();
 			if(rs.next()) {
-				this.numRecords = rs.getInt("COUNT(obj.id)");
+				this.numRecords = rs.getInt(1);
 				return numRecords;
 			}
 		}
@@ -293,6 +324,7 @@ public class QueryBuilder
 	
 	public QueryBuilder limit(Integer page, Integer perPage)
 	{
+		limit = "";
 		if (page == null || page <= 0) {
 			page = 1;
 		}
@@ -319,7 +351,7 @@ public class QueryBuilder
 		
 		Integer startFrom = (page-1) * perPage;
 		
-		query += " LIMIT ?, ?";
+		limit += " LIMIT ?, ?";
 	
 		if (startFrom != null && startFrom >= 0)
 			addParam(startFrom);
@@ -332,11 +364,6 @@ public class QueryBuilder
 			addParam(DEFAULT_PER_PAGE);
 		
 		return this;
-	}
-	
-	public void end()
-	{
-		query += ";";
 	}
 
 }

@@ -28,6 +28,14 @@ $(document).ready(function() {
 				canHide : true,
 				canFilter : true
 			}));
+		} else {
+			G.addPage(H.page({
+				name: 'posts',
+				title: 'Posts',
+				canHide : true,
+				canFilter : true,
+				hiddenContent : true
+			}));
 		}
 		
 		// Determine owner first
@@ -41,9 +49,10 @@ $(document).ready(function() {
 			}, function(data) {
 				G.log(data);
 				if (data.totalRecords === 1) {
-					Search.create({
+					var forumSearch = Search.create({
 						useParams  : true,
 						isSingle   : true,
+						cascade    : ['subforums'],
 						prefix     : "forum",
 						parent     : "#forumPageContent",
 						objType    : Forum,
@@ -61,12 +70,13 @@ $(document).ready(function() {
 						updateFunc : function() {
 							$(this.selTitle()).html(`${this.getOnlyObject().renderHeader()}`);
 						}
-					}).loadResults();
+					});
 					
 					// Render forum page
 					
-					Search.create({
+					var subforumsSearch = Search.create({
 						useParams  : false,
+						cascade    : [params.id == 1 ? 'posts' : 'threads'],
 						prefix     : "subforums",
 						parent     : "#subforumsPageContent",
 						objType    : Forum,
@@ -94,19 +104,21 @@ $(document).ready(function() {
 							}, redirectTo : function(id) {
 								return `forum.jsp?id=${id}`;
 							} , condition : function() {
-								return User.getCurrent().isAdmin();
+								var currentUser = User.getCurrent();
+								var currentForum = Search.byPrefix("forum").getOnlyObject();
+								return currentForum.canBePostedInBy(currentUser);
 							}
 						},
 						updateFunc : function() {
 							$(this.selTitle()).html(`Subforums (${this.data.totalRecords})`);
 						}
 						
-					}).loadResults();
+					});
 					
 					// Threads
 					
 					if (params.id != 1) {
-						Search.create({
+						var threadsSearch = Search.create({
 							useParams  : false,
 							prefix     : "threads",
 							parent     : "#threadsPageContent",
@@ -148,8 +160,38 @@ $(document).ready(function() {
 							updateFunc : function() {
 								$(this.selTitle()).html(`Threads (${this.data.totalRecords})`);
 							}
-						}).loadResults();
+						});
 					}
+						
+					// Posts
+					
+					if (params.id == 1) {
+						var postsSearch = Search.create({
+							useParams  : false,
+							filterOnly : true,
+							prefix     : "posts",
+							parent     : "#postsPageContent",
+							objType    : Post,
+							dataFunc   : G.dbGet,
+							dataArgs   : {
+								url    : "post",
+								data   : function() {
+									return {
+										orderBy : "obj.DATE",
+										asc     : "FALSE",
+										deleted : false,
+									};
+								},
+							},
+							renderFunc : Post.render,
+							filter     : Post.renderFilter,
+							updateFunc : function() {
+								$(this.selTitle()).html(`Posts (${this.data.totalRecords})`);
+							}
+						});
+					}
+					
+					forumSearch.loadResults();
 					
 					G.protectParam('id');
 					G.popStateHandler();

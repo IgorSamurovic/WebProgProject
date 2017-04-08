@@ -1,6 +1,7 @@
 package model;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -31,6 +32,7 @@ public class Thread implements DataObject {
 	private String _forumTitle;
 	private Integer _ownerRole;
 	private Boolean _allowPosting;
+	private ArrayList<String[]> _parents;
 	
 	// Validation
 	public String checkForErrors() {
@@ -76,7 +78,7 @@ public class Thread implements DataObject {
 	}
 	
 	// Constructors
-	
+
 	public Thread() {
 		super();
 		this.sticky = false;
@@ -144,6 +146,15 @@ public class Thread implements DataObject {
 		this._allowPosting = _allowPosting;
 	}
 
+	@JsonProperty("_parents")
+	public ArrayList<String[]> getParents() {
+		return _parents;
+	}
+
+	public void setParents(ArrayList<String[]> arrayList) {
+		this._parents = arrayList;
+	}
+	
 	// Standard
 	
 	public Integer getId()

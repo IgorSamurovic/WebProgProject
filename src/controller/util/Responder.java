@@ -32,5 +32,25 @@ public class Responder
 		}
 		return false;
 	}
+	
+	public static boolean out(HttpServletResponse response, Object txt) {
+		try {
+			response.getWriter().print(String.valueOf(txt));
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	public static boolean error(HttpServletResponse response, Object txt) {
+		try {
+			response.getWriter().print("Error: " + String.valueOf(txt));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.err.println("Responder.error: " + String.valueOf(txt));
+		return false;
+	}
 
 }

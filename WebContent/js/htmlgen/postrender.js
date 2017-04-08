@@ -14,11 +14,12 @@ $.extend(Post, {
 		$(target).setFields(obj.data);
 	},
 	
-	renderHeader : function(cls) {
-		return `<a class="link2 ${cls}" href="post.jsp?id=${this.data.id}">${this.data.threadTitle}</a>`;
+	renderLink : function(cls) {
+		return `<a class="link2 ${cls}" href="post.jsp?id=${this.data.id}">Post</a>`;
 	},
-	renderText : function(shorten) {
-		return (this.data.text !== undefined && this.data.text !== null) ? this.data.text.shorten(shorten) : "No text";
+	
+	renderHeader : function(cls) {
+		return `Post in <a class="link2 ${cls}" href="thread.jsp?thread=${this.data.thread}">${this.xtra.threadTitle}</a>`;
 	},
 	
 	renderText : function(shorten) {
@@ -36,6 +37,28 @@ $.extend(Post, {
 			</div>
 		`;
 	},
+
+	renderFilter : function() {
+		return `
+			<div class="columnFlex flex8">
+				<div class="rowFlex">
+					<div class="columnFlex flex4">
+						<div class="rowFlex">
+							${Forum.inputTitle({name:"forumTitle"})}
+							${Thread.inputTitle({name:"threadTitle"})}
+						</div>
+						${Forum.inputOwner({name:"ownerUsername"})}
+					</div>
+					
+					<div class="columnFlex flex3">
+						${Forum.inputDate({name:'dateA'})}
+						${Forum.inputDate({name:'dateB'})}
+					</div>
+				</div>
+				${Post.inputText()}
+			</div>
+		`;
+	}, 
 	
 	renderFilterThread : function() {
 		return `
@@ -50,7 +73,7 @@ $.extend(Post, {
 		var currentUser = User.getCurrent();
 		
 		// Let's make buttons first!
-		var buttons = [`<div class="buttons">`];
+		var buttons = [`<div class="alignRight">`];
 		
 		// Editing <Only admin or owner>
 		if (post.canBeEditedBy(currentUser)) {
@@ -69,9 +92,9 @@ $.extend(Post, {
 		
 		s.push('{Avatar}');
 		
-		var dlFields = ['Owner', 'Thread', 'Date', 'Text', ];
+		var dlFields = ['Owner', 'Found', 'Forum', 'Thread', 'Post', 'Date', 'Text', ];
 		
-		if (currentUser.isAdmin()) dlFields1.push('Deleted');
+		if (currentUser.isAdmin()) dlFields.push('Deleted');
 		
 		s.push(H.dl(dlFields, 'flex2'));
 
@@ -81,6 +104,10 @@ $.extend(Post, {
 			Avatar     : User.renderAvatarLink(post.data.owner, 80, 80),
 			Text       : post.renderText(120),
 			Owner      : post.renderOwner(),
+			Thread     : post.renderThread(),
+			Post   	   : post.renderLink(),
+			Found      : post.xtra.resultForumId ? post.renderResultForum() : post.renderForum(),
+			Forum      : post.renderForum(),
 			Date       : post.renderDate(),
 			Deleted    : post.renderDeleted()
 		});
@@ -88,6 +115,18 @@ $.extend(Post, {
 		return s;
 	},
 	
+	renderResultForum(cls) {
+		return Forum.renderTitle("", this.xtra.resultForumId, this.xtra.resultForumTitle);
+	},
+	
+	renderForum(cls) {
+		return Forum.renderTitle("", this.xtra.forumId, this.xtra.forumTitle);
+	}, 
+	
+	renderThread(cls) {
+		return Thread.renderTitle("", this.data.thread, this.xtra.threadTitle);
+	}, 
+
 	renderMain : function(post=this) {
 		var currentUser = User.getCurrent();
 		
@@ -115,10 +154,10 @@ $.extend(Post, {
 						${post.renderDate()}
 					</div>
 					<div class="columnFlex flex05 alignRight">
-						
+						${post.renderLink()}
 					</div>
 				</div>
-				<hr/>
+				<hr/> 
 				<div class="rowFlex">
 					<div class="columnFlex flex05">
 						${post.renderOwner()}

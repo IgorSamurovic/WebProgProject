@@ -1,19 +1,19 @@
 $.extend(DataObj, {
 	
-	selectAsc : function() {
+	selectAsc : function(defaultAsc=1) {
 		return H.selectBase({
 			name : "asc",
 			options : [['ASC', 'In ascending order'], ['DESC', 'In descending order']],
-			selected : 1
+			selected : defaultAsc
 		});	
 	},
 		
-	selectOrderBy : function(options=this._orderByOptions) {
+	selectOrderBy : function(options=this._orderByOptions, defaultAsc=1) {
 		return [H.selectBase({
 			name : "orderBy",
 			prefix: "Order by",
 			options : options || []
-		}), this.selectAsc()].join("");
+		}), this.selectAsc(defaultAsc)].join("");
 	}, 
 	
 	inputId : function(alt) {

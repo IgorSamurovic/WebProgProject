@@ -142,14 +142,14 @@ $(document).ready(function() {
 	$(document).on('click', '[name="editBtn"]', function(button) {
 		const that = this;
 		Search.getObject(this).openEditModal(undefined, function() {
-			Search.reloadAll();
+			Search.getSearch(that).loadResults();
 		});
 	});
 	
 	$(document).on('click', '[name="deleteBtn"]', function(button) {
 		const that = this;
 		Modals.deleteDialog(Search.getObject(this), $(this).data("val"), function() {
-			Search.getSearch(that).reloadAll();
+			Search.getSearch(that).loadResults();
 		});
 	});
 });
