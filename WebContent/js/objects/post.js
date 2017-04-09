@@ -12,7 +12,7 @@ const Post = Object.assign(Object.create(DataObj), {
 	// Editing
 	
 	canBeEditedBy(user) {
-		return !this.isDeleted() && (
+		return !this.isDeleted() && !user.isBanned() && (
 			user.isAdmin() ||
 			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user) ||
 			user.isUser() && user.owns(this) && this.xtra.allowPosting
@@ -22,7 +22,7 @@ const Post = Object.assign(Object.create(DataObj), {
 	// Deleting	
 	
 	canBeDeletedBy(user) {
-		return (
+		return !this.isDeleted() && !user.isBanned() && (
 			user.isAdmin() ||
 			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user) || 
 			user.isUser() && user.owns(this) && this.xtra.allowPosting

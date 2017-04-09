@@ -1,5 +1,12 @@
 $.extend(User, {
 
+	renderLogin : function() {
+		return `
+			${this.inputEntry()}
+			${this.inputPassword()}
+		`;
+	},
+	
 	renderSelectModal : function(target, elementTarget) {
 		const modal = $(target).closest('.modal').data('modalObject');
 		
@@ -53,6 +60,7 @@ $.extend(User, {
 				${H.msg(name)}
 			</form>`;
 		
+	Avatar.renderUpload(target, user.data.id);
 		$(target).append(html);
 		$(form).setFields(user.data);
 		return form;
@@ -67,14 +75,18 @@ $.extend(User, {
 	
 	// Renders the specified field into HTML
 	
-	renderAvatar : function(id=this.data.id, height=120, width=120) {
+	renderAvatar : function(id=this.data.id, height=120, width=120, src=`avatar?id=${id}`) {
 		//return '<img src="avatar?id=' + this.data.id + '&time=' + new Date().getTime() + '" class="useravatar" height="' +height+  '" width="' +width+ '"/>';
-		return '<img src="avatar?id=' +id+ '" class="useravatar" height="' +height+ '" width="' +width+ '"/>';
+		return `<img src="${src}" class="useravatar" height="${height}" width="${width}"/>`;
 	},
 	
 	renderAvatarLink: function (id=this.data.id, height=120, width=120, cls="") {
 		return '<a class="cls" href="profile.jsp?id=' + id + '">' + this.renderAvatar(id, height, width) + '</a>';
 	},
+	
+	renderHeader :function(id=this.data.id, username=this.data.username) {
+		return User.renderUsername(id, username);
+	}, 
 	
 	renderUsername : function(id=this.data.id, username=this.data.username) {
 		return `<a class="link2" href="profile.jsp?id=${id}">${username}</a>`;
@@ -157,7 +169,7 @@ $.extend(User, {
 				${User.inputEmail()}
 				${User.inputPassword()}
 				${User.inputConfirmPassword()}
-				${User.selectRole({}, strict=true)}
+				${User.getCurrent().isAdmin() ? User.selectRole({}, strict=true) : ""}
 				${User.inputName()}
 				${User.inputSurname()}
 			</div>

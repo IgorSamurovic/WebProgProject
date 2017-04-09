@@ -14,12 +14,12 @@
 				</li>
 				
 				<% if (current.getRole() >= User.Role.USER) {%>
-				<li>
+				<li class="noMargins">
 					
-					<a class ="right" href='<%= "profile.jsp?id=" + current.getId() %> '>  
-						<img width="40" height="40" src='<%= "avatar?id=" + current.getId() %> ' class="useravatar"/>
+					<a class ="noMargins right" href='<%= "profile.jsp?id=" + current.getId() %> '>  
+						<img width="40" height="40" src='<%= "avatar?id=" + current.getId() %> ' class="useravatarSmall"/>
 					</a>
-					<a class="right link2" id="linkLogout" href="logout.jsp">&timesLogout</a>
+					<a class="right link2 nav" id="linkLogout" href="logout.jsp">&timesLogout</a>
 				</li>
 				<% } %>
 		

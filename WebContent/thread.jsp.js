@@ -52,8 +52,12 @@ $(document).ready(function() {
 						},
 						renderFunc : Thread.renderMain,
 						updateFunc : function() {
-							console.log("thread upd8");
-							$(this.selTitle()).html(`${this.getOnlyObject().renderHeader()}`);
+							var obj = this.getOnlyObject();
+							if (obj) {
+								$(this.selTitle()).html(`${obj.renderHeader()}`);
+							} else {
+								Page.redirect();
+							}
 						}
 					});
 											

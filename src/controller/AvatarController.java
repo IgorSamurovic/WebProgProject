@@ -160,11 +160,10 @@ public class AvatarController extends HttpServlet {
 		{
 			File f = new File(getAvatarPath(id));
 			File old = new File(getAvatarPath(id) + ".old");
-			if (current.getRole() >= User.Role.ADMIN)
-			{
-				if (old.exists()) old.delete();
-				f.renameTo(old);
-			}
+
+			if (old.exists()) old.delete();
+			f.renameTo(old);
+
 		}
 		else
 		{

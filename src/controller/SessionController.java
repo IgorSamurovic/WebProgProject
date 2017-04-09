@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import controller.util.ParamProcessor;
+import controller.util.Responder;
 import model.User;
 import model.dao.UserDAO;
 import util.Cookies;
@@ -41,12 +42,12 @@ public class SessionController extends HttpServlet {
 			}
 			else
 			{
-				response.sendError(401);
+				Responder.error(response, "login");
 			}
 		}
 		else
 		{
-			response.sendError(401);
+			Responder.error(response, "login");
 		}
 	}
 	

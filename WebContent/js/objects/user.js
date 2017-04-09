@@ -2,6 +2,10 @@ const  User = Object.assign(Object.create(DataObj), {
 
 	_table : 'user',
 	
+	isBanned : function() {
+		return this.data.banned || this.data.deleted;
+	}, 
+	
 	getTitle : function() {
 		return this.renderUsername();
 	},

@@ -35,7 +35,7 @@ public class ForumController extends HttpServlet {
 		// First initialize variables
 		User current = Cookies.getUser(request);
 		
-		if (current == null || !current.isAdmin()) {
+		if (current == null || !current.isAdmin() || current.getBanned()) {
 			Responder.error(response, "access");
 			return;
 		}

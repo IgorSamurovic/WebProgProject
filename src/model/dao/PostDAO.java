@@ -184,7 +184,7 @@ public class PostDAO
 	 				txt = txt.substring(start, end);
 					
 	 				txt = txt.replaceAll("(?i)"+Pattern.quote(text), "<mark>"+text.toUpperCase()+"</mark>");
-				} else if (thread == null || pp.string("id") == null) {
+				} else if (thread == null && pp.string("id") == null) {
 					if (end > 100) { 
 						end = 100;
 					}

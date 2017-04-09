@@ -6,7 +6,7 @@ $.extend(User, {
 		['obj.role', 'Role'],
 		['obj.email', 'Email'],
 	],
-
+	
 	selectOrderBy : function() {
 		return DataObj.selectOrderBy(this._orderByOptions, 0)
 	}, 
@@ -68,8 +68,19 @@ $.extend(User, {
 			placeholder : "Email",
 			maxlength : '40',
 			pattern   : '.{3,40}',
-			error     : 'Must be a proper Email address.',
-			val       : 'selectObject',
+			error     : 'Must be a proper Email address.'
+		});
+	},
+	
+	inputEntry : function(alt) {
+		return H.inputBase({
+			required  : true,
+			alt       : alt, 
+			name      : 'entry',
+			placeholder : "Username or Email",
+			maxlength : '40',
+			pattern   : '.{3,40}',
+			error     : 'This field must be at least 3 characters long.',
 		});
 	},
 	

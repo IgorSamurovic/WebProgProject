@@ -7,7 +7,7 @@ const Forum = Object.assign(Object.create(DataObj), {
 	
 	// Posting
 	canBePostedInBy(user) {
-		return !this.isDeleted() && (
+		return !this.isDeleted() && !user.isBanned() && (
 			user.isAdmin() ||
 			user.isMod() ||
 			user.isUser() && !this.data.locked && this.xtra.allowPosting
@@ -17,7 +17,7 @@ const Forum = Object.assign(Object.create(DataObj), {
 	// Editing
 	
 	canBeEditedBy(user) {
-		return !this.isDeleted() && (
+		return !this.isDeleted() && !user.isBanned() && (
 			user.isAdmin()
 		);
 	},
@@ -25,7 +25,7 @@ const Forum = Object.assign(Object.create(DataObj), {
 	// Deleting	
 	
 	canBeDeletedBy(user) {
-		return (
+		return !this.isDeleted() && !user.isBanned() && (
 			user.isAdmin() && !this.isGod()
 		);
 	},
@@ -33,7 +33,7 @@ const Forum = Object.assign(Object.create(DataObj), {
 	// Locking
 	
 	canBeLockedBy(user) {
-		return !this.isDeleted() && (
+		return !this.isDeleted() && !user.isBanned() && (
 			user.isAdmin() && !this.isGod()
 		);
 	},

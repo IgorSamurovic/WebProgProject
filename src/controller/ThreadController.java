@@ -36,7 +36,7 @@ public class ThreadController extends HttpServlet {
 		User current = Cookies.getUser(request);
 		ThreadDAO dao = new ThreadDAO();
 		
-		if (current == null || current.isGuest()) {
+		if (current == null || current.isGuest() || current.getBanned()) {
 			Responder.error(response, "access");
 			return;
 		}

@@ -44,7 +44,12 @@ $(document).ready(function() {
 						},
 						renderFunc : Post.renderMain,
 						updateFunc : function() {
-							$(this.selTitle()).html(`${this.getOnlyObject().renderHeader()}`);
+							var obj = this.getOnlyObject();
+							if (obj) {
+								$(this.selTitle()).html(`${obj.renderHeader()}`);
+							} else {
+								Page.redirect();
+							}
 						}
 					}).loadResults();
 									

@@ -37,9 +37,7 @@ $.extend(Thread, {
 		
 	},
 	
-	renderEdit : function(target, obj=this) {
-		const isMainForum = obj.isGod();
-		
+	renderEdit : function(target, obj=this) {		
 		const html = `
 			<div class="columnFlex wide">
 				${Thread.inputTitle()}
@@ -204,9 +202,9 @@ $.extend(Thread, {
 						${thread.renderDate()}
 					</div>
 					<div class="wide flex3">
-						${thread.data.sticky ? "Sticky" : ""}
-						${thread.data.locked ? "Locked" : ""}
-						${thread.data.deleted && currentUser.isAdmin() ? "Deleted" : ""}
+						${thread.data.sticky ? H.smallImg("sticky.png") : ""}
+						${thread.data.locked ? H.smallImg("locked.png") : ""}
+						${thread.data.deleted && currentUser.isAdmin() ? H.smallImg("deleted.png") : ""}
 						${thread.renderTitle()}					
 					</div>
 				</div>

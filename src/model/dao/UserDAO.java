@@ -285,6 +285,7 @@ public class UserDAO {
 			stmt.execute();
 			return true;
 		} catch (Exception e) {
+			//e.printStackTrace();
 			softDelete(o, true);
 		}
 		return false;

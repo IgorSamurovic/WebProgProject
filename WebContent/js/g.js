@@ -37,12 +37,19 @@ var G = {
 		
 	// Shows a 'loading' gif in the middle of the screen
 	loading : function(isLoading) {
-		if (false && this._loadingInitialized === undefined) {
+		if (this._loadingInitialized === undefined) {
+			/*$('body').append(`
+				<div id="asyncLoadingImage" class="modalLoading">
+					<img class="loadingImage" height="100" width="100" src="res/img/loading.gif"/>
+				</div>
+			`);*/
+			
 			$('body').append(`
-					<div id="asyncLoadingImage" class="modal">
-						<img class="loadingImage" height="200" width="200" src="res/img/loading.gif"/>
-					</div>
-				`);	
+				<div id="asyncLoadingImage" class="modalLoading">
+					<img class="loadingImage" height="200" width="200" src="res/img/loading.gif"/>
+				</div>
+			`);
+			
 			this._loadingInitialized = true;	
 		}
 		
@@ -318,8 +325,13 @@ var G = {
 		var images = document.images;
 	    for (var i=0; i<images.length; i++)
 	    {
-	    	if (images[i].src.includes(str))
-	    		images[i].src = images[i].src.replace(/\btime=[^&]*/, 'time=' + new Date().getTime());
+	    	if (images[i].src.includes('avatar') && images[i].src.includes(str)) {
+	    		if (images[i].src.includes('&time=')) {
+	    			images[i].src = images[i].src.replace(/\btime=[^&]*/, 'time=' + new Date().getTime());
+	    		} else {
+	    			images[i].src = `${images[i].src}&time=${new Date().getTime()}`;
+	    		}
+	    	}	
 	    }
 	},
 	
@@ -354,23 +366,21 @@ var G = {
 			if (type === null || type === undefined) {
 				$(query).removeClass("good");
 				$(query).removeClass("bad");
-				msg = msg + btn;
+				msg = btn + msg;
 				$(query).html(msg);
 			} else if (type === true || type === "good" || type === "success") {
 				$(query).addClass("good");
 				$(query).removeClass("bad");
-				msg = msg + btn;
+				msg = btn + msg;
 				$(query).html(msg);
 			} else if (type === false || type === "bad" || type === "error") {
 				$(query).addClass("bad");
 				$(query).removeClass("good");
 				if (Errors[msg]) {
 					msg = Errors[msg]
-				} else {
-					msg = `Invalid ${msg}.`;
 				}
 				
-				msg += btn;
+				msg = btn + msg;
 				$(query).html(msg);
 			}
 		}

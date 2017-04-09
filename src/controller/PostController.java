@@ -32,7 +32,7 @@ public class PostController extends HttpServlet {
 		User current = Cookies.getUser(request);
 		PostDAO dao = new PostDAO();
 		
-		if (current == null || current.isGuest()) {
+		if (current == null || current.isGuest() || current.getBanned()) {
 			Responder.error(response, "access");
 			System.err.println(current);
 			return;

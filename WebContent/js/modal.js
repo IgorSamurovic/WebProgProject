@@ -113,7 +113,7 @@ Modals = {
 		var buttons = [];
 		
 		if (doDelete) {
-			buttons.push(H.btn('Yes (Soft delete)', 'YesBtn1', cls='special big', null));
+			buttons.push(H.btn(`Yes ${user.isAdmin() ? 'Soft delete' : ''}`, 'YesBtn1', cls='special big', null));
 			if (user.isAdmin()) {
 				buttons.push(H.btn('Attempt hard delete', 'YesBtn2', cls=' big', null));
 			}

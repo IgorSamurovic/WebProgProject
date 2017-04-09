@@ -10,8 +10,8 @@ Errors = {
 	db           : "Database error.",
 	parent       : "Selected parent is already a descendant of this forum.",
 	owner        : "Invalid owner.",
-	
-		
+	login        : "Invalid username or password.",
+	text         : "Contents need to be at least 7 characters long."
 		
 		
 }

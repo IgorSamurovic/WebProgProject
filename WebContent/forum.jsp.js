@@ -68,7 +68,12 @@ $(document).ready(function() {
 						},
 						renderFunc : Forum.render ,
 						updateFunc : function() {
-							$(this.selTitle()).html(`${this.getOnlyObject().renderHeader()}`);
+							var obj = this.getOnlyObject();
+							if (obj) {
+								$(this.selTitle()).html(`${obj.renderHeader()}`);
+							} else {
+								Page.redirect();
+							}
 						}
 					});
 					

@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import controller.util.ParamProcessor;
 import controller.util.Responder;
 import model.User;
+import model.User.Role;
 import model.dao.ThreadDAO;
 import model.dao.UserDAO;
 import util.Cookies;
@@ -35,11 +36,11 @@ public class UserController extends HttpServlet {
 		Integer id = pp.integer("id");
 		String reqType = pp.string("reqType");
 		
-		if (current == null || !(
+		if (current == null || current.getBanned() || !(
 				current.isAdmin() || 
 				(current.isMod() && current.getId() == id) ||
 				(current.isUser() && current.getId() == id) ||
-				(current.isGuest() && reqType.equals("register"))
+				(current.isGuest() && reqType.equals("add"))
 		)) {
 			Responder.error(response, "access");
 			return;
@@ -87,7 +88,7 @@ public class UserController extends HttpServlet {
 		// Add
 		
 		if (reqType.equals("add")) {
-			if (current.isAdmin()) {
+			if (current.isAdmin() || current.isGuest()) {
 				obj = new User();
 				obj.setUsername(username);
 				obj.setEmail(email);
@@ -95,13 +96,17 @@ public class UserController extends HttpServlet {
 				obj.setSurname(surname);
 			
 				if (password != null && confirmPassword != null && password.equals(confirmPassword)) {
-					obj.setPassword("password");
+					obj.setPassword(password);
 				} else {
 					Responder.error(response, "password");
 					return;
 				}
 				
-				obj.setRole(role);
+				if (current.isAdmin()) {
+					obj.setRole(role);	
+				} else {
+					obj.setRole(Role.USER);
+				}
 				
 				error = obj.checkForErrors();
 				

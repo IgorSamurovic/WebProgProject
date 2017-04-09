@@ -6,6 +6,10 @@
 
 var H = {	
 		
+	smallImg : function(file) {
+		return `<img src="res/img/${file}" height="16" width="16"/>`;
+	},
+		
 	textareaBase : function(args) {
 		if (args.alt) {
 			$.extend(args, args.alt);

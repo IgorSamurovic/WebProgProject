@@ -57,6 +57,15 @@ $(document).ready(function() {
 							},
 						},
 						renderFunc : User.render,
+						updateFunc : function() {
+							var obj = this.getOnlyObject();
+							if (obj) {
+								$(this.selTitle()).html(`${obj.renderHeader()}`);
+							} else {
+								Page.redirect();
+							}
+							
+						},
 					}).loadResults();
 											
 					// Render threads
@@ -108,8 +117,6 @@ $(document).ready(function() {
 						}
 						
 					}).loadResults();
-					
-					G.popStateHandler();
 					
 				} else {
 					Page.redirect();	

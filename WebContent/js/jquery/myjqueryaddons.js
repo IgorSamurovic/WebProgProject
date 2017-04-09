@@ -12,6 +12,15 @@
 		return this;
 	};
 	
+	$.fn.hide = function(doHide=true) {
+		if (!doHide) {
+			this.removeClass("hidden");
+		} else {
+			this.addClass("hidden");
+		}
+		return this;
+	};
+	
 	$.fn.isShown = function() {
 		return !this.hasClass('hidden');
 	};

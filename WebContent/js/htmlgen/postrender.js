@@ -72,6 +72,16 @@ $.extend(Post, {
 	render : function(post=this) {
 		var currentUser = User.getCurrent();
 		
+		// Let's make buttons first!
+		var buttons = [`<div class="buttons">`];
+
+		if (post.canBeDeletedBy(currentUser)) {
+			buttons.push(H.toggleBtn(['Delete', 'Undelete'], 'deleteBtn', 'small', !post.data.deleted));
+		}
+		
+		// Close buttons!
+		buttons.push(`</div>`);
+		
 		// Now render the rest of it!
 		var s = [`<div class="rowFlex">`];
 		
@@ -81,7 +91,7 @@ $.extend(Post, {
 		var dlFields2 = ['Forum', 'Found', 'Date'];
 		if (currentUser.isAdmin()) dlFields2.push('Deleted');
 		
-		s.push(H.dl(dlFields1, 'flex2'), H.dl(dlFields2, 'flex1'));
+		s.push(H.dl(dlFields1, 'flex2'), H.dl(dlFields2, 'flex1'), buttons);
 
 		s.push([`</div>`]);
 		s = s.supplant({
@@ -115,7 +125,7 @@ $.extend(Post, {
 		var currentUser = User.getCurrent();
 		
 		// Let's make buttons first!
-		var buttons = [`<div class="alignRight">`];
+		var buttons = [`<div>`];
 		
 		// Editing <Only admin or owner>
 		if (post.canBeEditedBy(currentUser)) {
@@ -131,7 +141,7 @@ $.extend(Post, {
 		
 		// ${post.renderLink()}
 		
-		return post.isDeleted() ? buttons.join("") : `
+		return post.isDeleted() ? [post.renderOwner(), buttons[1]].join("") : `
 
 				<div class="rowFlex">
 					<div class="columnFlex flex05 alignLeft">
