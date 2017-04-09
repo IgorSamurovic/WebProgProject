@@ -194,7 +194,6 @@ $(document).ready(function() {
 					forumSearch.loadResults();
 					
 					G.protectParam('id');
-					G.popStateHandler();
 					
 				} else {
 					Page.redirect();	

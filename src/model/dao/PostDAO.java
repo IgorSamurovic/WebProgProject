@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import controller.util.ParamProcessor;
 import model.Post;
@@ -76,7 +77,8 @@ public class PostDAO
 			rs.getString("frm.title"),
 			rs.getString("loc.locked") == null,
 			txtId,
-			txtTitle
+			txtTitle,
+			0
 		);
 	}
 
@@ -149,6 +151,56 @@ public class PostDAO
 		qb.setCounting(false);
 		qb.limit("$page", "$perPage");		
 		list.add(processMany(qb));
+		
+		String text = pp.string("text");
+		String thread = pp.string("thread");
+		
+		if ((Integer) list.get(0) > 0) {
+			@SuppressWarnings("unchecked")
+			ArrayList<Post> posts = (ArrayList<Post>) list.get(1);
+			
+			Integer index;
+			String txt;
+			Integer start;
+			Integer end;
+			
+			// Set foundindex so we know what part of the string to show
+			for (Post post : posts) {
+				
+				index = 0;
+				start = 0;
+				
+				txt = post.getText();
+				start = 0;
+				end = txt.length();
+				
+				
+				
+				if (text != null) {
+					index = Math.max(0, txt.indexOf(text));
+	 				post.setFoundIndex(index);
+	 				start = Math.max(0, index-50);
+	 				end = Math.min(txt.length(), index+50);
+	 				txt = txt.substring(start, end);
+					
+	 				txt = txt.replaceAll("(?i)"+Pattern.quote(text), "<mark>"+text.toUpperCase()+"</mark>");
+				} else if (thread == null || pp.string("id") == null) {
+					if (end > 100) { 
+						end = 100;
+					}
+					txt = txt.substring(start, end);
+				}
+ 				
+ 				if (end < post.getText().length()-3) {
+ 					txt += "...";
+ 				}
+ 				if (start > 0) {
+ 					txt = "..." + txt;
+ 				}
+
+ 				post.setText(txt);
+			}
+		}
 		
 		return list;
 	}

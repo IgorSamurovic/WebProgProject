@@ -28,6 +28,7 @@ public class Post implements DataObject {
 	private Boolean _allowPosting;
 	private Integer _resultForumId;
 	private String _resultForumTitle;
+	private Integer _foundIndex;
 	
 	// Validation
 	public String checkForErrors() {
@@ -35,7 +36,7 @@ public class Post implements DataObject {
 		Thread threadObj = null;
 		User ownerObj = null;
 		
-		if (text == null || (text != null && text.length() > 1000)) {
+		if (text == null || (text != null && (text.length() <= 6 || text.length() > 25000))) {
 			return "text";
 		}
 
@@ -69,7 +70,7 @@ public class Post implements DataObject {
 	
 	public Post(Integer id, String text, Integer thread, Integer owner, Timestamp date, Boolean deleted,
 		String _ownerUsername, Integer _ownerRole, String _threadTitle, String _forumId, String _forumTitle, Boolean _allowPosting,
-		Integer _resultForumId, String _resultForumTitle) {
+		Integer _resultForumId, String _resultForumTitle, Integer _foundIndex) {
 		super();
 		this.id = id;
 		this.text = text;
@@ -85,6 +86,7 @@ public class Post implements DataObject {
 		this._allowPosting = _allowPosting;
 		this._resultForumId = _resultForumId;
 		this._resultForumTitle = _resultForumTitle;
+		this._foundIndex = _foundIndex;
 	}
 
 	@Override
@@ -99,8 +101,16 @@ public class Post implements DataObject {
 	// Attributes
 	
 	// Special
-	
 
+	@JsonProperty("_foundIndex")
+	public Integer getFoundIndex() {
+		return _foundIndex;
+	}
+	
+	public void setFoundIndex(Integer _foundIndex) {
+		this._foundIndex = _foundIndex;
+	}
+	
 	@JsonProperty("_forumId")
 	public String getForumId() {
 		return _forumId;

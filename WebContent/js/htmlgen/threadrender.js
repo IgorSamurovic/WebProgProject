@@ -74,7 +74,7 @@ $.extend(Thread, {
 	},
 	
 	renderDescript : function(shorten) {
-		return (this.data.descript !== undefined && this.data.descript !== null) ? this.data.descript.shorten(shorten) : "No description";
+		return (this.data.descript !== undefined && this.data.descript !== null) ? this.data.descript.shorten(shorten) : "";
 	},
 	
 	renderText : function(shorten) {
@@ -122,11 +122,6 @@ $.extend(Thread, {
 		// Let's make buttons first!
 		var buttons = [`<div class="buttons">`];
 		
-		// Editing <Only admin or owner>
-		if (thread.canBeEditedBy(currentUser)) {
-			buttons.push(H.btn('Edit', 'editBtn', 'small special'));
-		}
-		
 		// Locking <Only admins and mods>
 		if (thread.canBeLockedBy(currentUser)) {
 			buttons.push(H.toggleBtn(['Lock', 'Unlock'], 'threadLockBtn', 'small', !thread.data.locked));
@@ -150,7 +145,9 @@ $.extend(Thread, {
 		
 		var dlFields = ['Title', 'Description', 'Text', 'Forum', 'Owner'];
 		var dlFields2 = ['Date', 'Sticky', 'Locked'];
-		
+		if (!thread.data.descript) {
+			dlFields.splice(1,1);
+		}
 		if (currentUser.isAdmin()) dlFields2.push('Deleted');
 		
 		s.push(H.dl(dlFields, 'flex2'), H.dl(dlFields2, 'flex1'));
@@ -222,8 +219,7 @@ $.extend(Thread, {
 					<div class="columnFlex flex4">
 						
 						<div class="postContent">
-							${thread.renderDescript()}
-							<hr/>
+							${thread.data.descript ? thread.renderDescript() + '<hr/>' : ""}
 							${thread.renderText()}
 						</div>
 						${buttons.join("")}

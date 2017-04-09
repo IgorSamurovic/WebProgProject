@@ -55,7 +55,7 @@ $.extend(Post, {
 						${Forum.inputDate({name:'dateB'})}
 					</div>
 				</div>
-				${Post.inputText()}
+				${Post.inputSearchText()}
 			</div>
 		`;
 	}, 
@@ -72,37 +72,21 @@ $.extend(Post, {
 	render : function(post=this) {
 		var currentUser = User.getCurrent();
 		
-		// Let's make buttons first!
-		var buttons = [`<div class="alignRight">`];
-		
-		// Editing <Only admin or owner>
-		if (post.canBeEditedBy(currentUser)) {
-			buttons.push(H.btn('Edit', 'editBtn', 'small special'));
-		}
-
-		if (post.canBeDeletedBy(currentUser)) {
-			buttons.push(H.toggleBtn(['Delete', 'Undelete'], 'deleteBtn', 'small', !post.data.deleted));
-		}
-		
-		// Close buttons!
-		buttons.push(`</div>`);
-		
 		// Now render the rest of it!
 		var s = [`<div class="rowFlex">`];
 		
 		s.push('{Avatar}');
 		
-		var dlFields = ['Owner', 'Found', 'Forum', 'Thread', 'Post', 'Date', 'Text', ];
+		var dlFields1 = ['Post', 'Thread', 'Owner', 'Text'];
+		var dlFields2 = ['Forum', 'Found', 'Date'];
+		if (currentUser.isAdmin()) dlFields2.push('Deleted');
 		
-		if (currentUser.isAdmin()) dlFields.push('Deleted');
-		
-		s.push(H.dl(dlFields, 'flex2'));
+		s.push(H.dl(dlFields1, 'flex2'), H.dl(dlFields2, 'flex1'));
 
-		s.push(buttons);
 		s.push([`</div>`]);
 		s = s.supplant({
 			Avatar     : User.renderAvatarLink(post.data.owner, 80, 80),
-			Text       : post.renderText(120),
+			Text       : post.renderText(),
 			Owner      : post.renderOwner(),
 			Thread     : post.renderThread(),
 			Post   	   : post.renderLink(),

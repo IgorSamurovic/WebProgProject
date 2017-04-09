@@ -73,15 +73,15 @@ public class User implements DataObject {
 	}
 	
 	public boolean isUser() {
-		return role >= Role.USER;
+		return role == Role.USER;
 	}
 	
 	public boolean isMod() {
-		return role >= Role.MOD;
+		return role == Role.MOD;
 	}
 	
 	public boolean isAdmin() {
-		return role >= Role.ADMIN;
+		return role == Role.ADMIN;
 	}
 
 	public int getPermissionLevel() {

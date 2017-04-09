@@ -116,22 +116,23 @@ $.extend(User, {
 		var isOwner = currentUser.data.id == user.data.id; 
 		var isDeleted = user.isDeleted();
 		
-		var dlFields = ['Username', 'Role', 'Date', 'Name'];
-		if (isAdmin || (user.data.email && isOwner)) dlFields.push('Email');
-		if (isAdmin) dlFields.push('Banned', 'Deleted');
+		var dlFields1 = ['Username', 'Role', 'Name'];
+		if (isAdmin || (user.data.email && isOwner)) dlFields1.push('Email');
+		var dlFields2 = ['Date', 'Banned'];
+		if (isAdmin) dlFields2.push('Deleted');
 		
 		var s = `
 			<div class="rowFlex">
 				{avatar}
-				${H.dl(dlFields)}
-	           
+				${H.dl(dlFields1, "flex2")}
+	           	${H.dl(dlFields2, "flex1")}
 				<div class="buttons">
 					${(isAdmin && !isGod && !isOwner) ?
-						H.toggleBtn(['Delete', 'Undelete'], 'deleteBtn', 'small btn', !user.data.deleted) : ""}
+						H.toggleBtn(['Delete', 'Undelete'], 'deleteBtn', 'small', !user.data.deleted) : ""}
 					${(!isDeleted && (isAdmin || isOwner)) ?
-						H.btn('Edit', 'editBtn', "small btn2") : ""}
+						H.btn('Edit', 'editBtn', "small special") : ""}
 					${(!isDeleted && (isAdmin && !isGod && !isOwner)) ?
-						H.toggleBtn(['Ban', 'Unban'], 'userBanBtn', 'small btn', !user.data.banned) : ""}
+						H.toggleBtn(['Ban', 'Unban'], 'userBanBtn', 'small', !user.data.banned) : ""}
 			 	</div>
 			 </div>
 
@@ -149,10 +150,27 @@ $.extend(User, {
 		return s;
 	},
 	
+	renderAdd : function () {
+		return `
+			<div class="columnFlex wide">
+				${User.inputUsername()}
+				${User.inputEmail()}
+				${User.inputPassword()}
+				${User.inputConfirmPassword()}
+				${User.selectRole({}, strict=true)}
+				${User.inputName()}
+				${User.inputSurname()}
+			</div>
+		`;
+	},
+	
 	renderFilter : function() {
 		return `
 			<div class="columnFlex flex2">
-				${User.inputUsername()}
+				<div class="rowFlexAlways">
+					${User.inputUsername()}
+					${User.selectRole()}
+				</div>
 				${User.inputEmail()}
 			</div>
 			

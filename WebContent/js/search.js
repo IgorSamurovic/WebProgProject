@@ -15,30 +15,18 @@
 
 */
 
-// Example layout for a Search object in HTML:
 
-/*
- * Parent
- * 	 Container
- *   Search Container
- *     Fields
- *     Search Button
- *   Result Container
- *     Buttons Pages
- *       Button1 Page
- *       Button2 Page
- *     Results
- *       Result1
- *         Buttons
- *           Button1
- *           Button2
- *       Result2
- *     Buttons
- *     
- */ 
 
 Search = {
-	
+
+	popStateHandler : function(searchObject) {
+		$(window).bind('popstate', function() {
+			var params = searchObject.getParams();
+			G.reloadParams();
+			searchObject.loadResults();
+		});	
+	},
+		
 	register : function(obj, prefix) {
 		if (this._searchObjects === undefined) {
 			this._searchObjects = {
@@ -82,7 +70,7 @@ Search = {
 	},
 	
 	getButton : function(pageId, btnType) {
-		const cls = this.getParams().page === pageId ? 'selected' : "";
+		const cls = this.getParams().page == pageId ? 'selected' : "";
 		return H.btn(pageId, 'changePageBtn', `${cls} ${btnType}`, pageId);
 	},
 	
@@ -188,12 +176,18 @@ Search = {
 		return $(sel).closest('[id$="SearchContainer"]').data('searchObject');
 	},
 	
+	getSearchChild : function(sel) {
+		return $(sel).find('[id$="SearchContainer"]').data('searchObject');
+	},
+	
 	DEFAULT_PERPAGE : 5,
 	MAX_PERPAGE : 50,
 	
 	renderResults : function(data) {
 		
 		var params = this.getParams();
+		G.log('params ARE!!!!!!-----------------------');
+		console.log(params);
 		var useParams = this.settings.useParams;
 		
 		var html;
@@ -339,6 +333,7 @@ Search = {
 			obj.settings._params = {};
 			obj.settings.useParams = false;
 		} else {
+			this.popStateHandler(obj);
 			obj.settings.useParams = true;
 			settings.allowed = (settings.allowed !== undefined) ? settings.allowed : [];
 		}
@@ -429,7 +424,6 @@ $(document).ready(function() {
 		if (params.perPage != $(this).val()) {
 			params.perPage = $(this).val();
 			G.pushState(searchObject.settings.useParams);
-
 			searchObject.loadResults();
 		}
 
@@ -480,7 +474,7 @@ $(document).ready(function() {
 			if (data.isError()) {
 				G.msg("addError", data.getError(), "error");
 			} else {
-					
+				G.msg("addError");
 				G.log("Created object ID:");
 				G.log(data);
 				$(that).setFields();

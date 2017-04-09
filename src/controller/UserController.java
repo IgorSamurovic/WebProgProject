@@ -50,11 +50,10 @@ public class UserController extends HttpServlet {
 		String name = pp.string("name");
 		String surname = pp.string("surname");
 		String password = pp.string("password");
+		String confirmPassword = pp.string("confirmPassword");
 		Integer role = pp.integer("role");
 		Boolean banned = pp.bool("banned");
 		Boolean deleted = pp.bool("deleted");
-		
-		
 		
 		if (reqType == null) return;
 		
@@ -88,37 +87,44 @@ public class UserController extends HttpServlet {
 		// Add
 		
 		if (reqType.equals("add")) {
-			if (id != null) {
-				if (current.isAdmin()) {
-					obj = new User();
-					obj.setUsername(username);
-					obj.setEmail(email);
-					obj.setName(name);	
-					obj.setSurname(surname);
+			if (current.isAdmin()) {
+				obj = new User();
+				obj.setUsername(username);
+				obj.setEmail(email);
+				obj.setName(name);	
+				obj.setSurname(surname);
+			
+				if (password != null && confirmPassword != null && password.equals(confirmPassword)) {
 					obj.setPassword("password");
-					
-					error = obj.checkForErrors();
-					
+				} else {
+					Responder.error(response, "password");
+					return;
+				}
+				
+				obj.setRole(role);
+				
+				error = obj.checkForErrors();
+				
+				if (error == null) {
+					error = dao.checkUnique(obj);
 					if (error == null) {
-						error = dao.checkUnique(obj);
-						if (error == null) {
-							if (dao.insert(obj)) {
-								pp.setForLast();
-								obj = dao.getFirstUser(dao.filter(pp, current));
-								Responder.out(response, obj.getId());
-							} else {
-								Responder.error(response, "db");
-							}
+						if (dao.insert(obj)) {
+							pp.setForLast();
+							obj = dao.getFirstUser(dao.filter(pp, current));
+							Responder.out(response, obj.getId());
 						} else {
-							Responder.error(response, error);
+							Responder.error(response, "db");
 						}
 					} else {
 						Responder.error(response, error);
 					}
 				} else {
-					Responder.error(response, "access");
+					Responder.error(response, error);
 				}
+			} else {
+				Responder.error(response, "access");
 			}
+
 			return;
 		} 
 		
@@ -133,7 +139,20 @@ public class UserController extends HttpServlet {
 					if (email != null) obj.setEmail(email);
 					obj.setName(name);
 					obj.setSurname(surname);
-					if (password != null) obj.setPassword(password);
+					
+					if (password != null && confirmPassword != null) {
+						if (password.equals(confirmPassword)) {
+							obj.setPassword(password);
+						} else {
+							Responder.error(response, "confirm");
+							return;
+						}
+					} else if ((password == null && confirmPassword != null) ||
+					(confirmPassword == null && password != null)) {
+						Responder.error(response, "confirm");
+						return;
+					}
+					
 					if (role != null) obj.setRole(role);
 					
 					error = obj.checkForErrors();

@@ -11,6 +11,7 @@ var H = {
 			$.extend(args, args.alt);
 		}
 		
+		const pattern = args.pattern !== undefined ? args.pattern : null;
 		const required = args.required ? "required" : "";
 		const disabled = args.disabled ? "disabled" : "";
 		const cls = args.cls || "";
@@ -20,21 +21,25 @@ var H = {
 		const rows = args.rows || '3';
 		const height = args.height || rows * 25;
 		const val = args.val !== undefined ? args.val : "";
+		const error = args.error !== undefined ? args.error : null;
 		
 		return `
-				<textarea
-					${required} 
-					${disabled} 
-					class="${cls}"
-					name="${name}"
-					maxlength="${maxlength}"
-					rows="${rows}"
-					style="height:${height}px;"
-					placeholder="${placeholder}"
-					data-val="${val}"
-				></textarea>
-				<div name="textareaCounter"> </div>
-	`
+			<textarea
+				pattern = "${pattern ? pattern : ''}"
+				${required} 
+				${disabled} 
+				class="${cls}"
+				name="${name}"
+				maxlength="${maxlength}"
+				rows="${rows}"
+				style="height:${height}px;"
+				placeholder="${placeholder}"
+				data-val="${val}"
+				${error ? "oninvalid=setCustomValidity('"+error+"');" : ""}
+				${error ? "oninput=setCustomValidity('');" : ""}
+			></textarea>
+			<div name="textareaCounter"> </div>
+		`
 	},
 		
 	inputBase : function(args) {
@@ -54,6 +59,8 @@ var H = {
 		const val = args.val !== undefined ? args.val : "";
 		const value = args.value !== undefined ? args.value : "";
 		const label = args.label !== undefined ? args.label : null;
+		const onInvalid = `oninvalid="setCustomValidity('${error}');"`;
+		const onInput = `oninput="setCustomValidity('');"`;
 		
 		return `
 			${label !== null && label !== undefined ? '<label cls="'+cls+'" >' : ""}
@@ -66,8 +73,8 @@ var H = {
 				placeholder="${placeholder}"
 				maxlength="${maxlength}"
 				pattern = "${pattern ? pattern : ''}"
-				${error ? "oninvalid=setCustomValidity('${error}');" : ""}
-				${error ? "oninput=setCustomValidity('');" : ""}
+				${error ? onInvalid : ""}
+				${error ? onInput : ""}
 				data-val="${val}"
 				
 				value="${value}"
@@ -93,15 +100,17 @@ var H = {
 		
 		for (var i=0; i<options.length; i++) {
 			option = options[i];
-			sel = (selected === i) ? "selected" : "";
-			
-			if (!$.isArray(option)) {
-				option = [
-					option,
-					option.capitalize(),
-				];
+			if (option) {
+				sel = (selected === i) ? "selected" : "";
+				
+				if (!$.isArray(option)) {
+					option = [
+						option,
+						option.capitalize(),
+					];
+				}
+				options[i] = `<option ${sel} value="${option[0]}">${prefix} ${option[1]}</option>`;
 			}
-			options[i] = `<option ${sel} value="${option[0]}">${prefix} ${option[1]}</option>`;
 		}
 		
 		return `<select
@@ -317,7 +326,12 @@ const HFUNC = (function() {
 		
 		$(document).on('click', "[name=pageHideBtn]", function(event) {
 			event.preventDefault();
-			$(this).closest(".page").children(".pagecontent").showToggle();
+			const page = $(this).closest(".page");
+			const pageContent = $(page).children(".pagecontent");
+			$(pageContent).showToggle();
+			if ($(pageContent).isShown()) {
+				Search.getSearchChild(page).loadResults();
+			}
 		});	
 		
 		$(document).on('click', "[name=pageExitBtn]", function(event) {
@@ -329,8 +343,9 @@ const HFUNC = (function() {
 		
 		$(document).on('click', "[name=pageFilterBtn]", function(event) {
 			event.preventDefault();
-			$(this).closest(".page").find('[id$="SearchFilterContainer"]').showToggle();
-			$(this).closest(".page").children(".pagecontent").show();
+			const page = $(this).closest(".page");
+			$(page).find('[id$="SearchFilterContainer"]').showToggle();
+			$(page).children(".pagecontent").show();
 		});	
 		
 		$(document).on('input', "textarea", function(event) {

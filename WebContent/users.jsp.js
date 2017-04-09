@@ -8,10 +8,10 @@ $(document).ready(function() {
 	
 	(function () {
 		const params = G.getParams();
-		G.restrictParams();
 
 		var usersSearch = Search.create({
-			useParams  : false,
+			allowed    : ['id', 'page', 'perPage'],
+			useParams  : true,
 			prefix     : "users",
 			parent     : "#usersPageContent",
 			objType    : User,
@@ -22,6 +22,8 @@ $(document).ready(function() {
 					return {
 						orderBy : "obj.username",
 						asc     : "true",
+						page    : params.page,
+						perPage : params.perPage,
 					};
 				},
 			},
@@ -29,11 +31,23 @@ $(document).ready(function() {
 			filter     : User.renderFilter,
 			updateFunc : function() {
 				$(this.selTitle()).html(`Users (${this.data.totalRecords})`);
+			},
+			add : {
+				html  : User.renderAdd,
+				label : 'Add user',
+				title : 'Add user',
+				data  : function() {
+					return {
+					}
+				},
+				
+				condition : function() {
+					return User.getCurrent().isAdmin();
+				}
 			}
 		});
-					
+		
 		usersSearch.loadResults();
-		G.popStateHandler();
 
 	}) ();
 });

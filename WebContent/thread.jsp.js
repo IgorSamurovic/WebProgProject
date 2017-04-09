@@ -35,7 +35,7 @@ $(document).ready(function() {
 					
 					var threadSearch = Search.create({
 						cascade    : ['posts'],
-						useParams  : true,
+						useParams  : false,
 						isSingle   : true,
 						prefix     : "thread",
 						parent     : "#threadPageContent",
@@ -59,9 +59,9 @@ $(document).ready(function() {
 											
 					// Render replies
 
-
 					var replySearch = Search.create({
-						useParams  : false,
+						allowed    : ['thread', 'page', 'perPage'],
+						useParams  : true,
 						prefix     : "posts",
 						parent     : "#postsPageContent",
 						objType    : Post,
@@ -73,6 +73,8 @@ $(document).ready(function() {
 									orderBy : "obj.DATE",
 									asc     : "TRUE",
 									thread  : params.thread,
+									page    : params.page,
+									perPage : params.perPage,
 								};
 							},
 						},
@@ -109,7 +111,6 @@ $(document).ready(function() {
 					}
 					
 					G.protectParam('id');
-					G.popStateHandler();
 					
 				} else {
 					Page.redirect();	

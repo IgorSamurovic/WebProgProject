@@ -78,8 +78,14 @@ $(document).ready(function() {
 	
 	$(document).on('click', '[name="userBanBtn"]', function(button) {
 		var that = this;
-		Search.getObject(this).ban($(that).data("val"), function() {
-			Search.getSearch(that).loadResults();
+		Modals.confirmation({
+			yesFunc : function() {  
+				Search.getObject(that).ban($(that).data("val"), function() {
+					Search.getSearch(that).loadResults();
+				});
+			}
 		});
+		
+		
 	});
 });

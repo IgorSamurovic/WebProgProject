@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import controller.util.ParamProcessor;
 import model.Forum;
@@ -140,6 +141,28 @@ public class ThreadDAO
 		if (pp.integer("id") != null && (Integer) list.get(0) > 0) {
 			Thread obj = getFirstThread(list);
 			obj.setParents(new ForumDAO().getParentList(obj.getId()));
+		}
+		
+		if ((Integer) list.get(0) > 0) {
+			@SuppressWarnings("unchecked")
+			ArrayList<Thread> threads = (ArrayList<Thread>) list.get(1);
+			Integer end;
+			String txt;
+			Integer len;
+			for (Thread thread : threads) {
+				if (pp.integer("id") == null) {
+					txt = thread.getText();
+					len = txt.length();
+					
+					end = Math.min(len, 100);
+				
+					txt = txt.substring(0, end);
+					if (end < thread.getText().length()-3) {
+	 					txt += "...";
+	 				}
+					thread.setText(txt);
+				}
+			}
 		}
 		
 		//pp.printDebug();

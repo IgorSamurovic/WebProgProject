@@ -11,6 +11,24 @@ $.extend(User, {
 		return DataObj.selectOrderBy(this._orderByOptions, 0)
 	}, 
 	
+	selectRole : function(alt={}, strict=false) {
+		const options = [
+			["", "Any"],
+			[1, "User"],
+			[2, "Moderator"],
+			[3, "Administrator"]
+		];
+		if (strict) {
+			delete options[0];
+		}
+		
+		return H.selectBase({
+			alt : alt,
+			name : "role",
+			options : options,
+		});
+	}, 
+	
 	inputName : function(alt) {
 		return H.inputBase({
 			required  : false,
@@ -34,7 +52,7 @@ $.extend(User, {
 			alt       : alt,
 			name      : 'username',
 			placeholder : "Username",
-			maxlength : '40',
+			maxlength : '20',
 			pattern   : '.{0,20}',
 			error     : 'Must be at least 3 characters long.',
 			val       : 'selectObject',
@@ -49,8 +67,8 @@ $.extend(User, {
 			name      : 'email',
 			placeholder : "Email",
 			maxlength : '40',
-			pattern   : '.{6,40}',
-			error     : 'Must be at least 3 characters long.',
+			pattern   : '.{3,40}',
+			error     : 'Must be a proper Email address.',
 			val       : 'selectObject',
 		});
 	},

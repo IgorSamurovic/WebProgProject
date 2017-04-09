@@ -86,7 +86,7 @@ public class ParamProcessor
 			String val = null;
 			
 			if (test != null && !test.equals("null") && !test.isEmpty()) {
-				val = test;
+				val = test.replaceAll("<[^>]*>", "");;
 			}
 			
 			//System.err.println(param + " " + val);

@@ -48,7 +48,7 @@ public class Thread implements DataObject {
 			return "descript";
 		}
 		
-		if (text == null || (text != null && text.length() > 1000)) {
+		if (text == null || (text != null && (text.length() <= 6 || text.length() > 25000))) {
 			return "text";
 		}
 

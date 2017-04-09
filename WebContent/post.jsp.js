@@ -49,7 +49,6 @@ $(document).ready(function() {
 					}).loadResults();
 									
 					G.protectParam('id');
-					G.popStateHandler();
 					
 				} else {
 					Page.redirect();	

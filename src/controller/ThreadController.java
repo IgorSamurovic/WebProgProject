@@ -70,6 +70,10 @@ public class ThreadController extends HttpServlet {
 						current.isMod() || 
 						current.isUser() || !forumObj.getLocked()
 				)) {
+					if (text != null) {
+						text = text.replaceAll("<[^>]*>", "");
+					}
+					
 					obj = new Thread();
 					obj.setTitle(title);
 					obj.setDescript(descript);
@@ -110,6 +114,11 @@ public class ThreadController extends HttpServlet {
 					current.isMod() && (obj.getOwner() == current.getId() || obj.getOwnerRole() <= Role.USER) ||
 					current.isUser() && obj.getOwner() == current.getId() && obj.getAllowPosting()
 				)) {
+					
+					if (text != null) {
+						text = text.replaceAll("<[^>]*>", "");
+					}
+					if (forum != null) obj.setForum(forum);
 					obj.setTitle(title);
 					obj.setDescript(descript);
 					obj.setText(text);

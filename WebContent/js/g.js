@@ -144,7 +144,9 @@ var G = {
 	
 	restrictParams : function(allowed=[]) {
 		var prop;
-		
+		if (!this._paramProtected) {
+			this._paramProtected = {};
+		}
 		for (prop in this._params) {
 			if (!this._paramProtected[prop] && $.inArray(prop, allowed) <= -1) {
 				delete this._params[prop];
@@ -347,18 +349,29 @@ var G = {
 			$(query).addClass("hidden");
 		} else {
 			var btn = ' <button type="button" class="msgCloseBtn small right btn">&times</button>';
-			msg = msg + btn;
-			$(query).html(msg);
+			
 			$(query).removeClass("hidden");
 			if (type === null || type === undefined) {
 				$(query).removeClass("good");
 				$(query).removeClass("bad");
+				msg = msg + btn;
+				$(query).html(msg);
 			} else if (type === true || type === "good" || type === "success") {
 				$(query).addClass("good");
 				$(query).removeClass("bad");
+				msg = msg + btn;
+				$(query).html(msg);
 			} else if (type === false || type === "bad" || type === "error") {
 				$(query).addClass("bad");
 				$(query).removeClass("good");
+				if (Errors[msg]) {
+					msg = Errors[msg]
+				} else {
+					msg = `Invalid ${msg}.`;
+				}
+				
+				msg += btn;
+				$(query).html(msg);
 			}
 		}
 	},
@@ -411,49 +424,7 @@ var G = {
 	    },
 		
 	},
-
-	//////////////////////////////////////////////////////////////////////////////////////////////
-	// Button binding
-	//////////////////////////////////////////////////////////////////////////////////////////////
-    
-	_tabs : null,
-	
-	selectTab : function(index, pushState=true) {
-		if (this._tabs && $(this._tabs).data('currentTab') !== index) {
-			var params = G.getParams();
-			$(this._tabs).children().removeClass("selected");
-			$(this._tabs).children().eq(index).addClass("selected");
-			
-			params.tab = Page.getTabString(index);
-			if (pushState)
-				G.pushState();
-			else
-				G.replaceState();
-			Page.render();
-		}
-	},
-	
-    // Connects a tab button container to pages
-    tabHandler : function(initial=0) {
-    	var that = this;
-    	this._tabs = $(".tabs");
-		$(this._tabs).on('click', '.tab', function(button) {
-			that.selectTab($(this).index());
-		});
-
-		this.selectTab(initial, false);
-	},
-	
-	popStateHandler : function() {
-		var that = this;
-		$(window).bind('popstate', function() {
-			var params = that.getParams();
-			that.reloadParams();
-			that.selectTab(Page.getTabId(params.tab), false);
-			Page.render();
-		});	
-	}
-    
+ 
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////

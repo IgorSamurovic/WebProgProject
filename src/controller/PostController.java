@@ -34,6 +34,7 @@ public class PostController extends HttpServlet {
 		
 		if (current == null || current.isGuest()) {
 			Responder.error(response, "access");
+			System.err.println(current);
 			return;
 		}
 		
@@ -57,9 +58,14 @@ public class PostController extends HttpServlet {
 		if (reqType.equals("add")) {
 			if (thread != null) {
 				Thread threadObj = new ThreadDAO().findById(thread, current);
-				if (threadObj != null && !threadObj.getDeleted() && threadObj.getAllowPosting() && (
-						current.isAdmin() || !threadObj.getLocked()
+				System.err.println(threadObj);
+				if (threadObj != null && !threadObj.getDeleted() && (
+					current.isAdmin() ||
+					(!threadObj.getLocked() && threadObj.getAllowPosting())
 				)) {	
+					if (text != null) {
+						text = text.replaceAll("<[^>]*>", "");
+					}
 					obj = new Post();
 					obj.setText(text);
 					obj.setThread(thread);
@@ -82,7 +88,7 @@ public class PostController extends HttpServlet {
 					Responder.error(response, "access");
 				}
 			} else {
-				Responder.error(response, "access");
+				Responder.error(response, "thread");
 			}
 		} 
 
@@ -97,6 +103,11 @@ public class PostController extends HttpServlet {
 					current.isMod() && (obj.getOwner() == current.getId() || obj.getOwnerRole() <= Role.USER) ||
 					current.isUser() && obj.getOwner() == current.getId() && obj.getAllowPosting()
 				)) {
+					
+					if (text != null) {
+						text = text.replaceAll("<[^>]*>", "");
+					}
+					
 					obj.setText(text);
 					
 					error = obj.checkForErrors();

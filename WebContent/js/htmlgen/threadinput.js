@@ -35,9 +35,11 @@ $.extend(Thread, {
 		return H.textareaBase ({
 			alt       : alt,
 			cls       : '',
+			required  : true,
 			name      : 'text',
 			placeholder : 'Content...',
-			maxlength : '1000',
+			maxlength : '25000',
+			pattern   : '.{6,25000}',
 			rows      : '8'
 		});
 	},
