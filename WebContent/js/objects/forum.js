@@ -25,7 +25,7 @@ const Forum = Object.assign(Object.create(DataObj), {
 	// Deleting	
 	
 	canBeDeletedBy(user) {
-		return !this.isDeleted() && !user.isBanned() && (
+		return !user.isBanned() && (
 			user.isAdmin() && !this.isGod()
 		);
 	},

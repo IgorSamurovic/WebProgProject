@@ -73,13 +73,13 @@ $(document).ready(function() {
 						dataArgs   : {
 							url    : "post",
 							data   : function() {
-								return {
+								return $.extend({
 									orderBy : "obj.DATE",
 									asc     : "TRUE",
 									thread  : params.thread,
 									page    : params.page,
 									perPage : params.perPage,
-								};
+								}, params);
 							},
 						},
 						renderFunc : Post.renderMain,

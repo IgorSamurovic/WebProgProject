@@ -40,9 +40,16 @@ $.extend(DataObj, {
 	},
 	
 	inputUser : function(alt, alt2, btnLabel="user") {
+		if (alt && !alt.cls) {
+			alt.cls = "flex2";
+		}
+		
+		if (alt2 && !alt2.cls) {
+			alt.cls = "flex1";
+		}
 		const input = User.inputUsername(alt);
 		const inputId = this.inputId(alt2);
-		const button = H.btn(`Select ${btnLabel}`, 'selectUser', cls='flex1');
+		const button = H.btn(`Select ${btnLabel}`, 'selectUser', cls='flex05');
 		
 		return `
 			<div class="rowFlexAlways">

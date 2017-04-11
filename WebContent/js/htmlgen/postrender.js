@@ -64,7 +64,7 @@ $.extend(Post, {
 		return `
 			<div class="columnFlex flex4">
 				${Post.inputOwner()}
-				${Post.inputTextSingleRow()}
+				${Post.inputSearchText()}
 			</div>
 		`;
 	},

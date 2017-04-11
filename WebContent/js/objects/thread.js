@@ -31,7 +31,7 @@ const Thread = Object.assign(Object.create(DataObj), {
 	// Deleting	
 	
 	canBeDeletedBy(user) {
-		return !this.isDeleted() && !user.isBanned() && (
+		return !user.isBanned() && (
 			user.isAdmin() ||
 			user.isMod() && (user.owns(this) || this.xtra.ownerRole <= User.roles.user)
 		);

@@ -5,7 +5,7 @@
 // This allows me to have a clearer picture of the object hierarchy.            	        //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-var G = {
+const G = {
 
 	_enableLogging : true, 
 	

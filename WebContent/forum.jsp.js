@@ -185,6 +185,7 @@ $(document).ready(function() {
 										orderBy : "obj.DATE",
 										asc     : "FALSE",
 										deleted : false,
+										mainPageSearch: true,
 									};
 								},
 							},

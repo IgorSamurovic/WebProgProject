@@ -15,8 +15,6 @@
 
 */
 
-
-
 Search = {
 
 	popStateHandler : function(searchObject) {
@@ -311,7 +309,7 @@ Search = {
 		}
 		
 		if (this.settings.useParams) {
-			G.restrictParams(this.settings.allowed);
+			//G.restrictParams(this.settings.allowed);
 		} else {
 			this.settings.dataArgs.xData = this.getParams();
 		}
@@ -435,8 +433,12 @@ $(document).ready(function() {
 		const form = $(this).closest('[id$="SearchFilterForm"]');
 		var params = searchObject.getParams();
 		
+		console.log("old params = ");
+		console.log(params);
 		$.extend(params, $(form).loadFields());
-
+		console.log("new params = ");
+		console.log(params);
+		
 		G.pushState(searchObject.settings.useParams);
 		searchObject.loadResults();
 	});

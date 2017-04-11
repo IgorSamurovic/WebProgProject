@@ -10,14 +10,12 @@ $(document).ready(function() {
 		name: 'threads',
 		title: 'Threads',
 		canHide : true,
-		hiddenContent : true,
 	}));
 	
 	G.addPage(H.page({
 		name: 'posts',
 		title: 'Posts',
 		canHide : true,
-		hiddenContent : true,
 	}));
 	
 	(function () {
@@ -61,6 +59,7 @@ $(document).ready(function() {
 							var obj = this.getOnlyObject();
 							if (obj) {
 								$(this.selTitle()).html(`${obj.renderHeader()}`);
+								G.refreshImage(obj.data.id);
 							} else {
 								Page.redirect();
 							}
@@ -80,7 +79,7 @@ $(document).ready(function() {
 							url    : "thread",
 							data   : function() {
 								return {
-									orderBy : "obj.DATE",
+									orderBy : "obj.date",
 									asc     : "FALSE",
 									owner   : params.id,
 								};
@@ -105,7 +104,7 @@ $(document).ready(function() {
 							url    : "post",
 							data   : function() {
 								return {
-									orderBy : "obj.DATE",
+									orderBy : "obj.date",
 									asc     : "FALSE",
 									owner   : params.id,
 								};

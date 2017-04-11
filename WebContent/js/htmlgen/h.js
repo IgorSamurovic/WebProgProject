@@ -4,7 +4,7 @@
 // This allows me to have a clearer picture of the object hierarchy.	       			    //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-var H = {	
+const H = {	
 		
 	smallImg : function(file) {
 		return `<img src="res/img/${file}" height="16" width="16"/>`;
@@ -319,9 +319,7 @@ var H = {
 		s.push('</dl>');
 		return s.join("");
 	},
-		
-		
-		
+			
 };
 
 const HFUNC = (function() {

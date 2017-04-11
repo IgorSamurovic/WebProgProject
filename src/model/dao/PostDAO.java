@@ -163,6 +163,7 @@ public class PostDAO
 			String txt;
 			Integer start;
 			Integer end;
+			Boolean mainPageSearch = pp.bool("mainPageSearch");
 			
 			// Set foundindex so we know what part of the string to show
 			for (Post post : posts) {
@@ -176,7 +177,7 @@ public class PostDAO
 				
 				
 				
-				if (text != null) {
+				if (text != null && mainPageSearch != null && mainPageSearch) {
 					index = Math.max(0, txt.indexOf(text));
 	 				post.setFoundIndex(index);
 	 				start = Math.max(0, index-50);

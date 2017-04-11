@@ -195,7 +195,7 @@ $.extend(Thread, {
 		// Close buttons!
 		buttons.push(`</div>`);
 		
-		return `
+		return thread.isDeleted() ? [thread.renderOwner(), buttons[1]].join("") : `
 			<div class="columnFlex">
 				<div class="rowFlex">
 					<div class="columnFlex flex05 alignLeft">

@@ -4,7 +4,7 @@ public class Settings
 {
 	public static String getHomepage()
 	{
-		return "/site/forum.jsp";
+		return "forum.jsp?id=1";
 		
 	}
 }

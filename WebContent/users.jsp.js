@@ -19,18 +19,19 @@ $(document).ready(function() {
 			dataArgs   : {
 				url    : "user",
 				data   : function() {
-					return {
+					return $.extend({
 						orderBy : "obj.username",
 						asc     : "true",
 						page    : params.page,
 						perPage : params.perPage,
-					};
+					}, params);
 				},
 			},
 			renderFunc : User.render,
 			filter     : User.renderFilter,
 			updateFunc : function() {
 				$(this.selTitle()).html(`Users (${this.data.totalRecords})`);
+				G.refreshImage();
 			},
 			add : {
 				html  : User.renderAdd,
