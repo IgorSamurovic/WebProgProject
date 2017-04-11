@@ -65,10 +65,10 @@ public class ThreadController extends HttpServlet {
 		if (reqType.equals("add")) {
 			if (forum != null) {
 				Forum forumObj = new ForumDAO().findById(forum, current);
-				if (forumObj != null && !forumObj.getDeleted() && forumObj.getAllowPosting() && (
+				if (forumObj != null && !forumObj.getDeleted() && (
 						current.isAdmin() ||
 						current.isMod() || 
-						current.isUser() || !forumObj.getLocked()
+						(current.isUser() && forumObj.getAllowPosting() && !forumObj.getLocked())
 				)) {
 					if (text != null) {
 						text = text.replaceAll("<[^>]*>", "");

@@ -64,7 +64,7 @@ public class ForumController extends HttpServlet {
 		if (reqType.equals("add")) {
 			if (parent != null) {
 				Forum forumObj = new ForumDAO().findById(parent, current);
-				if (forumObj != null && !forumObj.getDeleted() && forumObj.getAllowPosting()) {
+				if (forumObj != null && !forumObj.getDeleted()) {
 					obj = new Forum();
 					obj.setTitle(title);
 					obj.setDescript(descript);
